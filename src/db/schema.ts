@@ -1,0 +1,87 @@
+/**
+ * SQLite schema + versioned migrations.
+ *
+ * Migrations are append-only: never edit a shipped migration. Add a new one
+ * with an incremented `version` and bump `LATEST_VERSION`.
+ *
+ * The runner in `db/client.ts` reads a `__meta` table to track which versions
+ * have already been applied.
+ */
+
+/** SQLite row shape for the `subscriptions` table. Camel-cased domain objects
+ * are produced in `db/queries.ts` from these rows. */
+export interface SubscriptionRow {
+  id: string;
+  name: string;
+  amount: number;
+  currency: string;
+  cycle: string;
+  next_renewal: string;
+  category: string;
+  icon: string;
+  color: string | null;
+  notes: string | null;
+  created_at: number;
+  updated_at: number;
+  archived: number; // 0/1
+}
+
+export interface Migration {
+  version: number;
+  description: string;
+  sql: string;
+}
+
+/**
+ * Migration list — append new ones at the bottom.
+ * Schema rationale:
+ *  - `id` TEXT PRIMARY KEY — we use UUIDs generated in JS, not rowid, so the
+ *    id is stable across exports/imports.
+ *  - `amount` REAL — major currency units (e.g. 9.99). Per-row currency is
+ *    stored alongside so multi-currency is fully supported.
+ *  - `next_renewal` TEXT ISO date (YYYY-MM-DD).
+ *  - `archived` INTEGER 0/1 — SQLite has no native bool.
+ *  - Timestamps are epoch ms (INTEGER), sortable and TZ-free.
+ */
+export const MIGRATIONS: readonly Migration[] = [
+  {
+    version: 1,
+    description: 'create subscriptions table',
+    sql: `
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id            TEXT    PRIMARY KEY NOT NULL,
+        name          TEXT    NOT NULL,
+        amount        REAL    NOT NULL,
+        currency      TEXT    NOT NULL,
+        cycle         TEXT    NOT NULL,
+        next_renewal  TEXT    NOT NULL,
+        category      TEXT    NOT NULL,
+        icon          TEXT    NOT NULL,
+        color         TEXT,
+        notes         TEXT,
+        created_at    INTEGER NOT NULL,
+        updated_at    INTEGER NOT NULL,
+        archived      INTEGER NOT NULL DEFAULT 0
+      );
+      CREATE INDEX IF NOT EXISTS idx_subscriptions_archived ON subscriptions (archived);
+      CREATE INDEX IF NOT EXISTS idx_subscriptions_next_renewal ON subscriptions (next_renewal);
+      CREATE INDEX IF NOT EXISTS idx_subscriptions_category ON subscriptions (category);
+    `,
+  },
+  {
+    version: 2,
+    description: 'create meta table for migration tracking',
+    sql: `
+      CREATE TABLE IF NOT EXISTS __meta (
+        key   TEXT PRIMARY KEY NOT NULL,
+        value TEXT NOT NULL
+      );
+    `,
+  },
+] as const;
+
+/** Highest migration version in the list. Bump when you append a migration. */
+export const LATEST_VERSION: number = MIGRATIONS[MIGRATIONS.length - 1]!.version;
+
+/** The SQLite database filename (under the app's default database directory). */
+export const DATABASE_NAME = 'subby.db';
