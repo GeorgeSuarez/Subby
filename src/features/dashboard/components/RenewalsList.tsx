@@ -14,16 +14,24 @@
  * memoized inside `ListRow` and receive only primitive props.
  */
 
-import { useCallback } from 'react';
-import { Pressable, StyleSheet, View, type PressableProps } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useCallback } from "react";
+import { Pressable, StyleSheet, View, type PressableProps } from "react-native";
+import { useRouter } from "expo-router";
 
-import { Card, ListRow, Text } from '@/design/components';
-import { useTheme } from '@/design/theme';
-import { spacing } from '@/design/tokens';
-import { useActiveSubscriptions } from '@/store/useSubscriptionsStore';
-import { daysUntilRenewal, nextRenewalAfter, renewalsWithin } from '@/utils/billing';
-import { formatCurrency, formatMonthDay, formatRenewalIn } from '@/utils/format';
+import { Card, ListRow, Text } from "@/design/components";
+import { useTheme } from "@/design/theme";
+import { spacing } from "@/design/tokens";
+import { useActiveSubscriptions } from "@/store/useSubscriptionsStore";
+import {
+  daysUntilRenewal,
+  nextRenewalAfter,
+  renewalsWithin,
+} from "@/utils/billing";
+import {
+  formatCurrency,
+  formatMonthDay,
+  formatRenewalIn,
+} from "@/utils/format";
 
 /** Maximum rows shown on the Dashboard before "View all" takes the user to the list tab. */
 const MAX_ROWS = 5;
@@ -40,15 +48,22 @@ export function RenewalsList() {
 
   // Single stable callback instance — each row just calls it with its id.
   // Skill `list-performance-callbacks`: never create a new function per row.
-  const onRowPress = useCallback((id: string) => {
-    router.push(`/subscription/${id}`);
-  }, [router]);
+  const onRowPress = useCallback(
+    (id: string) => {
+      router.push(`/subscription/${id}`);
+    },
+    [router],
+  );
 
   return (
-    <Card padding={0} elevation="low">
+    <Card padding={spacing.md} elevation="low">
       <Card.Header>
-        <Text variant="headline" weight="600" color="textPrimary">Upcoming renewals</Text>
-        <Text variant="caption" color="textSecondary">Next {RENEWAL_WINDOW_DAYS} days</Text>
+        <Text variant="headline" align="left" weight="600" color="textPrimary">
+          Upcoming renewals
+        </Text>
+        <Text variant="caption" color="textSecondary">
+          Next {RENEWAL_WINDOW_DAYS} days
+        </Text>
       </Card.Header>
 
       <Card.Body>
@@ -81,7 +96,7 @@ export function RenewalsList() {
 
       <FooterLink
         label={`View all ${subs.length}`}
-        onPress={() => router.push('/subscriptions')}
+        onPress={() => router.push("/subscriptions")}
         borderColor={colors.hairline}
       />
     </Card>
@@ -96,7 +111,7 @@ function FooterLink({
   borderColor,
 }: {
   label: string;
-  onPress: PressableProps['onPress'];
+  onPress: PressableProps["onPress"];
   borderColor: string;
 }) {
   return (
@@ -109,7 +124,9 @@ function FooterLink({
         pressed ? { opacity: 0.6 } : null,
       ]}
     >
-      <Text variant="caption" weight="600" color="accent">{label}</Text>
+      <Text variant="caption" weight="600" color="accent">
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -117,13 +134,13 @@ function FooterLink({
 const styles = StyleSheet.create({
   empty: {
     padding: spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
     gap: spacing.xs,
   },
   footer: {
     borderTopWidth: 1,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
   },
 });
