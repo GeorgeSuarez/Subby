@@ -8,11 +8,16 @@
  *     onAction={handleAdd}
  *   />
  *
- * Skill rule `rendering-no-falsy-and`: ternary only for conditional actions.
+ * Skill rules:
+ *  - `rendering-no-falsy-and`: ternary only for conditional actions.
+ *  - `animation-gpu-properties`: entrance uses only `opacity` + `transform:
+ *    scale` via Reanimated's `entering` API (§3.1).
  */
 
 import { type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 
 import { Button } from '@/design/components/Button';
 import { Text } from '@/design/components/Text';
@@ -30,6 +35,9 @@ export interface EmptyStateProps {
   onAction?: () => void;
   /** Optional custom accessory node rendered above the title. */
   decoration?: ReactNode;
+  /** Ionicons name shown inside the default decoration tile.
+   *  Defaults to 'Cube'. */
+  decorationIcon?: string;
   /** Tone for the decoration backdrop (defaults to 'accentSoft'). */
   decorationTone?: keyof Palette;
 }
@@ -40,37 +48,51 @@ export function EmptyState({
   actionLabel,
   onAction,
   decoration,
+  decorationIcon = 'cube-outline',
   decorationTone = 'accentSoft',
 }: EmptyStateProps) {
   const { colors } = useTheme();
 
   return (
     <View style={styles.container}>
-      {decoration ? (
-        <View
-          style={[
-            styles.decoration,
-            { backgroundColor: colors[decorationTone], borderColor: colors.border },
-          ]}
-        >
-          {decoration}
-        </View>
-      ) : null}
+      <Animated.View
+        entering={ZoomIn.springify().damping(14).stiffness(180).delay(120)}
+        style={[
+          styles.decoration,
+          {
+            backgroundColor: colors[decorationTone],
+            borderColor: colors.border,
+          },
+        ]}
+      >
+        {decoration ? (
+          decoration
+        ) : (
+          <Ionicons name={decorationIcon as never} size={36} color={colors.accent} />
+        )}
+      </Animated.View>
 
-      <Text variant="title" color="textPrimary" align="center">
-        {title}
-      </Text>
-
-      {body ? (
-        <Text variant="body" color="textSecondary" align="center">
-          {body}
+      <Animated.View
+        entering={FadeInDown.duration(280).springify().damping(16).stiffness(200).delay(180)}
+        style={styles.copy}
+      >
+        <Text variant="title" color="textPrimary" align="center">
+          {title}
         </Text>
-      ) : null}
+
+        {body ? (
+          <Text variant="body" color="textSecondary" align="center">
+            {body}
+          </Text>
+        ) : null}
+      </Animated.View>
 
       {actionLabel && onAction ? (
-        <Button onPress={onAction} variant="primary" size="lg">
-          {actionLabel}
-        </Button>
+        <Animated.View entering={FadeInDown.duration(260).delay(260)}>
+          <Button onPress={onAction} variant="primary" size="lg">
+            {actionLabel}
+          </Button>
+        </Animated.View>
       ) : null}
     </View>
   );
@@ -91,5 +113,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
+  },
+  copy: {
+    alignItems: 'center',
+    gap: spacing.sm,
   },
 });

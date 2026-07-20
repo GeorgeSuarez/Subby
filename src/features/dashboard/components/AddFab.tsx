@@ -17,15 +17,17 @@
  * (GPU-accelerated) is animated; no layout properties touched.
  */
 
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withDelay,
+  withSpring,
   interpolate,
   runOnJS,
-  withSpring,
   type AnimatedStyle,
 } from 'react-native-reanimated';
 import type { AccessibilityRole, ViewStyle } from 'react-native';
@@ -33,6 +35,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '@/design/theme';
 import { layout, spacing } from '@/design/tokens';
+import { impactLight } from '@/utils/haptics';
 
 export interface AddFabProps {
   onPress: () => void;
@@ -43,8 +46,19 @@ export interface AddFabProps {
 export function AddFab({ onPress, label = 'Add subscription' }: AddFabProps) {
   const { colors, shadow } = useTheme();
 
-  // Ground truth: 0 = idle, 1 = pressed.
+  // Ground truth state shared values (skill §7.1):
+  //   pressed: 0 = idle, 1 = pressed  (gesture-driven)
+  //   entrance: 0 → 1 on mount (entrance spring)
+  // Both drive `transform: scale`, multiplied together for the final visual.
   const pressed = useSharedValue(0);
+  const entrance = useSharedValue(0);
+
+  // Entrance animation: spring scale/opacity from 0 → 1 once on mount.
+  // Skill §3.1: only `transform` and `opacity`.
+  useEffect(() => {
+    // Delay slightly so the dashboard cards settle before the FAB pops in.
+    entrance.set(withDelay(140, withSpring(1, { damping: 12, stiffness: 200, mass: 0.8 })));
+  }, [entrance]);
 
   const tap = Gesture.Tap()
     .onBegin(() => {
@@ -55,11 +69,14 @@ export function AddFab({ onPress, label = 'Add subscription' }: AddFabProps) {
     })
     .onEnd(() => {
       runOnJS(onPress)();
+      runOnJS(impactLight)();
     });
 
   const animatedStyle = useAnimatedStyle(() => {
-    const s = interpolate(pressed.get(), [0, 1], [1, 0.92]);
-    return { transform: [{ scale: s }] };
+    // Combine entrance + press scales. Both 0..1 ranges combined multiplicatively.
+    const s = interpolate(pressed.get(), [0, 1], [1, 0.92]) * entrance.get();
+    const o = entrance.get(); // opacity only follows entrance
+    return { transform: [{ scale: s }], opacity: o };
   });
 
   return (

@@ -27,6 +27,8 @@ import {
 } from '@/design/theme-resolve';
 import { memoryStorage, storageKey } from '@/design/storage';
 
+export type { ThemePreference };
+
 interface ThemeStore {
   /** User's explicit choice. `undefined` => "hasn't chosen" → falls back to system. */
   preference: ThemePreference | undefined;

@@ -21,6 +21,7 @@ import { StyleSheet, View, Alert } from 'react-native';
 import { Button } from '@/design/components';
 import { spacing } from '@/design/tokens';
 import type { Subscription } from '@/types/subscription';
+import { impactLight, notifyWarning, selection } from '@/utils/haptics';
 
 export interface DetailActionBarProps {
   sub: Subscription;
@@ -32,14 +33,27 @@ export interface DetailActionBarProps {
 export function DetailActionBar({ sub, onEdit, onArchive, onDelete }: DetailActionBarProps) {
   return (
     <View style={styles.container}>
-      <Button onPress={onEdit} variant="primary" size="lg">Edit subscription</Button>
+      <Button
+        onPress={() => { void impactLight(); onEdit(); }}
+        variant="primary"
+        size="lg"
+      >
+        Edit subscription
+      </Button>
 
-      <Button onPress={onArchive} variant="ghost" size="lg">
+      <Button
+        onPress={() => { void selection(); onArchive(); }}
+        variant="ghost"
+        size="lg"
+      >
         {sub.archived ? 'Unarchive' : 'Archive'}
       </Button>
 
       <Button
-        onPress={() => confirmDelete(sub.name, onDelete)}
+        onPress={() => {
+          void notifyWarning();
+          confirmDelete(sub.name, onDelete);
+        }}
         variant="danger"
         size="lg"
       >

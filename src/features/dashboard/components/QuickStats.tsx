@@ -10,10 +10,11 @@ import { StyleSheet, View } from 'react-native';
 import { Card, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
+import { AnimatedNumber } from '@/features/dashboard/components/AnimatedNumber';
 import { useActiveSubscriptions } from '@/store/useSubscriptionsStore';
 import { useCurrency } from '@/store/useUIStore';
 import { activeCount, largestMonthly, monthlyEquivalent, totalYearlySpend } from '@/utils/billing';
-import { formatCurrencyCompact } from '@/utils/format';
+import { formatCurrency } from '@/utils/format';
 
 export function QuickStats() {
   const subs = useActiveSubscriptions();
@@ -29,13 +30,33 @@ export function QuickStats() {
     <Card padding={spacing.lg} elevation="low">
       <Text variant="caption" color="textSecondary" weight="600">Quick stats</Text>
       <View style={[styles.row, { borderColor: colors.hairline }]}>
-        <Stat label="Yearly" value={formatCurrencyCompact(year, currency)} />
+        {/* Count-up is only applied to the currency-formatted numeric stats. */}
+        <Stat
+          label="Yearly"
+          value={
+            <AnimatedNumber
+              value={year}
+              format={(n) => formatCurrency(n, currency)}
+              delayMs={260}
+              duration={680}
+            />
+          }
+        />
         <Divider />
         <Stat label="Active" value={String(count)} />
         <Divider />
         <Stat
           label="Biggest"
-          value={biggest ? formatCurrencyCompact(biggestMonthly, currency) : '—'}
+          value={
+            biggest ? (
+              <AnimatedNumber
+                value={biggestMonthly}
+                format={(n) => formatCurrency(n, currency)}
+                delayMs={320}
+                duration={680}
+              />
+            ) : '—'
+          }
           sublabel={biggest?.name}
         />
       </View>
@@ -43,7 +64,15 @@ export function QuickStats() {
   );
 }
 
-function Stat({ label, value, sublabel }: { label: string; value: string; sublabel?: string }) {
+function Stat({
+  label,
+  value,
+  sublabel,
+}: {
+  label: string;
+  value: React.ReactNode;
+  sublabel?: string;
+}) {
   return (
     <View style={styles.stat}>
       <Text variant="caption" color="textTertiary">{label}</Text>

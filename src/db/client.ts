@@ -1,4 +1,4 @@
-/**
+ /**
  * SQLite client + migration runner.
  *
  * Owns the singleton `SQLiteDatabase` instance. Migrations run on first open

@@ -12,6 +12,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { Chip, SegmentedControl, Text } from '@/design/components';
 import { spacing } from '@/design/tokens';
+import { selection } from '@/utils/haptics';
 import type { SubscriptionFilter, SubscriptionSort } from '@/types/subscription';
 
 const SORT_LABELS: Record<SubscriptionSort, string> = {
@@ -43,7 +44,10 @@ export function SortFilterBar({ sort, filter, onSort, onFilter }: SortFilterBarP
       <SegmentedControl
         segments={sortKeys.map((k) => SORT_LABELS[k])}
         selectedIndex={selectedIndex}
-        onSelect={(i) => onSort(sortKeys[i] ?? 'nextRenewal')}
+        onSelect={(i) => {
+          void selection();
+          onSort(sortKeys[i] ?? 'nextRenewal');
+        }}
       />
 
       <View style={styles.chipRow}>
@@ -51,7 +55,10 @@ export function SortFilterBar({ sort, filter, onSort, onFilter }: SortFilterBarP
           <Chip
             key={opt.value}
             selected={filter === opt.value}
-            onPress={() => onFilter(opt.value)}
+            onPress={() => {
+              if (filter !== opt.value) void selection();
+              onFilter(opt.value);
+            }}
           >
             {opt.label}
           </Chip>

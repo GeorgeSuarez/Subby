@@ -9,15 +9,20 @@
  *     hides the splash screen once the database is ready.
  *
  * Skill rules:
- *  - `navigation-native-navigators`: native stack/tabs; we let expo-router
- *    handle this via the `(tabs)` route.
+ *  - `navigation-native-navigators`: native stack/tabs via expo-router.
  *  - `react-state-minimize`: hydration is keyed on mount only; the store
- *    itself owns all subsequent state.
+ *    owns all subsequent state.
+ *  - `animation-gpu-properties`: theme transitions use Reanimated `entering`
+ *    FadeIn — opacity only, GPU-accelerated, no layout/paint per frame (§3.1).
+ *  - `state-ground-truth`: the resolved color mode is the ground truth; the
+ *    wrapper gets `key={colorMode}` so a scheme change triggers a remount of
+ *    the surface, which Reanimated cross-fades.
  */
 
 import { useEffect } from 'react';
-import { useColorScheme, View } from 'react-native';
+import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { DarkTheme, DefaultTheme, Slot, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -56,9 +61,15 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
-        <View style={{ flex: 1, backgroundColor: isDark ? '#0B0F14' : '#F7F9FC' }}>
+        {/* key change forces a remount when the resolved scheme flips;
+            Reanimated's FadeIn entrance drives the cross-fade. */}
+        <Animated.View
+          key={colorMode}
+          entering={FadeIn.duration(280)}
+          style={{ flex: 1, backgroundColor: isDark ? '#0B0F14' : '#F7F9FC' }}
+        >
           <Slot />
-        </View>
+        </Animated.View>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

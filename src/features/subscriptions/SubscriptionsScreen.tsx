@@ -35,6 +35,7 @@ import {
 import { useFilter, useSort, useUIStore } from '@/store/useUIStore';
 import { daysUntilRenewal, nextRenewalAfter } from '@/utils/billing';
 import { formatCurrency, formatMonthDay, formatRenewalIn } from '@/utils/format';
+import { selection, impactMedium } from '@/utils/haptics';
 import type { Subscription } from '@/types/subscription';
 
 type FlashListProps = ComponentProps<typeof FlashList<Subscription>>;
@@ -70,12 +71,14 @@ export function SubscriptionsScreen() {
 
   // Stable handlers — passed to every row. Skill `list-performance-callbacks`.
   const onRowPress = useCallback((id: string) => {
+    void selection();
     router.push(`/subscription/${id}`);
   }, [router]);
 
   const onRowLongPress = useCallback((id: string) => {
     const target = subs.find((s) => s.id === id);
     if (!target) return;
+    void impactMedium();
     openRowActions({
       name: target.name,
       archived: target.archived,
