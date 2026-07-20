@@ -17,9 +17,10 @@
  * (GPU-accelerated) is animated; no layout properties touched.
  */
 
-import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useEffect } from "react";
+import { StyleSheet, View } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -29,13 +30,20 @@ import Animated, {
   interpolate,
   runOnJS,
   type AnimatedStyle,
-} from 'react-native-reanimated';
-import type { AccessibilityRole, ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+} from "react-native-reanimated";
+import type { AccessibilityRole, ViewStyle } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
-import { useTheme } from '@/design/theme';
-import { layout, spacing } from '@/design/tokens';
-import { impactLight } from '@/utils/haptics';
+import { useTheme } from "@/design/theme";
+import { layout, spacing } from "@/design/tokens";
+import { impactLight } from "@/utils/haptics";
+
+/**
+ * Native tab bar height (UITabBarController / Material Bottom Navigation).
+ * Combined with the safe-area bottom inset, this lifts the FAB above both
+ * the tab bar and the home indicator.
+ */
+const TAB_BAR_HEIGHT = 50;
 
 export interface AddFabProps {
   onPress: () => void;
@@ -43,8 +51,9 @@ export interface AddFabProps {
   label?: string;
 }
 
-export function AddFab({ onPress, label = 'Add subscription' }: AddFabProps) {
+export function AddFab({ onPress, label = "Add subscription" }: AddFabProps) {
   const { colors, shadow } = useTheme();
+  const insets = useSafeAreaInsets();
 
   // Ground truth state shared values (skill §7.1):
   //   pressed: 0 = idle, 1 = pressed  (gesture-driven)
@@ -57,7 +66,9 @@ export function AddFab({ onPress, label = 'Add subscription' }: AddFabProps) {
   // Skill §3.1: only `transform` and `opacity`.
   useEffect(() => {
     // Delay slightly so the dashboard cards settle before the FAB pops in.
-    entrance.set(withDelay(140, withSpring(1, { damping: 12, stiffness: 200, mass: 0.8 })));
+    entrance.set(
+      withDelay(140, withSpring(1, { damping: 12, stiffness: 200, mass: 0.8 })),
+    );
   }, [entrance]);
 
   const tap = Gesture.Tap()
@@ -79,13 +90,21 @@ export function AddFab({ onPress, label = 'Add subscription' }: AddFabProps) {
     return { transform: [{ scale: s }], opacity: o };
   });
 
+  // Lift the FAB above the native tab bar + home indicator so it stays
+  // tappable and visible. We compute one number from the tab bar height,
+  // the safe-area bottom inset, and a small breathing gap.
+  const bottomOffset = TAB_BAR_HEIGHT + insets.bottom + spacing.sm;
+
   return (
-    <View style={styles.container} pointerEvents="box-none">
+    <View
+      style={[styles.container, { bottom: bottomOffset }]}
+      pointerEvents="box-none"
+    >
       <GestureDetector gesture={tap}>
         <AnimatedFab
           accessibilityRole="button"
           accessibilityLabel={label}
-          shadow={shadow('glowAccent')}
+          shadow={shadow("glowAccent")}
           accent={colors.accent}
           fg={colors.textOnAccent}
           animatedStyle={animatedStyle}
@@ -113,7 +132,11 @@ function AnimatedFab({
 }) {
   return (
     <Animated.View
-      style={[styles.fab, { backgroundColor: accent, boxShadow: shadow }, animatedStyle]}
+      style={[
+        styles.fab,
+        { backgroundColor: accent, boxShadow: shadow },
+        animatedStyle,
+      ]}
       {...rest}
     >
       <Ionicons name="add" size={28} color={fg} />
@@ -123,17 +146,17 @@ function AnimatedFab({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    bottom: spacing.xl,
+    position: "absolute",
     right: spacing.xl,
+    bottom: spacing.xl,
     zIndex: 10,
   },
   fab: {
     width: layout.fabSize,
     height: layout.fabSize,
     borderRadius: layout.fabSize / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderCurve: 'continuous',
+    alignItems: "center",
+    justifyContent: "center",
+    borderCurve: "continuous",
   },
 });

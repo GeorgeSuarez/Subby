@@ -10,7 +10,10 @@
     "ios": {
       "icon": "./assets/expo.icon",
       "supportsTablet": true,
-      "bundleIdentifier": "com.subby.app"
+      "bundleIdentifier": "com.subby.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Subby uses the camera only if a future update adds receipt scanning — v1 does not access the camera."
+      }
     },
     "android": {
       "package": "com.subby.app",
@@ -34,6 +37,7 @@
           "backgroundColor": "#0B0F14",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76,
+          "resizeMode": "contain",
           "dark": {
             "backgroundColor": "#0B0F14",
             "image": "./assets/images/splash-icon.png"
@@ -45,6 +49,11 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": ""
+      }
     }
   }
 }

@@ -10,6 +10,10 @@
  * iOS the native tab bar's automatic content inset handles the bottom inset
  * when disableAutomaticContentInsets isn't set. We set `contentInsetAdjustmentBehavior`
  * explicitly so behavior is identical on platforms that don't auto-apply it.
+ *
+ * Adding a new subscription is initiated via the center "Add" tab in the
+ * native tab bar, not via a per-screen FAB. The empty-state CTA still routes
+ * to the same modal.
  */
 
 import { useCallback, type ComponentProps } from 'react';
@@ -23,7 +27,6 @@ import { useActiveSubscriptions, useIsLoadingSubscriptions } from '@/store/useSu
 import { HeroSpend } from '@/features/dashboard/components/HeroSpend';
 import { QuickStats } from '@/features/dashboard/components/QuickStats';
 import { RenewalsList } from '@/features/dashboard/components/RenewalsList';
-import { AddFab } from '@/features/dashboard/components/AddFab';
 
 type ScrollViewProps = ComponentProps<typeof ScrollView>;
 
@@ -32,8 +35,7 @@ export function DashboardScreen() {
   const subs = useActiveSubscriptions();
   const isLoading = useIsLoadingSubscriptions();
 
-  // Stable FAB handler — `useCallback` so AddFab's memo + ListRow-style
-  // depends-on-stable-props pattern holds (skill `list-performance-callbacks`).
+  // Empty-state CTA — single stable callback (skill `list-performance-callbacks`).
   const onAdd = useCallback(() => {
     router.push('/subscription/add');
   }, [router]);
@@ -48,7 +50,6 @@ export function DashboardScreen() {
           actionLabel="Add subscription"
           onAction={onAdd}
         />
-        <AddFab onPress={onAdd} />
       </Surface>
     );
   }
@@ -66,7 +67,6 @@ export function DashboardScreen() {
         <RenewalsList />
         <QuickStats />
       </ScrollView>
-      <AddFab onPress={onAdd} />
     </Surface>
   );
 }
@@ -78,8 +78,7 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
     gap: spacing.lg,
-    // Provide breathing room above the FAB so the last card isn't covered.
-    paddingBottom: spacing['3xl'],
+    paddingBottom: spacing['2xl'],
   },
   empty: {
     flex: 1,
