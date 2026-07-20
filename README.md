@@ -5,9 +5,9 @@ A minimalistic subscription dashboard for tracking and managing monthly recurrin
 **iOS + Android · React Native 0.86 · Expo SDK 57 · React Compiler ON**
 
 <p align="center">
-  <img src="docs/screenshots/dashboard.png" width="280" alt="Subby dashboard showing monthly spend, upcoming renewals, and quick stats" />
-  <img src="docs/screenshots/subscriptions.png" width="280" alt="Subby subscriptions list showing the history of all subscriptions" />
-  <img src="docs/screenshots/add-subscriptions.png" width="280" alt="Subby add subscriptions workflow" />
+  <img src="docs/screenshots/dashboard.png" width="240" alt="Subby dashboard showing monthly spend, upcoming renewals, and quick stats" />
+  <img src="docs/screenshots/subscriptions.png" width="240" alt="Subby subscriptions list showing the history of all subscriptions" />
+  <img src="docs/screenshots/add-subscriptions.png" width="240" alt="Subby add subscriptions workflow" />
 </p>
 
 ---
