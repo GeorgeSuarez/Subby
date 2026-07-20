@@ -6,6 +6,8 @@ A minimalistic subscription dashboard for tracking and managing monthly recurrin
 
 <p align="center">
   <img src="docs/screenshots/dashboard.png" width="280" alt="Subby dashboard showing monthly spend, upcoming renewals, and quick stats" />
+  <img src="docs/screenshots/subscriptions.png" width="280" alt="Subby subscriptions list showing the history of all subscriptions" />
+  <img src="docs/screenshots/add-subscriptions.png" width="280" alt="Subby add subscriptions workflow" />
 </p>
 
 ---
@@ -29,18 +31,18 @@ The project was built as a portfolio piece to demonstrate modern React Native en
 
 ## Tech Stack
 
-| Concern | Choice |
-|---------|--------|
-| Framework | Expo SDK 57, React 19, React Native 0.86, React Compiler ON |
+| Concern    | Choice                                                                 |
+| ---------- | ---------------------------------------------------------------------- |
+| Framework  | Expo SDK 57, React 19, React Native 0.86, React Compiler ON            |
 | Navigation | `expo-router` with `unstable-native-tabs` (native stack + native tabs) |
-| State | `zustand` with selectors (no React Context for shared state) |
-| Database | `expo-sqlite` with typed query layer + migration runner |
-| Lists | `@shopify/flash-list` v2 (auto-sizing, no `estimatedItemSize` needed) |
-| Images | `expo-image` exclusively (never RN `Image`) |
-| Animations | `react-native-reanimated` 4 + `react-native-gesture-handler` |
-| Styling | `StyleSheet.create` + design tokens (no NativeWind) |
-| Haptics | `expo-haptics` |
-| Icons | SF Symbols (iOS) + Material drawables (Android) via `NativeTabs` |
+| State      | `zustand` with selectors (no React Context for shared state)           |
+| Database   | `expo-sqlite` with typed query layer + migration runner                |
+| Lists      | `@shopify/flash-list` v2 (auto-sizing, no `estimatedItemSize` needed)  |
+| Images     | `expo-image` exclusively (never RN `Image`)                            |
+| Animations | `react-native-reanimated` 4 + `react-native-gesture-handler`           |
+| Styling    | `StyleSheet.create` + design tokens (no NativeWind)                    |
+| Haptics    | `expo-haptics`                                                         |
+| Icons      | SF Symbols (iOS) + Material drawables (Android) via `NativeTabs`       |
 
 ## Architecture
 
@@ -119,11 +121,11 @@ Built following the [React Native skills guide](.opencode/AGENTS.md):
 
 EAS build profiles are defined in `eas.json`:
 
-| Profile | Distribution | iOS | Android |
-|---------|-------------|-----|---------|
-| development | internal | simulator | APK |
-| preview | internal | TestFlight | APK |
-| production | store | App Store | Play Store |
+| Profile     | Distribution | iOS        | Android    |
+| ----------- | ------------ | ---------- | ---------- |
+| development | internal     | simulator  | APK        |
+| preview     | internal     | TestFlight | APK        |
+| production  | store        | App Store  | Play Store |
 
 ```bash
 npm run build:preview:ios       # TestFlight QA build
