@@ -11,7 +11,8 @@
 import { useCallback } from 'react';
 
 import { Card, SegmentedControl, Text } from '@/design/components';
-import { useColorMode, useThemeStore, type ThemePreference } from '@/design/theme';
+import { useColorMode, useThemeStore } from '@/design/theme';
+import { type ThemePreference } from '@/design/theme-resolve';
 import { spacing } from '@/design/tokens';
 import { selection } from '@/utils/haptics';
 
