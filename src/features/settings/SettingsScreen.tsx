@@ -15,6 +15,7 @@ import { Surface } from '@/design/components/Surface';
 import { spacing } from '@/design/tokens';
 import { ThemeSection } from '@/features/settings/components/ThemeSection';
 import { CurrencySection } from '@/features/settings/components/CurrencySection';
+import { BudgetSection } from '@/features/settings/components/BudgetSection';
 import { AccountSection } from '@/features/settings/components/AccountSection';
 import { DemoDataSection } from '@/features/settings/components/DemoDataSection';
 import { DangerZoneSection } from '@/features/settings/components/DangerZoneSection';
@@ -30,6 +31,7 @@ export function SettingsScreen() {
       >
         <ThemeSection />
         <CurrencySection />
+        <BudgetSection />
         <AccountSection />
         <DemoDataSection />
         <DangerZoneSection />

@@ -6,8 +6,8 @@
  * call them during render to derive values.
  */
 
-import type { Cycle, Subscription } from '@/types/subscription';
-import { cycleMeta } from '@/utils/constants';
+import type { CategorySlug, Cycle, Subscription } from '@/types/subscription';
+import { categoryMeta, cycleMeta } from '@/utils/constants';
 
 /** Parsed YYYY-MM-DD with explicit UTC interpretation (avoids TZ surprises). */
 export function parseDate(iso: string): Date {
@@ -155,4 +155,85 @@ export function groupByCategory(subs: readonly Subscription[]): Map<string, Subs
     m.set(s.category, list);
   }
   return m;
+}
+
+// --- Dashboard aggregates ----------------------------------------------------
+
+/** Charges due between `from` and the end of its calendar month. */
+export interface MonthCharges {
+  /** Sum of actual charge amounts (each sub's real amount, not monthly-eq). */
+  total: number;
+  /** Number of renewals in the window. */
+  count: number;
+}
+
+/**
+ * Charges coming due from today through the end of the current calendar month.
+ * Past renewals roll to next month by construction (see `nextRenewalAfter`),
+ * so this window is unambiguous.
+ */
+export function renewalsThisMonth(
+  subs: readonly Subscription[],
+  from: Date = todayUTC(),
+): MonthCharges {
+  // Day 0 of next month (UTC noon) = last day of the current month.
+  const endOfMonth = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth() + 1, 0, 12, 0, 0, 0));
+  const days = daysBetween(from, endOfMonth);
+  const renewals = renewalsWithin(subs, days, from);
+  return {
+    total: renewals.reduce((sum, s) => sum + s.amount, 0),
+    count: renewals.length,
+  };
+}
+
+/** One row of the category breakdown card. */
+export interface CategoryBreakdownItem {
+  category: CategorySlug;
+  label: string;
+  count: number;
+  /** Monthly-equivalent spend for this category. */
+  monthlyTotal: number;
+  /** Share of the grand total (0..1). */
+  share: number;
+}
+
+/**
+ * Monthly spend per category, sorted by amount (largest first). Archived subs
+ * are excluded (inherited from `groupByCategory`).
+ */
+export function categoryBreakdown(subs: readonly Subscription[]): CategoryBreakdownItem[] {
+  const grand = totalMonthlySpend(subs);
+  const items: CategoryBreakdownItem[] = [];
+  for (const [slug, list] of groupByCategory(subs)) {
+    const category = slug as CategorySlug;
+    const monthlyTotal = list.reduce((sum, s) => sum + monthlyEquivalent(s), 0);
+    items.push({
+      category,
+      label: categoryMeta(category).label,
+      count: list.length,
+      monthlyTotal,
+      share: grand > 0 ? monthlyTotal / grand : 0,
+    });
+  }
+  return items.sort((a, b) => b.monthlyTotal - a.monthlyTotal);
+}
+
+/** Progress of monthly spend against a budget. */
+export interface BudgetProgress {
+  /** 0..1, clamped. */
+  pct: number;
+  /** True when spent exceeds the budget. */
+  over: boolean;
+  /** How much spent exceeds the budget (0 when not over). */
+  overAmount: number;
+}
+
+/** Budget is unset (<= 0) → neutral progress. */
+export function budgetProgress(spent: number, budget: number): BudgetProgress {
+  if (!Number.isFinite(budget) || budget <= 0) {
+    return { pct: 0, over: false, overAmount: 0 };
+  }
+  const pct = Math.min(1, Math.max(0, spent / budget));
+  const over = spent > budget;
+  return { pct, over, overAmount: over ? spent - budget : 0 };
 }

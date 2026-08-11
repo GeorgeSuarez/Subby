@@ -1,5 +1,7 @@
 import {
   addMonths,
+  budgetProgress,
+  categoryBreakdown,
   daysBetween,
   daysUntilRenewal,
   groupByCategory,
@@ -7,6 +9,7 @@ import {
   monthlyEquivalent,
   nextRenewalAfter,
   parseDate,
+  renewalsThisMonth,
   renewalsWithin,
   toISODate,
   totalMonthlySpend,
@@ -201,5 +204,92 @@ describe('groupByCategory', () => {
     expect(map.get('streaming')?.length).toBe(2);
     expect(map.get('music')?.length).toBe(1);
     expect(map.has('utilities')).toBe(false);
+  });
+});
+
+describe('renewalsThisMonth', () => {
+  const from = parseDate('2026-07-16'); // mid-July
+
+  it('sums actual charge amounts from today through end of month', () => {
+    const subs = [
+      sub({ id: 'a', amount: 10, nextRenewal: '2026-07-20' }), // in window
+      sub({ id: 'b', amount: 20, nextRenewal: '2026-07-31' }), // last day of month
+      sub({ id: 'c', amount: 30, nextRenewal: '2026-08-01' }), // next month — out
+    ];
+    const result = renewalsThisMonth(subs, from);
+    expect(result.count).toBe(2);
+    expect(result.total).toBe(30);
+  });
+
+  it('rolls a renewal dated today into the next cycle (excluded)', () => {
+    // Matches app-wide semantics: a same-day renewal counts as already charged
+    // and advances to the next cycle (see `nextRenewalAfter`).
+    const result = renewalsThisMonth([sub({ id: 'a', amount: 5, nextRenewal: '2026-07-16' })], from);
+    expect(result.count).toBe(0);
+    expect(result.total).toBe(0);
+  });
+
+  it('charges yearly subs at their full amount', () => {
+    const result = renewalsThisMonth(
+      [sub({ id: 'a', amount: 120, cycle: 'yearly', nextRenewal: '2026-07-25' })],
+      from,
+    );
+    expect(result.total).toBe(120);
+  });
+
+  it('excludes archived subs and returns zeroes for an empty list', () => {
+    const result = renewalsThisMonth(
+      [sub({ id: 'a', amount: 10, nextRenewal: '2026-07-20', archived: true })],
+      from,
+    );
+    expect(result).toEqual({ total: 0, count: 0 });
+    expect(renewalsThisMonth([], from)).toEqual({ total: 0, count: 0 });
+  });
+});
+
+describe('categoryBreakdown', () => {
+  it('groups by category, converts to monthly equivalents, and sorts desc', () => {
+    const subs = [
+      sub({ id: 'a', amount: 12, category: 'streaming', nextRenewal: '2026-07-20' }),
+      sub({ id: 'b', amount: 120, cycle: 'yearly', category: 'music', nextRenewal: '2026-07-20' }), // 10/mo
+      sub({ id: 'c', amount: 6, category: 'streaming', nextRenewal: '2026-07-20' }),
+      sub({ id: 'd', amount: 999, category: 'music', archived: true, nextRenewal: '2026-07-20' }),
+    ];
+    const items = categoryBreakdown(subs);
+    expect(items[0]?.category).toBe('streaming'); // 18 > 10
+    expect(items[0]?.monthlyTotal).toBeCloseTo(18);
+    expect(items[0]?.count).toBe(2);
+    expect(items[1]?.category).toBe('music');
+    expect(items[1]?.monthlyTotal).toBeCloseTo(10);
+    // share = 18/28 and 10/28
+    expect(items[0]?.share).toBeCloseTo(18 / 28);
+    expect(items[1]?.share).toBeCloseTo(10 / 28);
+  });
+
+  it('returns an empty list when there are no active subs', () => {
+    expect(categoryBreakdown([])).toEqual([]);
+    expect(categoryBreakdown([sub({ id: 'a', archived: true })])).toEqual([]);
+  });
+});
+
+describe('budgetProgress', () => {
+  it('treats an unset budget as neutral', () => {
+    expect(budgetProgress(50, 0)).toEqual({ pct: 0, over: false, overAmount: 0 });
+    expect(budgetProgress(50, -5)).toEqual({ pct: 0, over: false, overAmount: 0 });
+  });
+
+  it('reports progress under budget', () => {
+    expect(budgetProgress(25, 100)).toEqual({ pct: 0.25, over: false, overAmount: 0 });
+  });
+
+  it('clamps at 100% when spending exactly the budget', () => {
+    expect(budgetProgress(100, 100)).toEqual({ pct: 1, over: false, overAmount: 0 });
+  });
+
+  it('flags over-budget with the excess amount', () => {
+    const result = budgetProgress(130, 100);
+    expect(result.pct).toBe(1);
+    expect(result.over).toBe(true);
+    expect(result.overAmount).toBe(30);
   });
 });

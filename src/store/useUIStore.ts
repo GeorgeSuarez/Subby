@@ -5,6 +5,7 @@
  *  - `currency`     — default currency for new subscriptions (Settings).
  *  - `sort`         — current sort for the subscriptions list.
  *  - `filter`       — current filter for the subscriptions list.
+ *  - `budget`       — monthly budget for the dashboard hero (0 = unset).
  *
  * The theme preference lives in `@/design/theme.ts` (`useThemeStore`) since it
  * is tied to the palette resolver. Currency/sort/filter are independent.
@@ -27,9 +28,12 @@ export interface UIStore {
   currency: CurrencyCode;
   sort: SubscriptionSort;
   filter: SubscriptionFilter;
+  /** Monthly budget in major currency units. 0 = not set. */
+  budget: number;
   setCurrency: (c: CurrencyCode) => void;
   setSort: (s: SubscriptionSort) => void;
   setFilter: (f: SubscriptionFilter) => void;
+  setBudget: (b: number) => void;
 }
 
 export const useUIStore = create<UIStore>()(
@@ -38,17 +42,20 @@ export const useUIStore = create<UIStore>()(
       currency: DEFAULT_CURRENCY,
       sort: 'nextRenewal',
       filter: 'active',
+      budget: 0,
       setCurrency: (currency) => set({ currency }),
       setSort: (sort) => set({ sort }),
       setFilter: (filter) => set({ filter }),
+      setBudget: (budget) => set({ budget }),
     }),
     {
       name: UI_PREFS_KEY,
       storage: createJSONStorage(() => persistentStorage),
-      partialize: (s): { currency: CurrencyCode; sort: SubscriptionSort; filter: SubscriptionFilter } => ({
+      partialize: (s): { currency: CurrencyCode; sort: SubscriptionSort; filter: SubscriptionFilter; budget: number } => ({
         currency: s.currency,
         sort: s.sort,
         filter: s.filter,
+        budget: s.budget,
       }),
     },
   ),
@@ -63,4 +70,8 @@ export function useSort(): SubscriptionSort {
 }
 export function useFilter(): SubscriptionFilter {
   return useUIStore((s) => s.filter);
+}
+/** Monthly budget in major units; 0 when unset. */
+export function useBudget(): number {
+  return useUIStore((s) => s.budget);
 }

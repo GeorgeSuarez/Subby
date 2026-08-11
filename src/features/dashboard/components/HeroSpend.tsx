@@ -16,23 +16,25 @@ import { StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
-import { spacing } from '@/design/tokens';
+import { radius, spacing } from '@/design/tokens';
 import { useActiveSubscriptions, useIsLoadingSubscriptions } from '@/store/useSubscriptionsStore';
-import { totalMonthlySpend, totalYearlySpend } from '@/utils/billing';
+import { budgetProgress, totalMonthlySpend, totalYearlySpend } from '@/utils/billing';
 import { formatCurrency, formatCurrencyCompact } from '@/utils/format';
-import { useCurrency } from '@/store/useUIStore';
+import { useBudget, useCurrency } from '@/store/useUIStore';
 import { AnimatedNumber } from '@/features/dashboard/components/AnimatedNumber';
 
 export function HeroSpend() {
   const subs = useActiveSubscriptions();
   const isLoading = useIsLoadingSubscriptions();
   const currency = useCurrency();
+  const budget = useBudget();
   const { colors } = useTheme();
 
   // DURING render we derive the totals from the active subscriptions.
   // No state for monthly/yearly; skill `react-state-minimize`.
   const monthly = totalMonthlySpend(subs);
   const yearly = totalYearlySpend(subs);
+  const progress = budgetProgress(monthly, budget);
 
   return (
     <Card padding={spacing.xl} elevation="high">
@@ -64,6 +66,28 @@ export function HeroSpend() {
         </Text>
       </View>
 
+      {/* Budget progress — only when a budget is set. */}
+      {budget > 0 ? (
+        <View style={styles.budget}>
+          <View style={[styles.track, { backgroundColor: colors.accentSoft }]}>
+            <View
+              style={[
+                styles.fill,
+                {
+                  width: `${Math.max(2, progress.pct * 100)}%`,
+                  backgroundColor: progress.over ? colors.negative : colors.accent,
+                },
+              ]}
+            />
+          </View>
+          <Text variant="caption" color={progress.over ? 'negative' : 'textSecondary'}>
+            {progress.over
+              ? `Over budget by ${formatCurrency(progress.overAmount, currency)}`
+              : `${Math.round(progress.pct * 100)}% of ${formatCurrency(budget, currency)} budget`}
+          </Text>
+        </View>
+      ) : null}
+
       <View style={[styles.divider, { backgroundColor: colors.hairline }]} />
     </Card>
   );
@@ -80,6 +104,19 @@ const styles = StyleSheet.create({
   },
   subRow: {
     marginTop: spacing.xs,
+  },
+  budget: {
+    marginTop: spacing.md,
+    gap: spacing.xs,
+  },
+  track: {
+    height: 6,
+    borderRadius: radius.pill,
+    overflow: 'hidden',
+  },
+  fill: {
+    height: '100%',
+    borderRadius: radius.pill,
   },
   divider: {
     height: 1,

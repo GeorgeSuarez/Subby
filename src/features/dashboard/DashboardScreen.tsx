@@ -25,7 +25,9 @@ import { Surface } from '@/design/components/Surface';
 import { spacing } from '@/design/tokens';
 import { useActiveSubscriptions, useIsLoadingSubscriptions } from '@/store/useSubscriptionsStore';
 import { HeroSpend } from '@/features/dashboard/components/HeroSpend';
+import { ThisMonthCard } from '@/features/dashboard/components/ThisMonthCard';
 import { QuickStats } from '@/features/dashboard/components/QuickStats';
+import { CategoryBreakdown } from '@/features/dashboard/components/CategoryBreakdown';
 import { RenewalsList } from '@/features/dashboard/components/RenewalsList';
 
 type ScrollViewProps = ComponentProps<typeof ScrollView>;
@@ -64,7 +66,9 @@ export function DashboardScreen() {
     <Surface background="surface" style={styles.root}>
       <ScrollView {...scrollProps}>
         <HeroSpend />
+        <ThisMonthCard />
         <RenewalsList />
+        <CategoryBreakdown />
         <QuickStats />
       </ScrollView>
     </Surface>
