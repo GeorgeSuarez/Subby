@@ -18,6 +18,8 @@ describe('CATEGORIES', () => {
     expect(slugs).toContain('streaming');
     expect(slugs).toContain('music');
     expect(slugs).toContain('developer');
+    expect(slugs).toContain('fitness');
+    expect(slugs).toContain('lifestyle');
     expect(slugs).toContain('other');
   });
 

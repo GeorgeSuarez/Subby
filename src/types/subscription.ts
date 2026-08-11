@@ -23,6 +23,7 @@ export type CategorySlug =
   | 'gaming'
   | 'news'
   | 'fitness'
+  | 'lifestyle'
   | 'education'
   | 'utilities'
   | 'other';

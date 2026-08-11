@@ -37,6 +37,7 @@ export {
 export { Sheet, type SheetProps } from "@/design/components/Sheet";
 export { Stat, type StatProps } from "@/design/components/Stat";
 export { Surface, type SurfaceProps } from "@/design/components/Surface";
+export { Toast } from "@/design/components/Toast";
 export {
   Text,
   TextLabel,

@@ -23,6 +23,7 @@ export const CATEGORIES: readonly CategoryMeta[] = [
   { slug: 'gaming', label: 'Gaming', icon: 'game-controller-outline' },
   { slug: 'news', label: 'News', icon: 'newspaper-outline' },
   { slug: 'fitness', label: 'Fitness', icon: 'fitness-outline' },
+  { slug: 'lifestyle', label: 'Lifestyle', icon: 'sparkles-outline' },
   { slug: 'education', label: 'Education', icon: 'school-outline' },
   { slug: 'utilities', label: 'Utilities', icon: 'construct-outline' },
   { slug: 'other', label: 'Other', icon: 'cube-outline' },

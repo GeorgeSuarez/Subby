@@ -32,6 +32,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 
 import { useColorMode } from '@/design/theme';
+import { Toast } from '@/design/components/Toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
 
@@ -91,6 +92,9 @@ export default function RootLayout() {
               <Stack.Screen name="auth" />
             </Stack.Protected>
           </Stack>
+
+          {/* Mounted above the navigator so toasts survive modal dismissal. */}
+          <Toast />
         </Animated.View>
       </ThemeProvider>
     </GestureHandlerRootView>

@@ -58,6 +58,7 @@ import type {
 } from "@/types/subscription";
 import { useUIStore } from "@/store/useUIStore";
 import { useSubscriptionsStore } from "@/store/useSubscriptionsStore";
+import { toast } from "@/store/useToastStore";
 
 export interface AddEditScreenProps {
   /** Pass an existing subscription to enter "edit" mode; undefined = add new. */
@@ -184,6 +185,7 @@ export function AddEditScreen({
     if (isEdit && existing) {
       const saved = await editRef.current(existing.id, cleanedDraft);
       if (saved) {
+        toast("Changes saved");
         onSaved(saved.id);
       } else {
         // Not found — surface a native alert and stay in the modal.
@@ -196,6 +198,7 @@ export function AddEditScreen({
     } else {
       const saved = await addRef.current(cleanedDraft);
       if (saved) {
+        toast("Subscription added");
         onSaved(saved.id);
       } else {
         Alert.alert(
