@@ -6,10 +6,9 @@
  * tab bar (UITabBarController on iOS, Material Bottom Navigation on Android).
  * Never swap to JS-based `@react-navigation/bottom-tabs`.
  *
- * Four tabs — Dashboard, Subscriptions, Add (center action), Settings. The
- * center "Add" tab is a transparent redirect that opens the
- * `/subscription/add` modal and immediately returns the user to their previous
- * tab when dismissed. Icons:
+ * Three tabs — Dashboard, Subscriptions, Settings. The "Add" action lives on
+ * the dashboard as a floating button (`AddFab`) instead of a center tab.
+ * Icons:
  *   - iOS: SF Symbols (built in, no asset files required)
  *   - Android: Material drawable names (resolved by `react-native-screens`)
  *
@@ -56,15 +55,6 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon
           sf={{ default: "list.bullet", selected: "list.bullet.indent" }}
           md="list"
-        />
-      </NativeTabs.Trigger>
-
-      {/* Add — center action tab. Redirects to /subscription/add modal. */}
-      <NativeTabs.Trigger name="add">
-        <NativeTabs.Trigger.Label>Add</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf={{ default: "plus", selected: "plus.app.fill" }}
-          md="add"
         />
       </NativeTabs.Trigger>
 

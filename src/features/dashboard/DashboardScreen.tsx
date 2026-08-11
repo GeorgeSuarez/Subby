@@ -23,7 +23,7 @@ import { useRouter } from 'expo-router';
 import { EmptyState } from '@/design/components';
 import { Surface } from '@/design/components/Surface';
 import { useTheme } from '@/design/theme';
-import { spacing } from '@/design/tokens';
+import { layout, spacing } from '@/design/tokens';
 import {
   useActiveSubscriptions,
   useIsLoadingSubscriptions,
@@ -33,6 +33,7 @@ import { HeroSpend } from '@/features/dashboard/components/HeroSpend';
 import { QuickStats } from '@/features/dashboard/components/QuickStats';
 import { CategoryBreakdown } from '@/features/dashboard/components/CategoryBreakdown';
 import { RenewalsList } from '@/features/dashboard/components/RenewalsList';
+import { AddFab } from '@/features/dashboard/components/AddFab';
 
 type ScrollViewProps = ComponentProps<typeof ScrollView>;
 
@@ -84,6 +85,9 @@ export function DashboardScreen() {
         <CategoryBreakdown />
         <QuickStats />
       </ScrollView>
+      {/* Primary add affordance — floats above the tab bar. The empty state
+          has its own centered CTA, so the FAB only shows with content. */}
+      <AddFab onPress={onAdd} />
     </Surface>
   );
 }
@@ -95,7 +99,8 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
     gap: spacing.lg,
-    paddingBottom: spacing['2xl'],
+    // Extra bottom padding so the last card clears the floating Add FAB.
+    paddingBottom: spacing['3xl'] + layout.fabSize,
   },
   empty: {
     flex: 1,

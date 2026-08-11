@@ -38,13 +38,6 @@ import { useTheme } from "@/design/theme";
 import { layout, spacing } from "@/design/tokens";
 import { impactLight } from "@/utils/haptics";
 
-/**
- * Native tab bar height (UITabBarController / Material Bottom Navigation).
- * Combined with the safe-area bottom inset, this lifts the FAB above both
- * the tab bar and the home indicator.
- */
-const TAB_BAR_HEIGHT = 50;
-
 export interface AddFabProps {
   onPress: () => void;
   /** Optional accessibility label; defaults to "Add subscription". */
@@ -90,10 +83,11 @@ export function AddFab({ onPress, label = "Add subscription" }: AddFabProps) {
     return { transform: [{ scale: s }], opacity: o };
   });
 
-  // Lift the FAB above the native tab bar + home indicator so it stays
-  // tappable and visible. We compute one number from the tab bar height,
-  // the safe-area bottom inset, and a small breathing gap.
-  const bottomOffset = TAB_BAR_HEIGHT + insets.bottom + spacing.sm;
+  // On iOS 26 the translucent native tab bar is part of the bottom safe-area
+  // inset, so `insets.bottom` is the bar's full height — a small gap parks
+  // the FAB just above the navigation menu. (On Android the screen already
+  // ends at the bar, leaving the same small gap.)
+  const bottomOffset = insets.bottom + spacing.sm;
 
   return (
     <View
