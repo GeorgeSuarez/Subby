@@ -19,13 +19,16 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { Button, Card, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
+import { useAuthStore } from '@/store/useAuthStore';
 import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
+import { isTestAccountEmail } from '@/utils/constants';
 import { notifyWarning, notifySuccess } from '@/utils/haptics';
 
 export function DangerZoneSection() {
   const { colors } = useTheme();
   const subs = useSubscriptionsStore((s) => s.subs);
   const clearAll = useSubscriptionsStore((s) => s.clearAll);
+  const isTestAccount = isTestAccountEmail(useAuthStore((s) => s.email));
 
   const onWipe = useCallback(() => {
     void notifyWarning();
@@ -61,6 +64,10 @@ export function DangerZoneSection() {
       { cancelable: true },
     );
   }, [subs.length, clearAll]);
+
+  // The wipe is device-wide (it also removes demo rows), so it's restricted
+  // to the test account — same rule as the demo-data controls.
+  if (!isTestAccount) return null;
 
   return (
     <Card padding={spacing.lg} elevation="flat">

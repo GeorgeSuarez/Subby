@@ -26,12 +26,22 @@ import {
   setArchived as dbSetArchived,
   updateSubscription as dbUpdate,
 } from '@/db/queries';
-import { seedIfEmpty } from '@/db/seed';
 import type {
   Subscription,
   SubscriptionDraft,
   SubscriptionPatch,
 } from '@/types/subscription';
+import { useAuthStore } from '@/store/useAuthStore';
+import { isTestAccountEmail } from '@/utils/constants';
+
+/**
+ * Demo (seeded) rows are visible ONLY to the test account. Every read of the
+ * subscriptions table passes this flag so the DB stays device-wide while each
+ * account only ever sees its own view.
+ */
+function seededVisibility(): boolean {
+  return isTestAccountEmail(useAuthStore.getState().email);
+}
 
 export interface SubscriptionsStore {
   /** Currently cached subscriptions. Empty until `hydrate()` finishes. */
@@ -40,8 +50,14 @@ export interface SubscriptionsStore {
   isLoading: boolean;
   /** Error from the last failed operation; cleared on next success. */
   error: string | null;
-  /** Pull every row from the DB into the store. */
+  /** Pull every row from the DB into the store (account-aware visibility). */
   hydrate: () => Promise<void>;
+  /**
+   * Drop the in-memory cache without touching the DB. Called when the signed-in
+   * account changes so a previous account's rows are never visible — even
+   * briefly or after a failed read.
+   */
+  resetCache: () => void;
   /** Add a new subscription. Returns the persisted row on success. */
   add: (draft: SubscriptionDraft) => Promise<Subscription | null>;
   /** Patch fields on an existing subscription. Returns the updated row, or null. */
@@ -61,14 +77,19 @@ export const useSubscriptionsStore = create<SubscriptionsStore>((set, get) => ({
   isLoading: false,
   error: null,
 
+  resetCache: () => set({ subs: [], error: null }),
+
   hydrate: async () => {
     set({ isLoading: true, error: null });
     try {
-      await seedIfEmpty();
-      const subs = await getAllSubscriptions();
+      // No auto-seed: demo (seeded) data is loaded only by the test account
+      // via `loadSeedData` (see `src/db/seed.ts`).
+      const subs = await getAllSubscriptions(seededVisibility());
       set({ subs, isLoading: false });
     } catch (e) {
-      set({ isLoading: false, error: errorMessage(e) });
+      // Never leave a stale/previous account's rows visible on failure —
+      // empty beats wrong.
+      set({ isLoading: false, error: errorMessage(e), subs: [] });
     }
   },
 
@@ -76,7 +97,7 @@ export const useSubscriptionsStore = create<SubscriptionsStore>((set, get) => ({
     try {
       const created = await dbInsert(draft);
       // Refresh cache from DB rather than mutating locally (single source of truth).
-      const subs = await getAllSubscriptions();
+      const subs = await getAllSubscriptions(seededVisibility());
       set({ subs, error: null });
       return created;
     } catch (e) {
@@ -92,7 +113,7 @@ export const useSubscriptionsStore = create<SubscriptionsStore>((set, get) => ({
         set({ error: `Subscription ${id} not found` });
         return null;
       }
-      const subs = await getAllSubscriptions();
+      const subs = await getAllSubscriptions(seededVisibility());
       set({ subs, error: null });
       return updated;
     } catch (e) {
@@ -108,7 +129,7 @@ export const useSubscriptionsStore = create<SubscriptionsStore>((set, get) => ({
         set({ error: `Subscription ${id} not found` });
         return null;
       }
-      const subs = await getAllSubscriptions();
+      const subs = await getAllSubscriptions(seededVisibility());
       set({ subs, error: null });
       return updated;
     } catch (e) {
@@ -120,7 +141,7 @@ export const useSubscriptionsStore = create<SubscriptionsStore>((set, get) => ({
   remove: async (id) => {
     try {
       await dbDelete(id);
-      const subs = await getAllSubscriptions();
+      const subs = await getAllSubscriptions(seededVisibility());
       set({ subs, error: null });
     } catch (e) {
       set({ error: errorMessage(e) });

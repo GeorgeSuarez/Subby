@@ -25,7 +25,7 @@ import {
   type ResolvedScheme,
   type ThemePreference,
 } from '@/design/theme-resolve';
-import { memoryStorage, storageKey } from '@/design/storage';
+import { persistentStorage, storageKey } from '@/design/storage';
 
 interface ThemeStore {
   /** User's explicit choice. `undefined` => "hasn't chosen" → falls back to system. */
@@ -42,7 +42,7 @@ export const useThemeStore = create<ThemeStore>()(
     }),
     {
       name: storageKey.themePref,
-      storage: createJSONStorage(() => memoryStorage),
+      storage: createJSONStorage(() => persistentStorage),
       // Only persist the user's choice, never anything else.
       partialize: (s): { preference: ThemePreference | undefined } => ({ preference: s.preference }),
     },

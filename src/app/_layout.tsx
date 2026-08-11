@@ -1,5 +1,5 @@
 /**
- * Root layout — providers and bootstrap.
+ * Root layout — providers, bootstrap, and the auth gate.
  *
  * Wraps every route with:
  *   - `GestureHandlerRootView` (required by react-native-gesture-handler)
@@ -7,11 +7,15 @@
  *   - `expo-status-bar` styling
  *   - a one-shot `useEffect` that hydrates the subscriptions store and
  *     hides the splash screen once the database is ready.
+ *   - an auth gate via `Stack.Protected`: signed-out users see only the
+ *     `auth` group; signed-in users get the tabs plus the add/edit modal
+ *     group (gating the modal too blocks signed-out deep links to it).
  *
  * Skill rules:
  *  - `navigation-native-navigators`: native stack/tabs via expo-router.
  *  - `react-state-minimize`: hydration is keyed on mount only; the store
- *    owns all subsequent state.
+ *    owns all subsequent state. The gate is derived from the auth store's
+ *    `isSignedIn` — no local copies.
  *  - `animation-gpu-properties`: theme transitions use Reanimated `entering`
  *    FadeIn — opacity only, GPU-accelerated, no layout/paint per frame (§3.1).
  *  - `state-ground-truth`: the resolved color mode is the ground truth; the
@@ -23,11 +27,12 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { FadeIn } from 'react-native-reanimated';
-import { DarkTheme, DefaultTheme, Slot, ThemeProvider } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 
 import { useColorMode } from '@/design/theme';
+import { useAuthStore } from '@/store/useAuthStore';
 import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
 
 // Keep the splash visible until our first data hydration resolves.
@@ -37,9 +42,16 @@ export default function RootLayout() {
   const scheme = useColorScheme();
   const colorMode = useColorMode();
   const hydrate = useSubscriptionsStore((s) => s.hydrate);
+  const resetCache = useSubscriptionsStore((s) => s.resetCache);
+  const isSignedIn = useAuthStore((s) => s.isSignedIn);
+  // Account identity drives seeded-data visibility; re-hydrate when it
+  // changes (cold-start auth rehydration included).
+  const email = useAuthStore((s) => s.email);
 
-  // Hydrate the subscriptions cache exactly once on mount.
+  // Drop the previous account's cache immediately, then load this account's
+  // view. Runs on mount and whenever the signed-in account changes.
   useEffect(() => {
+    resetCache();
     let cancelled = false;
     (async () => {
       try {
@@ -53,7 +65,7 @@ export default function RootLayout() {
     return () => {
       cancelled = true;
     };
-  }, [hydrate]);
+  }, [resetCache, hydrate, isSignedIn, email]);
 
   const isDark = colorMode === 'dark';
 
@@ -68,7 +80,17 @@ export default function RootLayout() {
           entering={FadeIn.duration(280)}
           style={{ flex: 1, backgroundColor: isDark ? '#0B0F14' : '#F7F9FC' }}
         >
-          <Slot />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Protected guard={isSignedIn}>
+              <Stack.Screen name="(tabs)" />
+              {/* The add/edit modal group sits behind the same gate so a
+                  signed-out user can't deep link into it. */}
+              <Stack.Screen name="subscription" />
+            </Stack.Protected>
+            <Stack.Protected guard={!isSignedIn}>
+              <Stack.Screen name="auth" />
+            </Stack.Protected>
+          </Stack>
         </Animated.View>
       </ThemeProvider>
     </GestureHandlerRootView>

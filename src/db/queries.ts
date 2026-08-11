@@ -12,6 +12,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { getDatabase } from '@/db/client';
+import { subsWhereClause } from '@/db/query-builder';
 import type { SubscriptionRow } from '@/db/schema';
 import type {
   CategorySlug,
@@ -43,7 +44,7 @@ export function rowToSubscription(row: SubscriptionRow): Subscription {
 
 /** Convert a domain Subscription to a row-shaped object for INSERT/UPDATE. */
 export function subscriptionToRow(
-  sub: SubscriptionDraft & { id: string; createdAt: number; updatedAt: number; archived: boolean },
+  sub: SubscriptionDraft & { id: string; createdAt: number; updatedAt: number; archived: boolean; seeded?: boolean },
 ): Omit<SubscriptionRow, 'archived'> & { archived: number } {
   return {
     id: sub.id,
@@ -59,35 +60,45 @@ export function subscriptionToRow(
     created_at: sub.createdAt,
     updated_at: sub.updatedAt,
     archived: sub.archived ? 1 : 0,
+    seeded: sub.seeded ? 1 : 0,
   };
 }
 
 const ALL_COLUMNS = `
   id, name, amount, currency, cycle,
   next_renewal AS next_renewal, category, icon, color, notes,
-  created_at, updated_at, archived
+  created_at, updated_at, archived, seeded
 `;
 
-async function allSubs(db: SQLiteDatabase): Promise<Subscription[]> {
-  const rows = await db.getAllAsync<SubscriptionRow>(`SELECT ${ALL_COLUMNS} FROM subscriptions;`);
+async function allSubs(
+  db: SQLiteDatabase,
+  includeSeeded: boolean,
+  where = '',
+): Promise<Subscription[]> {
+  // `subsWhereClause` emits a full 'WHERE …' fragment ('' when unneeded) —
+  // never a bare 'AND', which would be invalid SQL.
+  const rows = await db.getAllAsync<SubscriptionRow>(
+    `SELECT ${ALL_COLUMNS} FROM subscriptions${subsWhereClause(includeSeeded, where)};`,
+  );
   return rows.map(rowToSubscription);
 }
 
 // --- Read -------------------------------------------------------------------
 
-/** Get every subscription (active + archived). */
-export async function getAllSubscriptions(): Promise<Subscription[]> {
+/**
+ * Get every subscription the current account may see.
+ * Demo (seeded) rows are only visible to the test account — `includeSeeded`
+ * must be `true` for it and `false` for everyone else (the default).
+ */
+export async function getAllSubscriptions(includeSeeded = false): Promise<Subscription[]> {
   const db = await getDatabase();
-  return allSubs(db);
+  return allSubs(db, includeSeeded);
 }
 
-/** Get only active (non-archived) subscriptions. */
-export async function getActiveSubscriptions(): Promise<Subscription[]> {
+/** Get only active (non-archived) subscriptions. Same seeded-visibility rule. */
+export async function getActiveSubscriptions(includeSeeded = false): Promise<Subscription[]> {
   const db = await getDatabase();
-  const rows = await db.getAllAsync<SubscriptionRow>(
-    `SELECT ${ALL_COLUMNS} FROM subscriptions WHERE archived = 0;`,
-  );
-  return rows.map(rowToSubscription);
+  return allSubs(db, includeSeeded, ' WHERE archived = 0');
 }
 
 /** Look up a single subscription by id. Returns null if not found. */
@@ -104,9 +115,13 @@ export async function getSubscriptionById(id: string): Promise<Subscription | nu
 
 /**
  * Insert a new subscription. Caller supplies all fields except id/timestamps.
- * The function generates those and returns the persisted Subscription.
+ * Pass `{ seeded: true }` for demo-data rows (invisible to non-test accounts).
+ * The function generates the rest and returns the persisted Subscription.
  */
-export async function insertSubscription(draft: SubscriptionDraft): Promise<Subscription> {
+export async function insertSubscription(
+  draft: SubscriptionDraft,
+  options: { seeded?: boolean } = {},
+): Promise<Subscription> {
   const db = await getDatabase();
   const now = Date.now();
   const id = generateId();
@@ -116,12 +131,13 @@ export async function insertSubscription(draft: SubscriptionDraft): Promise<Subs
     createdAt: now,
     updatedAt: now,
     archived: false,
+    seeded: options.seeded ?? false,
   });
 
   await db.runAsync(
     `INSERT INTO subscriptions
-      (id, name, amount, currency, cycle, next_renewal, category, icon, color, notes, created_at, updated_at, archived)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      (id, name, amount, currency, cycle, next_renewal, category, icon, color, notes, created_at, updated_at, archived, seeded)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     [
       row.id,
       row.name,
@@ -136,6 +152,7 @@ export async function insertSubscription(draft: SubscriptionDraft): Promise<Subs
       row.created_at,
       row.updated_at,
       row.archived,
+      row.seeded,
     ],
   );
 

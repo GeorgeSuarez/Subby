@@ -85,6 +85,25 @@ export const CURRENCY_BY_CODE: Record<CurrencyCode, CurrencyMeta> = Object.fromE
 /** Default currency for a brand-new app (user can change in Settings). */
 export const DEFAULT_CURRENCY: CurrencyCode = 'USD';
 
+/**
+ * The only account allowed to load or remove demo (seeded) data.
+ * Signing in with this email auto-loads the seed set; the Settings
+ * "Demo data" section shows its controls exclusively to this account.
+ */
+export const TEST_ACCOUNT_EMAIL = 'test@subby.app';
+
+/**
+ * Fixed password for the test account (mock auth has no real backend, so this
+ * is a plain constant, not a hashed credential). `validateDraft` enforces it
+ * whenever the email matches `TEST_ACCOUNT_EMAIL`.
+ */
+export const TEST_ACCOUNT_PASSWORD = 'subby123';
+
+/** Rule: is this the test account? Case-insensitive on a trimmed value. */
+export function isTestAccountEmail(email: string | null | undefined): boolean {
+  return email != null && email.trim().toLowerCase() === TEST_ACCOUNT_EMAIL;
+}
+
 export function currencyMeta(code: CurrencyCode): CurrencyMeta {
   return CURRENCY_BY_CODE[code] ?? CURRENCY_BY_CODE.USD;
 }

@@ -9,15 +9,15 @@
  * The theme preference lives in `@/design/theme.ts` (`useThemeStore`) since it
  * is tied to the palette resolver. Currency/sort/filter are independent.
  *
- * Persistence uses the same in-memory adapter as the theme store for v1; in
- * Step 13 we'll swap to AsyncStorage for true cross-launch persistence.
+ * Persistence uses the SQLite-backed `persistentStorage` adapter
+ * (`@/design/storage`), so preferences survive restarts.
  */
 
 import { Platform } from 'react-native';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-import { memoryStorage } from '@/design/storage';
+import { persistentStorage } from '@/design/storage';
 import { DEFAULT_CURRENCY } from '@/utils/constants';
 import type { CurrencyCode, SubscriptionFilter, SubscriptionSort } from '@/types/subscription';
 
@@ -44,7 +44,7 @@ export const useUIStore = create<UIStore>()(
     }),
     {
       name: UI_PREFS_KEY,
-      storage: createJSONStorage(() => memoryStorage),
+      storage: createJSONStorage(() => persistentStorage),
       partialize: (s): { currency: CurrencyCode; sort: SubscriptionSort; filter: SubscriptionFilter } => ({
         currency: s.currency,
         sort: s.sort,

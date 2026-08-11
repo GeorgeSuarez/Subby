@@ -24,6 +24,7 @@ export interface SubscriptionRow {
   created_at: number;
   updated_at: number;
   archived: number; // 0/1
+  seeded: number; // 0/1 — demo data rows are invisible to non-test accounts
 }
 
 export interface Migration {
@@ -76,6 +77,19 @@ export const MIGRATIONS: readonly Migration[] = [
         key   TEXT PRIMARY KEY NOT NULL,
         value TEXT NOT NULL
       );
+    `,
+  },
+  {
+    version: 3,
+    description: 'add seeded flag for demo data rows',
+    // Marks rows created by the demo-data seed so reads can filter them out
+    // for every account except the test account. The name-based UPDATE is a
+    // one-time backfill for devices that auto-seeded before v3 existed — new
+    // seed loads set the flag at insert time.
+    sql: `
+      ALTER TABLE subscriptions ADD COLUMN seeded INTEGER NOT NULL DEFAULT 0;
+      UPDATE subscriptions SET seeded = 1
+        WHERE name IN ('Netflix', 'Spotify', 'iCloud+', 'GitHub', 'Figma', 'Disney+', 'New York Times');
     `,
   },
 ] as const;

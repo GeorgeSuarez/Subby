@@ -8,6 +8,8 @@ import {
   currencyMeta,
   DEFAULT_CURRENCY,
   DEFAULT_CATEGORY,
+  TEST_ACCOUNT_EMAIL,
+  isTestAccountEmail,
 } from '@/utils/constants';
 
 describe('CATEGORIES', () => {
@@ -66,5 +68,22 @@ describe('defaults', () => {
     for (const c of CATEGORIES) {
       expect(slugs).toContain(c.slug);
     }
+  });
+});
+
+describe('test account rule', () => {
+  it('accepts the exact test account email', () => {
+    expect(isTestAccountEmail(TEST_ACCOUNT_EMAIL)).toBe(true);
+  });
+
+  it('is case-insensitive and trims whitespace', () => {
+    expect(isTestAccountEmail('  Test@Subby.App  ')).toBe(true);
+  });
+
+  it('rejects every other account', () => {
+    expect(isTestAccountEmail('ada@lovelace.dev')).toBe(false);
+    expect(isTestAccountEmail('')).toBe(false);
+    expect(isTestAccountEmail(null)).toBe(false);
+    expect(isTestAccountEmail(undefined)).toBe(false);
   });
 });
