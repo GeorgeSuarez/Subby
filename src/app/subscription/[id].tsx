@@ -27,7 +27,9 @@ export default function SubscriptionDetailRoute() {
   const sub = useSubscriptionsStore((s) => s.subs.find((x) => x.id === id));
 
   const onEdit = useCallback(() => {
-    router.push({ pathname: '/subscription/add', params: { id } });
+    // `/subscription/edit` is presented as a card (not a sheet) so it can
+    // stack over this formSheet without the blank-screen issue.
+    router.push({ pathname: '/subscription/edit', params: { id } });
   }, [router, id]);
 
   const onDismiss = useCallback(() => {
