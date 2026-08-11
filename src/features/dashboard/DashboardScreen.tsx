@@ -17,15 +17,19 @@
  */
 
 import { useCallback, type ComponentProps } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { EmptyState } from '@/design/components';
 import { Surface } from '@/design/components/Surface';
+import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
-import { useActiveSubscriptions, useIsLoadingSubscriptions } from '@/store/useSubscriptionsStore';
+import {
+  useActiveSubscriptions,
+  useIsLoadingSubscriptions,
+  useSubscriptionsStore,
+} from '@/store/useSubscriptionsStore';
 import { HeroSpend } from '@/features/dashboard/components/HeroSpend';
-import { ThisMonthCard } from '@/features/dashboard/components/ThisMonthCard';
 import { QuickStats } from '@/features/dashboard/components/QuickStats';
 import { CategoryBreakdown } from '@/features/dashboard/components/CategoryBreakdown';
 import { RenewalsList } from '@/features/dashboard/components/RenewalsList';
@@ -34,8 +38,10 @@ type ScrollViewProps = ComponentProps<typeof ScrollView>;
 
 export function DashboardScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const subs = useActiveSubscriptions();
   const isLoading = useIsLoadingSubscriptions();
+  const hydrate = useSubscriptionsStore((s) => s.hydrate);
 
   // Empty-state CTA — single stable callback (skill `list-performance-callbacks`).
   const onAdd = useCallback(() => {
@@ -60,13 +66,20 @@ export function DashboardScreen() {
     contentInsetAdjustmentBehavior: 'automatic',
     contentContainerStyle: styles.content,
     showsVerticalScrollIndicator: false,
+    refreshControl: (
+      <RefreshControl
+        refreshing={isLoading}
+        onRefresh={() => void hydrate()}
+        tintColor={colors.accent}
+        colors={[colors.accent]}
+      />
+    ),
   };
 
   return (
     <Surface background="surface" style={styles.root}>
       <ScrollView {...scrollProps}>
         <HeroSpend />
-        <ThisMonthCard />
         <RenewalsList />
         <CategoryBreakdown />
         <QuickStats />

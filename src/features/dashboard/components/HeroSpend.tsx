@@ -1,11 +1,12 @@
 /**
  * HeroSpend — big headline monthly total with count-up animation.
  *
- * Sources data from the subscriptions store and derives the monthly total
- * in render (skill `react-state-minimize`). The number animates from 0 to the
- * target on first mount and re-animates only when the value changes by >= 1.
+ * The single money anchor of the dashboard: monthly spend, its yearly
+ * equivalent, and how many renewals are charging this month. Sits on a subtle
+ * accent wash so it reads as the hero; the budget progress line appears when
+ * a budget is set.
  *
- * Skill rules followed:
+ * Skill rules:
  *  - `react-state-minimize`: monthly total is derived, never stored.
  *  - `state-ground-truth`: `subs` is the ground truth; `monthly` is a pure
  *    function of it.
@@ -18,7 +19,7 @@ import { Card, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { radius, spacing } from '@/design/tokens';
 import { useActiveSubscriptions, useIsLoadingSubscriptions } from '@/store/useSubscriptionsStore';
-import { budgetProgress, totalMonthlySpend, totalYearlySpend } from '@/utils/billing';
+import { budgetProgress, renewalsThisMonth, totalMonthlySpend, totalYearlySpend } from '@/utils/billing';
 import { formatCurrency, formatCurrencyCompact } from '@/utils/format';
 import { useBudget, useCurrency } from '@/store/useUIStore';
 import { AnimatedNumber } from '@/features/dashboard/components/AnimatedNumber';
@@ -34,10 +35,15 @@ export function HeroSpend() {
   // No state for monthly/yearly; skill `react-state-minimize`.
   const monthly = totalMonthlySpend(subs);
   const yearly = totalYearlySpend(subs);
+  const monthCharges = renewalsThisMonth(subs);
   const progress = budgetProgress(monthly, budget);
 
   return (
-    <Card padding={spacing.xl} elevation="high">
+    <Card
+      padding={spacing.xl}
+      elevation="high"
+      style={[styles.hero, { backgroundColor: colors.accentSoft }]}
+    >
       <View style={styles.labelRow}>
         <Text variant="caption" color="textSecondary">Monthly spend</Text>
         <Text variant="caption" color="textTertiary" weight="500">/ {subs.length} active</Text>
@@ -48,7 +54,7 @@ export function HeroSpend() {
         {isLoading ? (
           <Text variant="stat" color="textTertiary">—</Text>
         ) : (
-          <Text variant="stat" color="textPrimary">
+          <Text variant="stat" color="accent">
             <AnimatedNumber
               value={monthly}
               format={(n) => formatCurrency(n, currency)}
@@ -59,17 +65,18 @@ export function HeroSpend() {
         )}
       </View>
 
-      {/* Sub row: yearly equivalent in caption, displayed compact. */}
+      {/* Sub row: yearly equivalent + renewals charging this month. */}
       <View style={styles.subRow}>
-        <Text variant="caption" color="textSecondary">
-          {formatCurrencyCompact(yearly, currency)} per year
+        <Text variant="caption" color="textSecondary" numberOfLines={1}>
+          {formatCurrencyCompact(yearly, currency)} per year ·{' '}
+          {monthCharges.count} renewal{monthCharges.count === 1 ? '' : 's'} charging this month
         </Text>
       </View>
 
       {/* Budget progress — only when a budget is set. */}
       {budget > 0 ? (
         <View style={styles.budget}>
-          <View style={[styles.track, { backgroundColor: colors.accentSoft }]}>
+          <View style={[styles.track, { backgroundColor: colors.surfaceHigher }]}>
             <View
               style={[
                 styles.fill,
@@ -87,13 +94,14 @@ export function HeroSpend() {
           </Text>
         </View>
       ) : null}
-
-      <View style={[styles.divider, { backgroundColor: colors.hairline }]} />
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
+  hero: {
+    borderColor: 'transparent',
+  },
   labelRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -117,9 +125,5 @@ const styles = StyleSheet.create({
   fill: {
     height: '100%',
     borderRadius: radius.pill,
-  },
-  divider: {
-    height: 1,
-    marginTop: spacing.md,
   },
 });

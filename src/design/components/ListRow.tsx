@@ -18,7 +18,7 @@ import { memo, type ReactNode } from 'react';
 import { Pressable, StyleSheet, View, type PressableStateCallbackType, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 
 import { Avatar } from '@/design/components/Avatar';
-import { Text } from '@/design/components/Text';
+import { Text, type TextColor } from '@/design/components/Text';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
 
@@ -31,6 +31,8 @@ export interface ListRowProps extends Omit<PressableProps, 'style' | 'children' 
   trailingTitle?: string;
   /** Optional sub-detail below the trailing title. */
   trailingSubtitle?: string;
+  /** Override the trailing subtitle color token (e.g. urgency tinting). */
+  trailingSubtitleColor?: TextColor;
   /** Avatar source URL, or undefined to use `icon`. */
   avatarSource?: string;
   /** Ionicons glyph name when no avatar URL is supplied. */
@@ -59,6 +61,7 @@ function ListRowInner({
   subtitle,
   trailingTitle,
   trailingSubtitle,
+  trailingSubtitleColor = 'textSecondary',
   avatarSource,
   icon = 'Cube',
   avatarBackground = 'surfaceHigher',
@@ -115,7 +118,7 @@ function ListRowInner({
             </Text>
           ) : null}
           {trailingSubtitle ? (
-            <Text variant="caption" color="textSecondary" align="right" numberOfLines={1}>
+            <Text variant="caption" color={trailingSubtitleColor} align="right" numberOfLines={1}>
               {trailingSubtitle}
             </Text>
           ) : null}

@@ -237,3 +237,13 @@ export function budgetProgress(spent: number, budget: number): BudgetProgress {
   const over = spent > budget;
   return { pct, over, overAmount: over ? spent - budget : 0 };
 }
+
+/** Urgency band for a renewal countdown (days). */
+export type RenewalUrgency = 'critical' | 'soon' | 'calm';
+
+/** Classify days-until-renewal for visual urgency tinting. */
+export function renewalUrgencyTone(days: number): RenewalUrgency {
+  if (days <= 3) return 'critical';
+  if (days <= 7) return 'soon';
+  return 'calm';
+}

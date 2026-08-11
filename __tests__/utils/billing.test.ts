@@ -11,6 +11,7 @@ import {
   parseDate,
   renewalsThisMonth,
   renewalsWithin,
+  renewalUrgencyTone,
   toISODate,
   totalMonthlySpend,
   totalYearlySpend,
@@ -291,5 +292,22 @@ describe('budgetProgress', () => {
     expect(result.pct).toBe(1);
     expect(result.over).toBe(true);
     expect(result.overAmount).toBe(30);
+  });
+});
+
+describe('renewalUrgencyTone', () => {
+  it('is critical within 3 days', () => {
+    expect(renewalUrgencyTone(0)).toBe('critical');
+    expect(renewalUrgencyTone(3)).toBe('critical');
+  });
+
+  it('is soon within 7 days', () => {
+    expect(renewalUrgencyTone(4)).toBe('soon');
+    expect(renewalUrgencyTone(7)).toBe('soon');
+  });
+
+  it('is calm beyond a week', () => {
+    expect(renewalUrgencyTone(8)).toBe('calm');
+    expect(renewalUrgencyTone(45)).toBe('calm');
   });
 });

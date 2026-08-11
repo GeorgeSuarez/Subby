@@ -1,26 +1,28 @@
 /**
- * QuickStats — three-column stat strip (yearly / count / biggest).
+ * QuickStats — 2×2 "card-in-card" stat grid (monthly / yearly / active /
+ * biggest). Each tile is its own elevated cell.
  *
- * Skill rule `react-state-minimize`: every value here is derived during
- * render from the active-subscriptions selector.
+ * Skill rule `react-state-minimize`: every value is derived during render
+ * from the active-subscriptions selector.
  */
 
 import { StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { Card, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
-import { spacing } from '@/design/tokens';
+import { radius, spacing } from '@/design/tokens';
 import { AnimatedNumber } from '@/features/dashboard/components/AnimatedNumber';
 import { useActiveSubscriptions } from '@/store/useSubscriptionsStore';
 import { useCurrency } from '@/store/useUIStore';
-import { activeCount, largestMonthly, monthlyEquivalent, totalYearlySpend } from '@/utils/billing';
+import { activeCount, largestMonthly, monthlyEquivalent, totalMonthlySpend, totalYearlySpend } from '@/utils/billing';
 import { formatCurrency } from '@/utils/format';
 
 export function QuickStats() {
   const subs = useActiveSubscriptions();
   const currency = useCurrency();
-  const { colors } = useTheme();
 
+  const monthly = totalMonthlySpend(subs);
   const year = totalYearlySpend(subs);
   const count = activeCount(subs);
   const biggest = largestMonthly(subs);
@@ -29,31 +31,42 @@ export function QuickStats() {
   return (
     <Card padding={spacing.lg} elevation="low">
       <Text variant="caption" color="textSecondary" weight="600">Quick stats</Text>
-      <View style={[styles.row, { borderColor: colors.hairline }]}>
-        {/* Count-up is only applied to the currency-formatted numeric stats. */}
-        <Stat
+      <View style={styles.grid}>
+        <Tile
+          icon="calendar-number-outline"
+          label="Monthly"
+          value={
+            <AnimatedNumber
+              value={monthly}
+              format={(n) => formatCurrency(n, currency)}
+              delayMs={240}
+              duration={600}
+            />
+          }
+        />
+        <Tile
+          icon="trending-up-outline"
           label="Yearly"
           value={
             <AnimatedNumber
               value={year}
               format={(n) => formatCurrency(n, currency)}
-              delayMs={260}
-              duration={680}
+              delayMs={320}
+              duration={600}
             />
           }
         />
-        <Divider />
-        <Stat label="Active" value={String(count)} />
-        <Divider />
-        <Stat
+        <Tile icon="apps-outline" label="Active" value={String(count)} />
+        <Tile
+          icon="arrow-up-circle-outline"
           label="Biggest"
           value={
             biggest ? (
               <AnimatedNumber
                 value={biggestMonthly}
                 format={(n) => formatCurrency(n, currency)}
-                delayMs={320}
-                duration={680}
+                delayMs={400}
+                duration={600}
               />
             ) : '—'
           }
@@ -64,19 +77,35 @@ export function QuickStats() {
   );
 }
 
-function Stat({
+function Tile({
+  icon,
   label,
   value,
   sublabel,
 }: {
+  icon: keyof typeof Ionicons.glyphMap;
   label: string;
   value: React.ReactNode;
   sublabel?: string;
 }) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.stat}>
-      <Text variant="caption" color="textTertiary">{label}</Text>
-      <Text variant="headline" weight="700" color="textPrimary">{value}</Text>
+    <View
+      style={[
+        styles.tile,
+        {
+          backgroundColor: colors.surfaceHigher,
+          borderColor: colors.border,
+        },
+      ]}
+    >
+      <View style={styles.tileHeader}>
+        <Ionicons name={icon} size={16} color={colors.textTertiary} />
+        <Text variant="caption" color="textTertiary">{label}</Text>
+      </View>
+      <Text variant="headline" weight="700" color="textPrimary" numberOfLines={1}>
+        {value}
+      </Text>
       {sublabel ? (
         <Text variant="caption" color="textSecondary" numberOfLines={1}>{sublabel}</Text>
       ) : null}
@@ -84,26 +113,25 @@ function Stat({
   );
 }
 
-function Divider() {
-  const { colors } = useTheme();
-  return <View style={[styles.divider, { backgroundColor: colors.hairline }]} />;
-}
-
 const styles = StyleSheet.create({
-  row: {
+  grid: {
     flexDirection: 'row',
-    borderTopWidth: 1,
+    flexWrap: 'wrap',
+    gap: spacing.sm,
     marginTop: spacing.md,
-    paddingTop: spacing.md,
-    alignItems: 'stretch',
   },
-  stat: {
-    flex: 1,
-    gap: spacing.xs / 2,
-    paddingHorizontal: spacing.xs,
+  tile: {
+    flexGrow: 1,
+    flexBasis: '45%',
+    borderWidth: 1,
+    borderCurve: 'continuous',
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: spacing.xs,
   },
-  divider: {
-    width: 1,
-    marginVertical: spacing.xs,
+  tileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
   },
 });

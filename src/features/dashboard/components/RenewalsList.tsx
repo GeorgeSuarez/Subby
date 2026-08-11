@@ -26,12 +26,15 @@ import {
   daysUntilRenewal,
   nextRenewalAfter,
   renewalsWithin,
+  renewalUrgencyTone,
+  type RenewalUrgency,
 } from "@/utils/billing";
 import {
   formatCurrency,
   formatMonthDay,
   formatRenewalIn,
 } from "@/utils/format";
+import type { TextColor } from '@/design/components/Text';
 
 /** Maximum rows shown on the Dashboard before "View all" takes the user to the list tab. */
 const MAX_ROWS = 5;
@@ -58,11 +61,8 @@ export function RenewalsList() {
   return (
     <Card padding={spacing.md} elevation="low">
       <Card.Header>
-        <Text variant="headline" align="left" weight="600" color="textPrimary">
-          Upcoming renewals
-        </Text>
-        <Text variant="caption" color="textSecondary">
-          Next {RENEWAL_WINDOW_DAYS} days
+        <Text variant="caption" color="textSecondary" weight="600">
+          Upcoming renewals · next {RENEWAL_WINDOW_DAYS} days
         </Text>
       </Card.Header>
 
@@ -77,6 +77,7 @@ export function RenewalsList() {
           upcoming.map((s) => {
             const nextISO = nextRenewalAfter(s);
             const days = daysUntilRenewal(s);
+            const tone = renewalUrgencyTone(days);
             return (
               <ListRow
                 key={s.id}
@@ -85,6 +86,7 @@ export function RenewalsList() {
                 subtitle={formatMonthDay(nextISO)}
                 trailingTitle={formatCurrency(s.amount, s.currency)}
                 trailingSubtitle={formatRenewalIn(days)}
+                trailingSubtitleColor={toneColor(tone)}
                 icon={s.icon}
                 avatarBackground="surfaceHigher"
                 onPressWithId={onRowPress}
@@ -104,6 +106,18 @@ export function RenewalsList() {
 }
 
 // --- Sub-components ---------------------------------------------------------
+
+/** Map an urgency band to a text color token (pure; color is presentation). */
+function toneColor(tone: RenewalUrgency): TextColor {
+  switch (tone) {
+    case 'critical':
+      return 'negative';
+    case 'soon':
+      return 'accent';
+    case 'calm':
+      return 'textSecondary';
+  }
+}
 
 function FooterLink({
   label,
