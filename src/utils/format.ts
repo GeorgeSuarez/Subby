@@ -92,6 +92,23 @@ export function formatWeekday(iso: string): string {
   return weekdayFormatter.format(d);
 }
 
+const monthKeyFormatter = new Intl.DateTimeFormat(undefined, { month: 'short', year: '2-digit' });
+const monthShortFormatter = new Intl.DateTimeFormat(undefined, { month: 'short' });
+
+/** Format a 'YYYY-MM' forecast key as "Jul ’26". */
+export function formatMonthKey(monthKey: string): string {
+  const [y, m] = monthKey.split('-').map(Number);
+  const d = new Date(Date.UTC(y ?? 2000, (m ?? 1) - 1, 1, 12, 0, 0, 0));
+  return monthKeyFormatter.format(d);
+}
+
+/** Format a 'YYYY-MM' forecast key as just "Jul". */
+export function formatMonthShort(monthKey: string): string {
+  const [y, m] = monthKey.split('-').map(Number);
+  const d = new Date(Date.UTC(y ?? 2000, (m ?? 1) - 1, 1, 12, 0, 0, 0));
+  return monthShortFormatter.format(d);
+}
+
 // --- Relative time ----------------------------------------------------------
 
 /**

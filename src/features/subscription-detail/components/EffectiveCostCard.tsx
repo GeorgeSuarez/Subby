@@ -13,6 +13,7 @@ import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
 import { getMonthlyCost, getYearlyCost } from '@/features/subscription-detail/detail-helpers';
 import { formatCurrency } from '@/utils/format';
+import { yearlySavingsHint } from '@/utils/billing';
 import type { Subscription } from '@/types/subscription';
 
 export interface EffectiveCostCardProps {
@@ -25,6 +26,7 @@ export function EffectiveCostCard({ sub, notes }: EffectiveCostCardProps) {
   const { colors } = useTheme();
   const monthly = getMonthlyCost(sub);
   const yearly = getYearlyCost(sub);
+  const savings = yearlySavingsHint(sub);
 
   return (
     <Card padding={spacing.lg} elevation="low">
@@ -35,6 +37,17 @@ export function EffectiveCostCard({ sub, notes }: EffectiveCostCardProps) {
         <Divider />
         <Stat label="Per year" value={yearly} currency={sub.currency} />
       </View>
+
+      {savings ? (
+        <View style={[styles.hintRow, { borderTopColor: colors.hairline }]}>
+          <Text variant="caption" color="accent" weight="600">
+            Billed yearly could save ~{formatCurrency(savings.savingsPerYear, sub.currency)}/yr
+          </Text>
+          <Text variant="caption" color="textTertiary">
+            Typical 15% discount (estimate)
+          </Text>
+        </View>
+      ) : null}
 
       {notes ? (
         <View style={[styles.notesRow, { borderTopColor: colors.hairline }]}>
@@ -86,6 +99,12 @@ const styles = StyleSheet.create({
   divider: {
     width: 1,
     marginVertical: spacing.xs,
+  },
+  hintRow: {
+    borderTopWidth: 1,
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
+    gap: spacing.xs / 2,
   },
   notesRow: {
     borderTopWidth: 1,

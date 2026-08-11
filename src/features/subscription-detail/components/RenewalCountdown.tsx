@@ -15,7 +15,7 @@ import { StyleSheet, View } from 'react-native';
 import { Badge, Card, Text, type BadgeTone } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
-import { getRenewalStatus, type RenewalTone } from '@/features/subscription-detail/detail-helpers';
+import { getRenewalStatus, getTrialStatus, type RenewalTone } from '@/features/subscription-detail/detail-helpers';
 import { formatDate } from '@/utils/format';
 import type { Subscription } from '@/types/subscription';
 
@@ -25,7 +25,12 @@ export interface RenewalCountdownProps {
 
 export function RenewalCountdown({ sub }: RenewalCountdownProps) {
   const { colors } = useTheme();
-  const status = getRenewalStatus(sub);
+
+  // A free trial outranks the renewal countdown while it's the user's focus.
+  const trial = getTrialStatus(sub);
+  const renewal = getRenewalStatus(sub);
+  const status = trial ?? renewal;
+  const endISO = trial ? trial.endISO : renewal.nextISO;
   const tone: BadgeTone = status.tone;
   // Derived background tint via the soft variant of the matching semantic color.
   const toneBackground = toneSoftColor(status.tone, colors);
@@ -33,7 +38,9 @@ export function RenewalCountdown({ sub }: RenewalCountdownProps) {
 
   return (
     <Card padding={spacing.lg} elevation="low">
-      <Text variant="caption" color="textSecondary" weight="600">Next renewal</Text>
+      <Text variant="caption" color="textSecondary" weight="600">
+        {trial ? 'Free trial' : 'Next renewal'}
+      </Text>
 
       <View style={styles.bigRow}>
         <Text variant="stat" weight="700" color="textPrimary">
@@ -49,7 +56,7 @@ export function RenewalCountdown({ sub }: RenewalCountdownProps) {
         <Badge tone={tone}>{status.label}</Badge>
         <View style={[styles.dateChip, { backgroundColor: toneBackground }]}>
           <Text variant="caption" weight="600" color={toneText}>
-            {formatDate(status.nextISO)}
+            {formatDate(endISO)}
           </Text>
         </View>
       </View>

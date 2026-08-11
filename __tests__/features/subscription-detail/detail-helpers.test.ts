@@ -1,6 +1,7 @@
 import {
   getMonthlyCost,
   getRenewalStatus,
+  getTrialStatus,
   getYearlyCost,
   renewalToneFor,
 } from '@/features/subscription-detail/detail-helpers';
@@ -86,5 +87,33 @@ describe('getMonthlyCost / getYearlyCost', () => {
   });
   it('yearlyEquivalent: quarterly ×4', () => {
     expect(getYearlyCost(base({ amount: 30, cycle: 'quarterly' }))).toBeCloseTo(120);
+  });
+});
+
+describe('getTrialStatus', () => {
+  const inDays = (n: number): string => {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+
+  it('returns null without a trial end', () => {
+    expect(getTrialStatus(base({}))).toBeNull();
+  });
+
+  it('reports days remaining and a future date', () => {
+    const status = getTrialStatus(base({ trialEnds: inDays(5) }));
+    expect(status).not.toBeNull();
+    expect(status?.days).toBe(5);
+    expect(status?.label).toBe('Ends in 5 days');
+    expect(status?.tone).toBe('positive');
+  });
+
+  it('warns within 3 days and flags ended trials', () => {
+    expect(getTrialStatus(base({ trialEnds: inDays(1) }))?.tone).toBe('warning');
+    expect(getTrialStatus(base({ trialEnds: inDays(0) }))?.label).toBe('Ends today');
+    const ended = getTrialStatus(base({ trialEnds: inDays(-2) }));
+    expect(ended?.tone).toBe('negative');
+    expect(ended?.label).toBe('Trial ended');
   });
 });

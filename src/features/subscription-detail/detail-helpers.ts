@@ -9,7 +9,15 @@
  */
 
 import type { Subscription } from '@/types/subscription';
-import { daysUntilRenewal, monthlyEquivalent, nextRenewalAfter, yearlyEquivalent } from '@/utils/billing';
+import {
+  daysBetween,
+  daysUntilRenewal,
+  monthlyEquivalent,
+  nextRenewalAfter,
+  parseDate,
+  todayUTC,
+  yearlyEquivalent,
+} from '@/utils/billing';
 
 /** Tone that maps to semantic palette tokens (mirrors Badge's tone union). */
 export type RenewalTone = 'positive' | 'negative' | 'warning' | 'neutral';
@@ -66,4 +74,35 @@ export function getMonthlyCost(sub: Subscription): number {
 /** Derived effective yearly cost. */
 export function getYearlyCost(sub: Subscription): number {
   return yearlyEquivalent(sub);
+}
+
+// --- Trial status ------------------------------------------------------------
+
+export interface TrialStatus {
+  /** Days until the trial ends; negative if it already ended. */
+  days: number;
+  /** ISO date of the trial end. */
+  endISO: string;
+  tone: RenewalTone;
+  label: string;
+}
+
+/** Trial countdown — null when the subscription has no trial end date. */
+export function getTrialStatus(sub: Subscription): TrialStatus | null {
+  if (!sub.trialEnds) return null;
+  const end = parseDate(sub.trialEnds);
+  const days = daysBetween(todayUTC(), end);
+  return {
+    days,
+    endISO: sub.trialEnds,
+    tone: days < 0 ? 'negative' : days <= 3 ? 'warning' : 'positive',
+    label: trialLabel(days),
+  };
+}
+
+function trialLabel(days: number): string {
+  if (days < 0) return 'Trial ended';
+  if (days === 0) return 'Ends today';
+  if (days === 1) return 'Ends tomorrow';
+  return `Ends in ${days} days`;
 }

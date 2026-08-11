@@ -247,3 +247,87 @@ export function renewalUrgencyTone(days: number): RenewalUrgency {
   if (days <= 7) return 'soon';
   return 'calm';
 }
+
+// --- Savings / forecast / reminders ------------------------------------------
+
+/**
+ * Assumed typical yearly-billing discount used by the savings hint. A
+ * documented heuristic — the UI labels the figure as an estimate.
+ */
+export const YEARLY_SAVINGS_RATE = 0.15;
+
+export interface YearlySavingsHint {
+  /** Estimated money saved per year. */
+  savingsPerYear: number;
+  /** Estimated yearly price after the typical discount. */
+  estimatedYearlyPrice: number;
+}
+
+/**
+ * Estimate what a MONTHLY subscription would cost billed yearly (typical 15%
+ * discount). Returns null for non-monthly cycles (already billed optimally).
+ */
+export function yearlySavingsHint(sub: { amount: number; cycle: Cycle }): YearlySavingsHint | null {
+  if (sub.cycle !== 'monthly') return null;
+  const yearlyPrice = sub.amount * 12;
+  const estimatedYearlyPrice = Math.round(yearlyPrice * (1 - YEARLY_SAVINGS_RATE) * 100) / 100;
+  return { savingsPerYear: Math.round((yearlyPrice - estimatedYearlyPrice) * 100) / 100, estimatedYearlyPrice };
+}
+
+/** One month of the forecast series. */
+export interface ForecastMonth {
+  /** 'YYYY-MM' key of the bucket. */
+  month: string;
+  /** Actual charges landing in that month. */
+  total: number;
+  /** Number of renewals landing in that month. */
+  count: number;
+}
+
+/**
+ * Actual charges per calendar month for the next `months` months, starting
+ * with the current month. Each subscription contributes its REAL charge
+ * amount to the months its renewal lands (so yearly subs create peaks).
+ */
+export function monthlyForecast(
+  subs: readonly Subscription[],
+  months = 12,
+  from: Date = todayUTC(),
+): ForecastMonth[] {
+  const buckets = new Map<string, { total: number; count: number }>();
+  for (const s of subs) {
+    if (s.archived) continue;
+    const span = cycleMeta(s.cycle).months;
+    let next = parseDate(nextRenewalAfter(s, from));
+    for (let i = 0; i < months; i++) {
+      const key = `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, '0')}`;
+      const bucket = buckets.get(key) ?? { total: 0, count: 0 };
+      bucket.total += s.amount;
+      bucket.count += 1;
+      buckets.set(key, bucket);
+      next = addMonths(next, span);
+    }
+  }
+
+  // Emit a contiguous series starting with the current month.
+  const result: ForecastMonth[] = [];
+  const cursor = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), 1, 12, 0, 0, 0));
+  for (let i = 0; i < months; i++) {
+    const key = `${cursor.getUTCFullYear()}-${String(cursor.getUTCMonth() + 1).padStart(2, '0')}`;
+    const bucket = buckets.get(key) ?? { total: 0, count: 0 };
+    result.push({ month: key, total: bucket.total, count: bucket.count });
+    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+  }
+  return result;
+}
+
+/**
+ * When to fire a renewal reminder: `daysBefore` the renewal, at 09:00 UTC.
+ * (Renewal dates are stored as UTC noon — the reminder lands the day before.)
+ */
+export function reminderDateFor(nextRenewalISO: string, daysBefore = 1): Date {
+  const renewal = parseDate(nextRenewalISO);
+  const reminder = new Date(renewal.getTime() - daysBefore * 86_400_000);
+  reminder.setUTCHours(9, 0, 0, 0);
+  return reminder;
+}

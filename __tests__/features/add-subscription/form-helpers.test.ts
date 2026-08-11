@@ -153,6 +153,20 @@ describe('validateDraft', () => {
     const long = 'x'.repeat(281);
     expect(validateDraft({ ...valid, notes: long })[0]?.field).toBe('notes');
   });
+
+  it('accepts a valid future trial end', () => {
+    const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+    expect(validateDraft({ ...valid, trialEnds: tomorrow })).toEqual([]);
+  });
+
+  it('rejects a malformed or past trial end', () => {
+    expect(validateDraft({ ...valid, trialEnds: 'not-a-date' })[0]?.field).toBe('trialEnds');
+    expect(validateDraft({ ...valid, trialEnds: '2020-01-01' })[0]?.field).toBe('trialEnds');
+  });
+
+  it('allows an unset trial end', () => {
+    expect(validateDraft(valid)).toEqual([]);
+  });
 });
 
 describe('errorsByField', () => {

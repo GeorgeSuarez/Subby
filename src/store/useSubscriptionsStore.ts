@@ -24,8 +24,14 @@ import {
   getAllSubscriptions,
   insertSubscription as dbInsert,
   setArchived as dbSetArchived,
+  setNotificationId as dbSetNotificationId,
   updateSubscription as dbUpdate,
 } from '@/db/queries';
+import {
+  cancelRenewalReminder,
+  rescheduleRenewalReminder,
+  scheduleRenewalReminder,
+} from '@/utils/notifications';
 import type {
   Subscription,
   SubscriptionDraft,
@@ -96,6 +102,12 @@ export const useSubscriptionsStore = create<SubscriptionsStore>((set, get) => ({
   add: async (draft) => {
     try {
       const created = await dbInsert(draft);
+      // Schedule the renewal reminder and persist its id (best-effort — a
+      // denied permission or disabled toggle just leaves it unscheduled).
+      const notificationId = await scheduleRenewalReminder(created);
+      if (notificationId) {
+        await dbSetNotificationId(created.id, notificationId);
+      }
       // Refresh cache from DB rather than mutating locally (single source of truth).
       const subs = await getAllSubscriptions(seededVisibility());
       set({ subs, error: null });
@@ -108,10 +120,16 @@ export const useSubscriptionsStore = create<SubscriptionsStore>((set, get) => ({
 
   edit: async (id, patch) => {
     try {
+      const previous = get().subs.find((x) => x.id === id);
       const updated = await dbUpdate(id, patch);
       if (!updated) {
         set({ error: `Subscription ${id} not found` });
         return null;
+      }
+      // Renewal date may have changed — reschedule the reminder.
+      const notificationId = await rescheduleRenewalReminder(updated, previous?.notificationId);
+      if (notificationId) {
+        await dbSetNotificationId(updated.id, notificationId);
       }
       const subs = await getAllSubscriptions(seededVisibility());
       set({ subs, error: null });
@@ -124,10 +142,16 @@ export const useSubscriptionsStore = create<SubscriptionsStore>((set, get) => ({
 
   archive: async (id, archived) => {
     try {
+      const previous = get().subs.find((x) => x.id === id);
       const updated = await dbSetArchived(id, archived);
       if (!updated) {
         set({ error: `Subscription ${id} not found` });
         return null;
+      }
+      // Archived subs stop charging — drop their reminder.
+      if (archived && previous?.notificationId) {
+        await cancelRenewalReminder(previous.notificationId);
+        await dbSetNotificationId(id, null);
       }
       const subs = await getAllSubscriptions(seededVisibility());
       set({ subs, error: null });
@@ -140,6 +164,10 @@ export const useSubscriptionsStore = create<SubscriptionsStore>((set, get) => ({
 
   remove: async (id) => {
     try {
+      const target = get().subs.find((x) => x.id === id);
+      if (target?.notificationId) {
+        await cancelRenewalReminder(target.notificationId);
+      }
       await dbDelete(id);
       const subs = await getAllSubscriptions(seededVisibility());
       set({ subs, error: null });
@@ -150,6 +178,10 @@ export const useSubscriptionsStore = create<SubscriptionsStore>((set, get) => ({
 
   clearAll: async () => {
     try {
+      // Cancel every scheduled reminder before wiping rows.
+      for (const s of get().subs) {
+        await cancelRenewalReminder(s.notificationId);
+      }
       await deleteAllSubscriptions();
       set({ subs: [], error: null });
     } catch (e) {

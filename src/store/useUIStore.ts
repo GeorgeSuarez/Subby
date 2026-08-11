@@ -6,6 +6,7 @@
  *  - `sort`         — current sort for the subscriptions list.
  *  - `filter`       — current filter for the subscriptions list.
  *  - `budget`       — monthly budget for the dashboard hero (0 = unset).
+ *  - `remindersEnabled` — renewal-reminder notifications toggle.
  *
  * The theme preference lives in `@/design/theme.ts` (`useThemeStore`) since it
  * is tied to the palette resolver. Currency/sort/filter are independent.
@@ -30,10 +31,13 @@ export interface UIStore {
   filter: SubscriptionFilter;
   /** Monthly budget in major currency units. 0 = not set. */
   budget: number;
+  /** Schedule local renewal-reminder notifications. */
+  remindersEnabled: boolean;
   setCurrency: (c: CurrencyCode) => void;
   setSort: (s: SubscriptionSort) => void;
   setFilter: (f: SubscriptionFilter) => void;
   setBudget: (b: number) => void;
+  setRemindersEnabled: (enabled: boolean) => void;
 }
 
 export const useUIStore = create<UIStore>()(
@@ -43,19 +47,22 @@ export const useUIStore = create<UIStore>()(
       sort: 'nextRenewal',
       filter: 'active',
       budget: 0,
+      remindersEnabled: true,
       setCurrency: (currency) => set({ currency }),
       setSort: (sort) => set({ sort }),
       setFilter: (filter) => set({ filter }),
       setBudget: (budget) => set({ budget }),
+      setRemindersEnabled: (remindersEnabled) => set({ remindersEnabled }),
     }),
     {
       name: UI_PREFS_KEY,
       storage: createJSONStorage(() => persistentStorage),
-      partialize: (s): { currency: CurrencyCode; sort: SubscriptionSort; filter: SubscriptionFilter; budget: number } => ({
+      partialize: (s): { currency: CurrencyCode; sort: SubscriptionSort; filter: SubscriptionFilter; budget: number; remindersEnabled: boolean } => ({
         currency: s.currency,
         sort: s.sort,
         filter: s.filter,
         budget: s.budget,
+        remindersEnabled: s.remindersEnabled,
       }),
     },
   ),
@@ -74,4 +81,9 @@ export function useFilter(): SubscriptionFilter {
 /** Monthly budget in major units; 0 when unset. */
 export function useBudget(): number {
   return useUIStore((s) => s.budget);
+}
+
+/** Are renewal reminders enabled? */
+export function useRemindersEnabled(): boolean {
+  return useUIStore((s) => s.remindersEnabled);
 }

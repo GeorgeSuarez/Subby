@@ -33,6 +33,7 @@ import { HeroSpend } from '@/features/dashboard/components/HeroSpend';
 import { QuickStats } from '@/features/dashboard/components/QuickStats';
 import { CategoryBreakdown } from '@/features/dashboard/components/CategoryBreakdown';
 import { RenewalsList } from '@/features/dashboard/components/RenewalsList';
+import { ForecastCard } from '@/features/dashboard/components/ForecastCard';
 import { AddFab } from '@/features/dashboard/components/AddFab';
 
 type ScrollViewProps = ComponentProps<typeof ScrollView>;
@@ -83,6 +84,7 @@ export function DashboardScreen() {
         <HeroSpend />
         <RenewalsList />
         <CategoryBreakdown />
+        <ForecastCard />
         <QuickStats />
       </ScrollView>
       {/* Primary add affordance — floats above the tab bar. The empty state

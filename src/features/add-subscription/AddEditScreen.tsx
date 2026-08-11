@@ -132,6 +132,14 @@ export function AddEditScreen({
     setDraft((prev) => ({ ...prev, nextRenewal: raw }));
   }, []);
 
+  const setTrialEnds = useCallback((raw: string) => {
+    setDraft((prev) => ({ ...prev, trialEnds: raw }));
+  }, []);
+
+  const clearTrialEnds = useCallback(() => {
+    setDraft((prev) => ({ ...prev, trialEnds: undefined }));
+  }, []);
+
   const setCycle = useCallback((cycle: SubscriptionDraft["cycle"]) => {
     setDraft((prev) => ({ ...prev, cycle }));
   }, []);
@@ -281,6 +289,29 @@ export function AddEditScreen({
             </FormField>
 
             <FormField
+              field="trialEnds"
+              label="Trial ends (optional)"
+              errorMap={errorMap}
+              showError={shouldShow("trialEnds")}
+              helper="The last day of a free trial, if any"
+            >
+              <View style={styles.dateRow}>
+                <View style={styles.dateRowField}>
+                  <DateInput
+                    value={draft.trialEnds ?? ""}
+                    onChange={(iso) => {
+                      setTrialEnds(iso);
+                      markTouched("trialEnds");
+                    }}
+                  />
+                </View>
+                {draft.trialEnds ? (
+                  <Button onPress={clearTrialEnds} variant="ghost" size="sm">Clear</Button>
+                ) : null}
+              </View>
+            </FormField>
+
+            <FormField
               field="cycle"
               label="Billing cycle"
               errorMap={errorMap}
@@ -372,6 +403,14 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: spacing.lg,
+  },
+  dateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  dateRowField: {
+    flex: 1,
   },
   notesInput: {
     height: 84,

@@ -49,6 +49,13 @@ export interface Subscription {
   color?: string;
   /** Optional notes shown on the detail screen. */
   notes?: string;
+  /** Optional free-trial end date (ISO YYYY-MM-DD). */
+  trialEnds?: string;
+  /**
+   * Id of the scheduled renewal-reminder notification, when one exists.
+   * Internal bookkeeping — used to cancel/reschedule on edits.
+   */
+  notificationId?: string;
   /** Epoch ms when this subscription was created in the app. */
   createdAt: number;
   /** Epoch ms when last edited; equals createdAt for never-edited rows. */

@@ -14,10 +14,11 @@
  */
 
 import { StyleSheet, View } from 'react-native';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 
 import { Card, Text } from '@/design/components';
-import { useTheme } from '@/design/theme';
-import { radius, spacing } from '@/design/tokens';
+import { useColorMode, useTheme } from '@/design/theme';
+import { layout, radius, spacing } from '@/design/tokens';
 import { useActiveSubscriptions, useIsLoadingSubscriptions } from '@/store/useSubscriptionsStore';
 import { budgetProgress, renewalsThisMonth, totalMonthlySpend, totalYearlySpend } from '@/utils/billing';
 import { formatCurrency, formatCurrencyCompact } from '@/utils/format';
@@ -29,7 +30,8 @@ export function HeroSpend() {
   const isLoading = useIsLoadingSubscriptions();
   const currency = useCurrency();
   const budget = useBudget();
-  const { colors } = useTheme();
+  const scheme = useColorMode();
+  const { colors, shadow } = useTheme();
 
   // DURING render we derive the totals from the active subscriptions.
   // No state for monthly/yearly; skill `react-state-minimize`.
@@ -38,12 +40,8 @@ export function HeroSpend() {
   const monthCharges = renewalsThisMonth(subs);
   const progress = budgetProgress(monthly, budget);
 
-  return (
-    <Card
-      padding={spacing.xl}
-      elevation="high"
-      style={[styles.hero, { backgroundColor: colors.accentSoft }]}
-    >
+  const content = (
+    <>
       <View style={styles.labelRow}>
         <Text variant="caption" color="textSecondary">Monthly spend</Text>
         <Text variant="caption" color="textTertiary" weight="500">/ {subs.length} active</Text>
@@ -94,6 +92,35 @@ export function HeroSpend() {
           </Text>
         </View>
       ) : null}
+    </>
+  );
+
+  // iOS 26 Liquid Glass hero with a quiet accent-wash card as the fallback.
+  if (isLiquidGlassAvailable()) {
+    return (
+      <GlassView
+        glassEffectStyle="regular"
+        colorScheme={scheme}
+        style={[
+          styles.glass,
+          {
+            borderColor: colors.hairline,
+            boxShadow: shadow('lg'),
+          },
+        ]}
+      >
+        {content}
+      </GlassView>
+    );
+  }
+
+  return (
+    <Card
+      padding={spacing.xl}
+      elevation="high"
+      style={[styles.hero, { backgroundColor: colors.accentSoft }]}
+    >
+      {content}
     </Card>
   );
 }
@@ -101,6 +128,12 @@ export function HeroSpend() {
 const styles = StyleSheet.create({
   hero: {
     borderColor: 'transparent',
+  },
+  glass: {
+    borderWidth: 1,
+    borderCurve: 'continuous',
+    borderRadius: layout.cardRadius,
+    padding: spacing.xl,
   },
   labelRow: {
     flexDirection: 'row',

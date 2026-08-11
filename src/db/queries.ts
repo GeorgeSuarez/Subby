@@ -36,6 +36,8 @@ export function rowToSubscription(row: SubscriptionRow): Subscription {
     icon: row.icon,
     color: row.color ?? undefined,
     notes: row.notes ?? undefined,
+    trialEnds: row.trial_ends ?? undefined,
+    notificationId: row.notification_id ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     archived: row.archived === 1,
@@ -65,6 +67,8 @@ export function subscriptionToRow(sub: RowInput): Omit<SubscriptionRow, 'archive
     icon: sub.icon,
     color: sub.color ?? null,
     notes: sub.notes ?? null,
+    trial_ends: sub.trialEnds ?? null,
+    notification_id: sub.notificationId ?? null,
     created_at: sub.createdAt,
     updated_at: sub.updatedAt,
     archived: sub.archived ? 1 : 0,
@@ -75,6 +79,7 @@ export function subscriptionToRow(sub: RowInput): Omit<SubscriptionRow, 'archive
 const ALL_COLUMNS = `
   id, name, amount, currency, cycle,
   next_renewal AS next_renewal, category, icon, color, notes,
+  trial_ends, notification_id,
   created_at, updated_at, archived, seeded
 `;
 
@@ -144,8 +149,8 @@ export async function insertSubscription(
 
   await db.runAsync(
     `INSERT INTO subscriptions
-      (id, name, amount, currency, cycle, next_renewal, category, icon, color, notes, created_at, updated_at, archived, seeded)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      (id, name, amount, currency, cycle, next_renewal, category, icon, color, notes, trial_ends, notification_id, created_at, updated_at, archived, seeded)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     [
       row.id,
       row.name,
@@ -157,6 +162,8 @@ export async function insertSubscription(
       row.icon,
       row.color,
       row.notes,
+      row.trial_ends,
+      row.notification_id,
       row.created_at,
       row.updated_at,
       row.archived,
@@ -188,7 +195,7 @@ export async function updateSubscription(id: string, patch: SubscriptionPatch): 
   await db.runAsync(
     `UPDATE subscriptions SET
       name = ?, amount = ?, currency = ?, cycle = ?, next_renewal = ?,
-      category = ?, icon = ?, color = ?, notes = ?, updated_at = ?, archived = ?
+      category = ?, icon = ?, color = ?, notes = ?, trial_ends = ?, updated_at = ?, archived = ?
       WHERE id = ?;`,
     [
       row.name,
@@ -200,6 +207,7 @@ export async function updateSubscription(id: string, patch: SubscriptionPatch): 
       row.icon,
       row.color,
       row.notes,
+      row.trial_ends,
       row.updated_at,
       row.archived,
       id,
@@ -217,6 +225,18 @@ export async function setArchived(id: string, archived: boolean): Promise<Subscr
     [archived ? 1 : 0, Date.now(), id],
   );
   return getSubscriptionById(id);
+}
+
+/**
+ * Set (or clear) the scheduled renewal-reminder notification id on a row.
+ * Bookkeeping only — generic edits never touch it.
+ */
+export async function setNotificationId(id: string, notificationId: string | null): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync(
+    'UPDATE subscriptions SET notification_id = ? WHERE id = ?;',
+    [notificationId, id],
+  );
 }
 
 /** Permanently delete a subscription. Use sparingly — prefer archive. */

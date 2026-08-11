@@ -25,6 +25,8 @@ export interface SubscriptionRow {
   updated_at: number;
   archived: number; // 0/1
   seeded: number; // 0/1 — demo data rows are invisible to non-test accounts
+  trial_ends: string | null; // ISO date — free-trial end (optional)
+  notification_id: string | null; // scheduled renewal reminder id (optional)
 }
 
 export interface Migration {
@@ -90,6 +92,14 @@ export const MIGRATIONS: readonly Migration[] = [
       ALTER TABLE subscriptions ADD COLUMN seeded INTEGER NOT NULL DEFAULT 0;
       UPDATE subscriptions SET seeded = 1
         WHERE name IN ('Netflix', 'Spotify', 'iCloud+', 'GitHub', 'Figma', 'Disney+', 'New York Times');
+    `,
+  },
+  {
+    version: 4,
+    description: 'add trial tracking and renewal-reminder columns',
+    sql: `
+      ALTER TABLE subscriptions ADD COLUMN trial_ends TEXT;
+      ALTER TABLE subscriptions ADD COLUMN notification_id TEXT;
     `,
   },
 ] as const;

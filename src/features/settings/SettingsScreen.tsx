@@ -16,6 +16,7 @@ import { spacing } from '@/design/tokens';
 import { ThemeSection } from '@/features/settings/components/ThemeSection';
 import { CurrencySection } from '@/features/settings/components/CurrencySection';
 import { BudgetSection } from '@/features/settings/components/BudgetSection';
+import { RemindersSection } from '@/features/settings/components/RemindersSection';
 import { AccountSection } from '@/features/settings/components/AccountSection';
 import { DemoDataSection } from '@/features/settings/components/DemoDataSection';
 import { DangerZoneSection } from '@/features/settings/components/DangerZoneSection';
@@ -32,6 +33,7 @@ export function SettingsScreen() {
         <ThemeSection />
         <CurrencySection />
         <BudgetSection />
+        <RemindersSection />
         <AccountSection />
         <DemoDataSection />
         <DangerZoneSection />

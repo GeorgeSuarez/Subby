@@ -7,8 +7,10 @@ import {
   groupByCategory,
   largestMonthly,
   monthlyEquivalent,
+  monthlyForecast,
   nextRenewalAfter,
   parseDate,
+  reminderDateFor,
   renewalsThisMonth,
   renewalsWithin,
   renewalUrgencyTone,
@@ -16,6 +18,7 @@ import {
   totalMonthlySpend,
   totalYearlySpend,
   yearlyEquivalent,
+  yearlySavingsHint,
 } from '@/utils/billing';
 import type { Subscription } from '@/types/subscription';
 
@@ -309,5 +312,57 @@ describe('renewalUrgencyTone', () => {
   it('is calm beyond a week', () => {
     expect(renewalUrgencyTone(8)).toBe('calm');
     expect(renewalUrgencyTone(45)).toBe('calm');
+  });
+});
+
+describe('yearlySavingsHint', () => {
+  it('estimates a 15% discount for monthly subs', () => {
+    const hint = yearlySavingsHint({ amount: 10, cycle: 'monthly' });
+    expect(hint).not.toBeNull();
+    // 120/yr -> ~102/yr at 15% off -> ~18 saved
+    expect(hint?.estimatedYearlyPrice).toBeCloseTo(102);
+    expect(hint?.savingsPerYear).toBeCloseTo(18);
+  });
+
+  it('returns null for non-monthly cycles', () => {
+    expect(yearlySavingsHint({ amount: 120, cycle: 'yearly' })).toBeNull();
+    expect(yearlySavingsHint({ amount: 30, cycle: 'quarterly' })).toBeNull();
+  });
+});
+
+describe('monthlyForecast', () => {
+  const from = parseDate('2026-07-16');
+
+  it('buckets actual charges into the months their renewals land', () => {
+    const subs = [
+      sub({ id: 'a', amount: 10, nextRenewal: '2026-07-20' }), // every month
+      sub({ id: 'b', amount: 120, cycle: 'yearly', nextRenewal: '2026-08-01' }), // Aug + next Aug
+      sub({ id: 'c', amount: 999, nextRenewal: '2026-07-20', archived: true }),
+    ];
+    const series = monthlyForecast(subs, 14, from);
+    expect(series.length).toBe(14);
+    expect(series[0]).toEqual({ month: '2026-07', total: 10, count: 1 });
+    expect(series[1]).toEqual({ month: '2026-08', total: 130, count: 2 }); // 10 + 120
+    // 12 months later the yearly sub lands again.
+    expect(series[13]).toEqual({ month: '2027-08', total: 130, count: 2 });
+  });
+
+  it('emits a contiguous series with zeroes for quiet months', () => {
+    const series = monthlyForecast([sub({ id: 'a', amount: 5, nextRenewal: '2027-01-01' })], 3, from);
+    expect(series.map((m) => m.month)).toEqual(['2026-07', '2026-08', '2026-09']);
+    expect(series.every((m) => m.total === 0 && m.count === 0)).toBe(true);
+  });
+});
+
+describe('reminderDateFor', () => {
+  it('lands the day before the renewal at 09:00 UTC', () => {
+    const d = reminderDateFor('2026-08-01');
+    expect(toISODate(d)).toBe('2026-07-31');
+    expect(d.getUTCHours()).toBe(9);
+    expect(d.getUTCMinutes()).toBe(0);
+  });
+
+  it('supports a custom lead time', () => {
+    expect(toISODate(reminderDateFor('2026-08-01', 3))).toBe('2026-07-29');
   });
 });

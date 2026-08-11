@@ -47,6 +47,7 @@ export function parseISO(s: string | undefined): Date | null {
 
 export type FieldKey =
   | 'name' | 'amount' | 'currency' | 'cycle' | 'nextRenewal'
+  | 'trialEnds'
   | 'category' | 'icon' | 'color' | 'notes';
 
 export interface FieldError {
@@ -95,6 +96,16 @@ export function validateDraft(draft: Partial<SubscriptionDraft>): FieldError[] {
   // nextRenewal
   if (!parseISO(draft.nextRenewal)) {
     errors.push({ field: 'nextRenewal', message: 'Renewal date must be YYYY-MM-DD' });
+  }
+
+  // trialEnds (optional — only validate when set)
+  if (draft.trialEnds) {
+    const trialDate = parseISO(draft.trialEnds);
+    if (!trialDate) {
+      errors.push({ field: 'trialEnds', message: 'Trial end must be YYYY-MM-DD' });
+    } else if (trialDate.getTime() < todayUTC().getTime()) {
+      errors.push({ field: 'trialEnds', message: 'Trial end must be a future date' });
+    }
   }
 
   // category
@@ -152,6 +163,7 @@ export function defaultDraft(currency: CurrencyCode): SubscriptionDraft {
     icon: categoryMeta('other').icon,
     color: undefined,
     notes: undefined,
+    trialEnds: undefined,
   };
 }
 
@@ -170,6 +182,7 @@ export function draftFromSubscription(sub: Subscription): SubscriptionDraft {
     icon: sub.icon,
     color: sub.color,
     notes: sub.notes,
+    trialEnds: sub.trialEnds,
   };
 }
 
