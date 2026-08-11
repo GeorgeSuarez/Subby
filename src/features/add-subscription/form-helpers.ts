@@ -72,7 +72,7 @@ export function validateDraft(draft: Partial<SubscriptionDraft>): FieldError[] {
     errors.push({ field: 'name', message: 'Name must be 64 characters or fewer' });
   }
 
-  // amount
+  // amount (raw input string; Number('') = 0, so empty is caught below)
   const amount = Number(draft.amount);
   if (!Number.isFinite(amount) || amount <= 0) {
     errors.push({ field: 'amount', message: 'Amount must be greater than 0' });
@@ -144,7 +144,7 @@ export function defaultDraft(currency: CurrencyCode): SubscriptionDraft {
   const now = todayUTC();
   return {
     name: '',
-    amount: 0,
+    amount: '',
     currency,
     cycle: 'monthly',
     nextRenewal: toISODate(addMonths(now, 1)),
@@ -162,7 +162,7 @@ export function defaultDraft(currency: CurrencyCode): SubscriptionDraft {
 export function draftFromSubscription(sub: Subscription): SubscriptionDraft {
   return {
     name: sub.name,
-    amount: sub.amount,
+    amount: String(sub.amount),
     currency: sub.currency,
     cycle: sub.cycle,
     nextRenewal: sub.nextRenewal,

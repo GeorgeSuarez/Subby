@@ -42,14 +42,22 @@ export function rowToSubscription(row: SubscriptionRow): Subscription {
   };
 }
 
+/** Input shape for `subscriptionToRow` — amount may be raw form text or a number. */
+type RowInput = Omit<SubscriptionDraft, 'amount'> & {
+  amount: number | string;
+  id: string;
+  createdAt: number;
+  updatedAt: number;
+  archived: boolean;
+  seeded?: boolean;
+};
+
 /** Convert a domain Subscription to a row-shaped object for INSERT/UPDATE. */
-export function subscriptionToRow(
-  sub: SubscriptionDraft & { id: string; createdAt: number; updatedAt: number; archived: boolean; seeded?: boolean },
-): Omit<SubscriptionRow, 'archived'> & { archived: number } {
+export function subscriptionToRow(sub: RowInput): Omit<SubscriptionRow, 'archived'> & { archived: number } {
   return {
     id: sub.id,
     name: sub.name,
-    amount: sub.amount,
+    amount: Number(sub.amount),
     currency: sub.currency,
     cycle: sub.cycle,
     next_renewal: sub.nextRenewal,
@@ -171,6 +179,8 @@ export async function updateSubscription(id: string, patch: SubscriptionPatch): 
   const merged: Subscription = {
     ...existing,
     ...patch,
+    // Patch amount arrives as raw form text — coerce back to a number.
+    amount: Number(patch.amount ?? existing.amount),
     updatedAt: Date.now(),
   };
   const row = subscriptionToRow(merged);

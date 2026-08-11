@@ -121,8 +121,9 @@ export function AddEditScreen({
   const setAmount = useCallback((raw: string) => {
     setDraft((prev) => ({
       ...prev,
-      // Empty means "user cleared it"; we keep 0 so validateDraft catches it.
-      amount: raw.length === 0 ? 0 : Number(raw),
+      // Keep the raw string (ground truth) so a trailing decimal point
+      // survives typing; the number is derived at save time.
+      amount: raw,
     }));
   }, []);
 
@@ -254,7 +255,7 @@ export function AddEditScreen({
             >
               <AmountInput
                 currency={draft.currency}
-                value={draft.amount === 0 ? "" : String(draft.amount)}
+                value={draft.amount}
                 onChangeText={setAmount}
                 onEndEditing={() => markTouched("amount")}
               />
@@ -265,12 +266,14 @@ export function AddEditScreen({
               label="Next renewal"
               errorMap={errorMap}
               showError={shouldShow("nextRenewal")}
-              helper="YYYY-MM-DD"
+              helper="The next time this subscription charges"
             >
               <DateInput
                 value={draft.nextRenewal}
-                onChange={setDate}
-                onEndEditing={() => markTouched("nextRenewal")}
+                onChange={(iso) => {
+                  setDate(iso);
+                  markTouched("nextRenewal");
+                }}
               />
             </FormField>
 

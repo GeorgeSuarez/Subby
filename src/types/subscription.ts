@@ -56,8 +56,18 @@ export interface Subscription {
   archived: boolean;
 }
 
-/** Shape used by the add/edit form (no id/timestamps; server assigns those). */
-export type SubscriptionDraft = Omit<Subscription, 'id' | 'createdAt' | 'updatedAt' | 'archived'>;
+/**
+ * Shape used by the add/edit form (no id/timestamps; server assigns those).
+ * `amount` is the RAW user input (e.g. "9.99", "12", "9.") — converting it to
+ * a number mid-typing would strip the decimal point before it's entered. It is
+ * coerced to a number at the DB boundary (see `subscriptionToRow`).
+ */
+export type SubscriptionDraft = Omit<
+  Subscription,
+  'id' | 'createdAt' | 'updatedAt' | 'archived' | 'amount'
+> & {
+  amount: string;
+};
 
 /** Partial draft for edits — only fields the user is changing. */
 export type SubscriptionPatch = Partial<SubscriptionDraft>;

@@ -16,7 +16,7 @@ export function seedDrafts(today: Date = todayUTC()): SubscriptionDraft[] {
   return [
     {
       name: 'Netflix',
-      amount: 15.99,
+      amount: '15.99',
       currency: 'USD',
       cycle: 'monthly',
       nextRenewal: inDays(2),
@@ -27,7 +27,7 @@ export function seedDrafts(today: Date = todayUTC()): SubscriptionDraft[] {
     },
     {
       name: 'Spotify',
-      amount: 11.99,
+      amount: '11.99',
       currency: 'USD',
       cycle: 'monthly',
       nextRenewal: inDays(5),
@@ -37,7 +37,7 @@ export function seedDrafts(today: Date = todayUTC()): SubscriptionDraft[] {
     },
     {
       name: 'iCloud+',
-      amount: 2.99,
+      amount: '2.99',
       currency: 'USD',
       cycle: 'monthly',
       nextRenewal: inDays(12),
@@ -48,7 +48,7 @@ export function seedDrafts(today: Date = todayUTC()): SubscriptionDraft[] {
     },
     {
       name: 'GitHub',
-      amount: 4,
+      amount: '4',
       currency: 'USD',
       cycle: 'monthly',
       nextRenewal: inDays(8),
@@ -58,7 +58,7 @@ export function seedDrafts(today: Date = todayUTC()): SubscriptionDraft[] {
     },
     {
       name: 'Figma',
-      amount: 12,
+      amount: '12',
       currency: 'USD',
       cycle: 'monthly',
       nextRenewal: inDays(18),
@@ -68,7 +68,7 @@ export function seedDrafts(today: Date = todayUTC()): SubscriptionDraft[] {
     },
     {
       name: 'Disney+',
-      amount: 109.99,
+      amount: '109.99',
       currency: 'USD',
       cycle: 'yearly',
       nextRenewal: inMonths(3),
@@ -78,7 +78,7 @@ export function seedDrafts(today: Date = todayUTC()): SubscriptionDraft[] {
     },
     {
       name: 'New York Times',
-      amount: 25,
+      amount: '25',
       currency: 'USD',
       cycle: 'monthly',
       nextRenewal: inDays(1),

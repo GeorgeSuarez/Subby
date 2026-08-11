@@ -39,7 +39,7 @@ describe('defaultDraft', () => {
     expect(d.cycle).toBe('monthly');
     expect(d.category).toBe('other');
     expect(d.icon).toBe('cube-outline'); // matches the 'other' category default
-    expect(d.amount).toBe(0);
+    expect(d.amount).toBe(''); // raw input starts empty
     expect(d.name).toBe('');
     // nextRenewal should be ~1 month from today and parse cleanly.
     expect(parseISO(d.nextRenewal)).toBeInstanceOf(Date);
@@ -66,7 +66,7 @@ describe('draftFromSubscription', () => {
     expect(draft).not.toHaveProperty('archived');
     // Sensible copies.
     expect(draft.name).toBe('Spotify');
-    expect(draft.amount).toBe(9.99);
+    expect(draft.amount).toBe('9.99'); // raw string, decimal preserved
     expect(draft.nextRenewal).toBe('2026-08-01');
   });
 
@@ -83,7 +83,7 @@ describe('draftFromSubscription', () => {
 
 describe('validateDraft', () => {
   const valid: SubscriptionDraft = {
-    name: 'Netflix', amount: 9.99, currency: 'USD', cycle: 'monthly',
+    name: 'Netflix', amount: '9.99', currency: 'USD', cycle: 'monthly',
     nextRenewal: '2026-08-01', category: 'streaming', icon: 'film-outline',
   };
 
@@ -104,14 +104,20 @@ describe('validateDraft', () => {
   });
 
   it('rejects zero, negative, non-finite amount', () => {
-    expect(validateDraft({ ...valid, amount: 0 })[0]?.field).toBe('amount');
-    expect(validateDraft({ ...valid, amount: -5 })[0]?.field).toBe('amount');
-    expect(validateDraft({ ...valid, amount: NaN })[0]?.field).toBe('amount');
+    expect(validateDraft({ ...valid, amount: '0' })[0]?.field).toBe('amount');
+    expect(validateDraft({ ...valid, amount: '-5' })[0]?.field).toBe('amount');
+    expect(validateDraft({ ...valid, amount: 'abc' })[0]?.field).toBe('amount');
+  });
+
+  it('accepts decimal strings and a trailing decimal point', () => {
+    expect(validateDraft({ ...valid, amount: '9.99' })).toEqual([]);
+    expect(validateDraft({ ...valid, amount: '9.' })).toEqual([]);
+    expect(validateDraft({ ...valid, amount: '12' })).toEqual([]);
   });
 
   it('rejects absurdly large amounts', () => {
     expect(
-      validateDraft({ ...valid, amount: 2_000_000 })[0]?.field,
+      validateDraft({ ...valid, amount: '2000000' })[0]?.field,
     ).toBe('amount');
   });
 
