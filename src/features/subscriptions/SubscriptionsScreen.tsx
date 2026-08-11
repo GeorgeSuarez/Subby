@@ -140,6 +140,7 @@ export function SubscriptionsScreen() {
       <FlashList
         data={visible}
         keyExtractor={(item) => item.id}
+        contentInsetAdjustmentBehavior="automatic"
         ListHeaderComponent={header}
         ListFooterComponent={footer}
         renderItem={({ item }) => (
