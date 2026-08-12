@@ -109,5 +109,4 @@ export const persistentStorage: StateStorage = {
 /** Storage keys — distinct per store; namespaced with the app slug. */
 export const storageKey = {
   themePref: 'subby.themePref',
-  auth: 'subby.auth',
 } as const;

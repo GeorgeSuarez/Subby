@@ -20,6 +20,7 @@
 
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -32,7 +33,9 @@ import { useRouter } from 'expo-router';
 
 import { Button, Text } from '@/design/components';
 import { Surface } from '@/design/components/Surface';
+import { useTheme } from '@/design/theme';
 import { layout, spacing } from '@/design/tokens';
+import { isSupabaseConfigured } from '@/lib/supabase';
 import { TextField } from '@/features/add-subscription/components/TextField';
 import { BrandLockup } from '@/features/auth/components/BrandLockup';
 import { PasswordField } from '@/features/auth/components/PasswordField';
@@ -48,7 +51,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
 import { loadSeedData } from '@/db/seed';
 import { isTestAccountEmail } from '@/utils/constants';
-import { notifySuccess, notifyWarning } from '@/utils/haptics';
+import { notifyError, notifySuccess, notifyWarning } from '@/utils/haptics';
 
 export interface AuthScreenProps {
   mode: AuthMode;
@@ -58,6 +61,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   const router = useRouter();
   const signIn = useAuthStore((s) => s.signIn);
   const signUp = useAuthStore((s) => s.signUp);
+  const isLoadingSession = useAuthStore((s) => s.isLoading);
 
   const copy = copyByMode[mode];
 
@@ -66,8 +70,10 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   const [touched, setTouched] = useState<ReadonlySet<AuthFieldKey>>(new Set());
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const passwordRef = useRef<TextInput>(null);
+  const { colors } = useTheme();
 
   // Errors are derived from the draft every render — never stored.
   const errors = useMemo(() => validateDraft(draft, mode), [draft, mode]);
@@ -83,6 +89,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
 
   const update = useCallback((key: AuthFieldKey, value: string) => {
     setDraft((prev) => ({ ...prev, [key]: value }));
+    setSubmitError(null);
   }, []);
 
   const markTouched = useCallback((key: AuthFieldKey) => {
@@ -97,12 +104,19 @@ export function AuthScreen({ mode }: AuthScreenProps) {
       return;
     }
     setSubmitting(true);
+    setSubmitError(null);
     try {
       const email = draft.email.trim();
       if (mode === 'signIn') {
-        await signIn(email);
+        await signIn(email, draft.password);
       } else {
-        await signUp(email);
+        await signUp(email, draft.password);
+        // Email confirmation is enabled — no session yet. Send the user to
+        // the verify-email screen instead of loading them into the app.
+        if (!useAuthStore.getState().isSignedIn) {
+          router.replace('/auth/verify-email');
+          return;
+        }
       }
       // Rule: demo (seeded) data loads automatically, but only for the test
       // account. `loadSeedData` re-checks the email and no-ops otherwise.
@@ -112,14 +126,29 @@ export function AuthScreen({ mode }: AuthScreenProps) {
       }
       void notifySuccess();
       router.replace('/');
+    } catch (e) {
+      setSubmitError(e instanceof Error ? e.message : 'Something went wrong. Try again.');
+      void notifyError();
     } finally {
       setSubmitting(false);
     }
-  }, [submitting, hasErrors, mode, draft.email, signIn, signUp, router]);
+  }, [submitting, hasErrors, mode, draft.email, draft.password, signIn, signUp, router]);
 
   const switchMode = useCallback(() => {
     router.push(mode === 'signIn' ? '/auth/sign-up' : '/auth/sign-in');
   }, [mode, router]);
+
+  // The initial session restore happens behind the splash screen; guard the
+  // brief window before it settles so the form never flashes.
+  if (isLoadingSession) {
+    return (
+      <Surface background="surface" style={styles.root}>
+        <View style={styles.loading}>
+          <ActivityIndicator color={colors.accent} />
+        </View>
+      </Surface>
+    );
+  }
 
   return (
     <Surface background="surface" style={styles.root}>
@@ -187,6 +216,16 @@ export function AuthScreen({ mode }: AuthScreenProps) {
             >
               {copy.cta}
             </Button>
+
+            {submitError ? (
+              <Text variant="caption" color="negative" align="center">{submitError}</Text>
+            ) : null}
+
+            {!isSupabaseConfigured ? (
+              <Text variant="caption" color="textTertiary" align="center">
+                Supabase is not configured — add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to .env
+              </Text>
+            ) : null}
           </View>
 
           <Pressable
@@ -207,6 +246,11 @@ export function AuthScreen({ mode }: AuthScreenProps) {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+  },
+  loading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   content: {
     flexGrow: 1,

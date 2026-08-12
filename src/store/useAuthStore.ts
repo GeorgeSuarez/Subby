@@ -1,70 +1,157 @@
 /**
- * Auth store — mock authentication for the sign-in / sign-up flow.
+ * Auth store — Supabase-backed session state.
  *
- * This is a UI mock: there is no backend. `signIn` / `signUp` simulate network
- * latency, then flip `isSignedIn` and remember the email entered so Settings
- * can show "Signed in as …". `signOut` clears the session and the root layout's
- * `Stack.Protected` guard flips back to the auth stack.
+ * The session is owned by Supabase (persisted in the device Keychain via
+ * `expo-secure-store`). This store mirrors session facts for the UI: the root
+ * layout's `Stack.Protected` gate, Settings' account row, and the auth
+ * screens all derive from `isSignedIn` / `email`.
  *
- * The session (signed-in flag + email) IS persisted via `persistentStorage`,
- * so a restart keeps the user signed in — matching how a real app would
- * restore a session from a stored token. When a real backend lands, replace
- * this mock with `expo-secure-store` for the auth token and derive
- * `isSignedIn` from its presence; never store passwords or tokens in plain KV.
+ * `initialize()` restores the session on boot and subscribes to
+ * `onAuthStateChange` so sign-in/out/session-refresh events flow into the
+ * store automatically. Until real credentials exist in `.env`, the actions
+ * throw a clear "not configured" error the form surfaces inline.
  *
  * Skill rules:
- *  - `react-state-minimize`: the store holds only session facts; everything
- *    else (routes, UI states) is derived from `isSignedIn`.
+ *  - `react-state-minimize`: only session facts live here; everything else is
+ *    derived.
  *  - `react-state-dispatcher`: mutations go through store actions only.
- *  - `react-state-fallback`: rehydration is async; until it resolves the
- *    default (signed out) state applies, so the auth gate never flashes
- *    signed-in content on a cold start.
+ *  - `react-state-fallback`: `isLoading` starts true and clears when the
+ *    initial session restore settles, so the gate never flashes signed-in
+ *    content on a cold start.
  */
 
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import type { Session } from '@supabase/supabase-js';
 
-import { persistentStorage, storageKey } from '@/design/storage';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 
-/** Simulated network latency so the CTA's disabled state is visible. */
-const MOCK_LATENCY_MS = 600;
+export const NOT_CONFIGURED_MESSAGE =
+  'Supabase is not configured — add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to .env';
 
 interface AuthStore {
   isSignedIn: boolean;
-  /** Email entered at sign-in/sign-up, shown in Settings. */
+  /** Email of the signed-in user, shown in Settings. */
   email: string | null;
-  signIn: (email: string) => Promise<void>;
-  signUp: (email: string) => Promise<void>;
-  signOut: () => void;
+  /** True until the initial session restore settles. */
+  isLoading: boolean;
+  /** Last auth failure message (cleared on the next attempt). */
+  error: string | null;
+  /** Email awaiting email confirmation — drives the verify-email screen. */
+  verificationEmail: string | null;
+  /** Internal: initialize() ran (idempotency guard). */
+  hasInitialized: boolean;
+  /** Restore the persisted session + subscribe to auth changes. Idempotent. */
+  initialize: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  /** Re-send the confirmation link to `verificationEmail`. */
+  resendVerificationEmail: () => Promise<void>;
+  /** True once the email is confirmed (a session exists); mirrors it. */
+  checkVerification: () => Promise<boolean>;
+  signOut: () => Promise<void>;
 }
 
-function mockLatency(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, MOCK_LATENCY_MS));
+let unsubscribeAuth: (() => void) | null = null;
+
+/** Mirror a session into the store. */
+function applySession(session: Session | null): void {
+  useAuthStore.setState({
+    isSignedIn: Boolean(session),
+    email: session?.user.email ?? null,
+    isLoading: false,
+    error: null,
+    verificationEmail: null,
+  });
 }
 
-export const useAuthStore = create<AuthStore>()(
-  persist(
-    (set) => ({
-      isSignedIn: false,
-      email: null,
-      signIn: async (email) => {
-        await mockLatency();
-        set({ isSignedIn: true, email: email.trim() });
-      },
-      signUp: async (email) => {
-        await mockLatency();
-        set({ isSignedIn: true, email: email.trim() });
-      },
-      signOut: () => set({ isSignedIn: false, email: null }),
-    }),
-    {
-      name: storageKey.auth,
-      storage: createJSONStorage(() => persistentStorage),
-      // Persist only the session facts — never the actions.
-      partialize: (s): { isSignedIn: boolean; email: string | null } => ({
-        isSignedIn: s.isSignedIn,
-        email: s.email,
-      }),
-    },
-  ),
-);
+export const useAuthStore = create<AuthStore>()((set, get) => ({
+  isSignedIn: false,
+  email: null,
+  isLoading: true,
+  error: null,
+  verificationEmail: null,
+  hasInitialized: false,
+
+  initialize: async () => {
+    if (get().hasInitialized) return;
+
+    if (!isSupabaseConfigured) {
+      set({ isLoading: false, hasInitialized: true });
+      return;
+    }
+
+    const { data } = await supabase.auth.getSession();
+    applySession(data.session);
+
+    unsubscribeAuth?.();
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+      applySession(session);
+    });
+    unsubscribeAuth = subscription.subscription.unsubscribe;
+
+    set({ hasInitialized: true });
+  },
+
+  signIn: async (email, password) => {
+    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    set({ isLoading: true, error: null });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    if (error) {
+      set({ isLoading: false, error: error.message });
+      throw new Error(error.message);
+    }
+    applySession(data.session);
+  },
+
+  signUp: async (email, password) => {
+    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    set({ isLoading: true, error: null });
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+    });
+    if (error) {
+      set({ isLoading: false, error: error.message });
+      throw new Error(error.message);
+    }
+    if (data.session) {
+      applySession(data.session);
+    } else {
+      // Email confirmation is enabled — no session until the link is clicked.
+      // Hand the sign-up over to the verify-email screen.
+      set({
+        isLoading: false,
+        error: null,
+        verificationEmail: email.trim(),
+      });
+    }
+  },
+
+  resendVerificationEmail: async () => {
+    const email = get().verificationEmail;
+    if (!email) throw new Error('No email awaiting verification.');
+    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    if (error) throw new Error(error.message);
+  },
+
+  checkVerification: async () => {
+    if (!isSupabaseConfigured) return false;
+    const { data } = await supabase.auth.getSession();
+    if (data.session) {
+      applySession(data.session);
+      return true;
+    }
+    return false;
+  },
+
+  signOut: async () => {
+    if (isSupabaseConfigured) {
+      await supabase.auth.signOut();
+    }
+    applySession(null);
+  },
+}));

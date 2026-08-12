@@ -1,35 +1,8 @@
 import { defaultDraft, validateDraft } from '@/features/auth/auth-helpers';
-import { TEST_ACCOUNT_EMAIL, TEST_ACCOUNT_PASSWORD } from '@/utils/constants';
 
 describe('validateDraft', () => {
   it('accepts a valid sign-in draft', () => {
     expect(validateDraft({ email: 'ada@lovelace.dev', password: 'any', }, 'signIn')).toEqual({});
-  });
-
-  it('accepts the test account with its fixed password', () => {
-    expect(
-      validateDraft({ email: TEST_ACCOUNT_EMAIL, password: TEST_ACCOUNT_PASSWORD }, 'signIn'),
-    ).toEqual({});
-  });
-
-  it('rejects the test account with a wrong password', () => {
-    const errors = validateDraft({ email: TEST_ACCOUNT_EMAIL, password: 'wrong' }, 'signIn');
-    expect(errors.password).toBe('Incorrect password for the test account.');
-  });
-
-  it('applies the fixed password rule on sign-up too', () => {
-    const errors = validateDraft({ email: TEST_ACCOUNT_EMAIL, password: 'wrong' }, 'signUp');
-    expect(errors.password).toBe('Incorrect password for the test account.');
-
-    expect(
-      validateDraft({ email: TEST_ACCOUNT_EMAIL, password: TEST_ACCOUNT_PASSWORD }, 'signUp'),
-    ).toEqual({});
-  });
-
-  it('is case-insensitive for the test email check', () => {
-    expect(
-      validateDraft({ email: 'Test@Subby.App', password: TEST_ACCOUNT_PASSWORD }, 'signIn'),
-    ).toEqual({});
   });
 
   it('accepts a valid sign-up draft', () => {

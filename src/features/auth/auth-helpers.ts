@@ -8,8 +8,6 @@
  *    that say what's wrong, no filler.
  */
 
-import { isTestAccountEmail, TEST_ACCOUNT_PASSWORD } from '@/utils/constants';
-
 export type AuthMode = 'signIn' | 'signUp';
 
 export interface AuthDraft {
@@ -55,9 +53,8 @@ export function defaultDraft(): AuthDraft {
 
 /**
  * Validate a draft for the given mode. Returns the FIRST error per field.
- * The test account must use its fixed password (`TEST_ACCOUNT_PASSWORD`) in
- * BOTH modes; every other account follows the normal rules (sign-up enforces
- * a password minimum, sign-in only requires it non-empty).
+ * Credentials are owned by Supabase; local validation only enforces format
+ * (sign-up enforces a password minimum, sign-in requires it non-empty).
  */
 export function validateDraft(draft: AuthDraft, mode: AuthMode): AuthErrors {
   const errors: AuthErrors = {};
@@ -69,11 +66,7 @@ export function validateDraft(draft: AuthDraft, mode: AuthMode): AuthErrors {
     errors.email = 'Enter a valid email address.';
   }
 
-  if (isTestAccountEmail(email)) {
-    if (draft.password !== TEST_ACCOUNT_PASSWORD) {
-      errors.password = 'Incorrect password for the test account.';
-    }
-  } else if (!draft.password) {
+  if (!draft.password) {
     errors.password = 'Enter your password.';
   } else if (mode === 'signUp' && draft.password.length < 8) {
     errors.password = 'Use at least 8 characters.';

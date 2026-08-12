@@ -44,19 +44,21 @@ export default function RootLayout() {
   const colorMode = useColorMode();
   const hydrate = useSubscriptionsStore((s) => s.hydrate);
   const resetCache = useSubscriptionsStore((s) => s.resetCache);
+  const initializeAuth = useAuthStore((s) => s.initialize);
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
   // Account identity drives seeded-data visibility; re-hydrate when it
   // changes (cold-start auth rehydration included).
   const email = useAuthStore((s) => s.email);
 
   // Drop the previous account's cache immediately, then load this account's
-  // view. Runs on mount and whenever the signed-in account changes.
+  // view and restore the auth session. Runs on mount and whenever the
+  // signed-in account changes; the splash stays until both settle.
   useEffect(() => {
     resetCache();
     let cancelled = false;
     (async () => {
       try {
-        await hydrate();
+        await Promise.all([hydrate(), initializeAuth()]);
       } finally {
         if (!cancelled) {
           SplashScreen.hideAsync();
@@ -66,7 +68,7 @@ export default function RootLayout() {
     return () => {
       cancelled = true;
     };
-  }, [resetCache, hydrate, isSignedIn, email]);
+  }, [resetCache, hydrate, initializeAuth, isSignedIn, email]);
 
   const isDark = colorMode === 'dark';
 
