@@ -1,19 +1,18 @@
 /**
- * Typed SQLite query layer.
+ * Typed Supabase query layer for subscriptions.
  *
  * Every function takes (and returns) the canonical {@link Subscription} domain
- * type. SQL rows (snake_case, archived as 0/1) are converted to/from the
- * domain shape inside this module so the rest of the app never sees SQLite
- * specifics.
+ * type. Supabase rows (snake_case, boolean flags) are converted to/from the
+ * domain shape inside this module so the rest of the app never sees
+ * PostgREST specifics.
  *
- * All functions are async and re-use the singleton from `db/client.ts`.
+ * Ownership: the `user_id` column defaults to `auth.uid()` and RLS scopes
+ * every row to the signed-in user, so queries never filter by user id.
+ * Renewal-reminder notification ids are device-local (`notification-sidecar`)
+ * and merged onto reads here.
  */
 
-import type { SQLiteDatabase } from 'expo-sqlite';
-
-import { getDatabase } from '@/db/client';
-import { subsWhereClause } from '@/db/query-builder';
-import type { SubscriptionRow } from '@/db/schema';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import type {
   CategorySlug,
   CurrencyCode,
@@ -22,13 +21,40 @@ import type {
   SubscriptionDraft,
   SubscriptionPatch,
 } from '@/types/subscription';
+import {
+  clearAllNotificationIds,
+  deleteNotificationId,
+  getAllNotificationIds,
+  setNotificationId as sidecarSetNotificationId,
+} from '@/db/notification-sidecar';
 
-/** Validate + coerce a SQLite row into a domain Subscription. Throws on bad data. */
-export function rowToSubscription(row: SubscriptionRow): Subscription {
+/** PostgREST row shape for the `subscriptions` table (RLS-scoped to the user). */
+interface SubscriptionRowRemote {
+  id: string;
+  user_id: string;
+  name: string;
+  amount: string | number;
+  currency: string;
+  cycle: string;
+  next_renewal: string;
+  category: string;
+  icon: string;
+  color: string | null;
+  notes: string | null;
+  trial_ends: string | null;
+  created_at: number | string;
+  updated_at: number | string;
+  archived: boolean;
+  seeded: boolean;
+}
+
+/** Coerce a PostgREST row into a domain Subscription. Numeric values arrive as
+ * strings (numeric/bigint JSON) — coerced with Number(). */
+export function rowToSubscription(row: SubscriptionRowRemote): Subscription {
   return {
     id: row.id,
     name: row.name,
-    amount: row.amount,
+    amount: Number(row.amount),
     currency: row.currency as CurrencyCode,
     cycle: row.cycle as Cycle,
     nextRenewal: row.next_renewal,
@@ -37,10 +63,9 @@ export function rowToSubscription(row: SubscriptionRow): Subscription {
     color: row.color ?? undefined,
     notes: row.notes ?? undefined,
     trialEnds: row.trial_ends ?? undefined,
-    notificationId: row.notification_id ?? undefined,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    archived: row.archived === 1,
+    createdAt: Number(row.created_at),
+    updatedAt: Number(row.updated_at),
+    archived: row.archived,
   };
 }
 
@@ -54,8 +79,8 @@ type RowInput = Omit<SubscriptionDraft, 'amount'> & {
   seeded?: boolean;
 };
 
-/** Convert a domain Subscription to a row-shaped object for INSERT/UPDATE. */
-export function subscriptionToRow(sub: RowInput): Omit<SubscriptionRow, 'archived'> & { archived: number } {
+/** Convert a domain Subscription to a PostgREST insert/update payload. */
+export function subscriptionToRow(sub: RowInput): Omit<SubscriptionRowRemote, 'user_id'> {
   return {
     id: sub.id,
     name: sub.name,
@@ -68,118 +93,96 @@ export function subscriptionToRow(sub: RowInput): Omit<SubscriptionRow, 'archive
     color: sub.color ?? null,
     notes: sub.notes ?? null,
     trial_ends: sub.trialEnds ?? null,
-    notification_id: sub.notificationId ?? null,
     created_at: sub.createdAt,
     updated_at: sub.updatedAt,
-    archived: sub.archived ? 1 : 0,
-    seeded: sub.seeded ? 1 : 0,
+    archived: sub.archived,
+    seeded: sub.seeded ?? false,
   };
 }
 
-const ALL_COLUMNS = `
-  id, name, amount, currency, cycle,
-  next_renewal AS next_renewal, category, icon, color, notes,
-  trial_ends, notification_id,
-  created_at, updated_at, archived, seeded
-`;
+/** A `select *` query on the subscriptions table (RLS-scoped to the user). */
+function subscriptionsQuery() {
+  return supabase.from('subscriptions').select('*');
+}
 
-async function allSubs(
-  db: SQLiteDatabase,
-  includeSeeded: boolean,
-  where = '',
-): Promise<Subscription[]> {
-  // `subsWhereClause` emits a full 'WHERE …' fragment ('' when unneeded) —
-  // never a bare 'AND', which would be invalid SQL.
-  const rows = await db.getAllAsync<SubscriptionRow>(
-    `SELECT ${ALL_COLUMNS} FROM subscriptions${subsWhereClause(includeSeeded, where)};`,
-  );
-  return rows.map(rowToSubscription);
+/** Merge device-local notification ids onto remote rows. */
+async function withNotificationIds(subs: Subscription[]): Promise<Subscription[]> {
+  if (subs.length === 0) return subs;
+  const map = await getAllNotificationIds();
+  return subs.map((s) => ({ ...s, notificationId: map[s.id] ?? undefined }));
+}
+
+function isMissingRowError(error: { code?: string } | null): boolean {
+  return error?.code === 'PGRST116';
 }
 
 // --- Read -------------------------------------------------------------------
 
 /**
  * Get every subscription the current account may see.
- * Demo (seeded) rows are only visible to the test account — `includeSeeded`
+ * Demo (seeded) rows are only loaded for the test account — `includeSeeded`
  * must be `true` for it and `false` for everyone else (the default).
  */
 export async function getAllSubscriptions(includeSeeded = false): Promise<Subscription[]> {
-  const db = await getDatabase();
-  return allSubs(db, includeSeeded);
+  if (!isSupabaseConfigured) return [];
+  let query = subscriptionsQuery();
+  if (!includeSeeded) query = query.eq('seeded', false);
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return withNotificationIds((data ?? []).map(rowToSubscription));
 }
 
 /** Get only active (non-archived) subscriptions. Same seeded-visibility rule. */
 export async function getActiveSubscriptions(includeSeeded = false): Promise<Subscription[]> {
-  const db = await getDatabase();
-  return allSubs(db, includeSeeded, ' WHERE archived = 0');
+  if (!isSupabaseConfigured) return [];
+  let query = subscriptionsQuery();
+  if (!includeSeeded) query = query.eq('seeded', false);
+  query = query.eq('archived', false);
+  const { data, error } = await query;
+  if (error) throw new Error(error.message);
+  return withNotificationIds((data ?? []).map(rowToSubscription));
 }
 
 /** Look up a single subscription by id. Returns null if not found. */
 export async function getSubscriptionById(id: string): Promise<Subscription | null> {
-  const db = await getDatabase();
-  const row = await db.getFirstAsync<SubscriptionRow>(
-    `SELECT ${ALL_COLUMNS} FROM subscriptions WHERE id = ?;`,
-    id,
-  );
-  return row ? rowToSubscription(row) : null;
+  if (!isSupabaseConfigured) return null;
+  const { data, error } = await subscriptionsQuery().eq('id', id).maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  const sub = rowToSubscription(data);
+  const [merged] = await withNotificationIds([sub]);
+  return merged ?? null;
 }
 
 // --- Write ------------------------------------------------------------------
 
 /**
  * Insert a new subscription. Caller supplies all fields except id/timestamps.
- * Pass `{ seeded: true }` for demo-data rows (invisible to non-test accounts).
+ * Pass `{ seeded: true }` for demo-data rows (test account only).
  * The function generates the rest and returns the persisted Subscription.
  */
 export async function insertSubscription(
   draft: SubscriptionDraft,
   options: { seeded?: boolean } = {},
 ): Promise<Subscription> {
-  const db = await getDatabase();
+  if (!isSupabaseConfigured) throw new Error('Supabase is not configured');
   const now = Date.now();
-  const id = generateId();
   const row = subscriptionToRow({
     ...draft,
-    id,
+    id: generateId(),
     createdAt: now,
     updatedAt: now,
     archived: false,
     seeded: options.seeded ?? false,
   });
-
-  await db.runAsync(
-    `INSERT INTO subscriptions
-      (id, name, amount, currency, cycle, next_renewal, category, icon, color, notes, trial_ends, notification_id, created_at, updated_at, archived, seeded)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-    [
-      row.id,
-      row.name,
-      row.amount,
-      row.currency,
-      row.cycle,
-      row.next_renewal,
-      row.category,
-      row.icon,
-      row.color,
-      row.notes,
-      row.trial_ends,
-      row.notification_id,
-      row.created_at,
-      row.updated_at,
-      row.archived,
-      row.seeded,
-    ],
-  );
-
-  // Read back to guarantee the persisted row matches (catches column-shape drift early).
-  const stored = await getSubscriptionById(id);
-  if (!stored) throw new Error(`insertSubscription: row ${id} not found after insert`);
-  return stored;
+  const { data, error } = await supabase.from('subscriptions').insert(row).select('*').single();
+  if (error) throw new Error(error.message);
+  return rowToSubscription(data);
 }
 
 /** Update fields on an existing subscription. Returns the new row or null. */
 export async function updateSubscription(id: string, patch: SubscriptionPatch): Promise<Subscription | null> {
-  const db = await getDatabase();
+  if (!isSupabaseConfigured) return null;
   const existing = await getSubscriptionById(id);
   if (!existing) return null;
 
@@ -192,75 +195,75 @@ export async function updateSubscription(id: string, patch: SubscriptionPatch): 
   };
   const row = subscriptionToRow(merged);
 
-  await db.runAsync(
-    `UPDATE subscriptions SET
-      name = ?, amount = ?, currency = ?, cycle = ?, next_renewal = ?,
-      category = ?, icon = ?, color = ?, notes = ?, trial_ends = ?, updated_at = ?, archived = ?
-      WHERE id = ?;`,
-    [
-      row.name,
-      row.amount,
-      row.currency,
-      row.cycle,
-      row.next_renewal,
-      row.category,
-      row.icon,
-      row.color,
-      row.notes,
-      row.trial_ends,
-      row.updated_at,
-      row.archived,
-      id,
-    ],
-  );
-
-  return getSubscriptionById(id);
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .update(row)
+    .eq('id', id)
+    .select('*')
+    .maybeSingle();
+  if (error && !isMissingRowError(error)) throw new Error(error.message);
+  if (!data) return null;
+  return rowToSubscription(data);
 }
 
 /** Set the archived flag on a subscription (soft delete). */
 export async function setArchived(id: string, archived: boolean): Promise<Subscription | null> {
-  const db = await getDatabase();
-  await db.runAsync(
-    'UPDATE subscriptions SET archived = ?, updated_at = ? WHERE id = ?;',
-    [archived ? 1 : 0, Date.now(), id],
-  );
-  return getSubscriptionById(id);
+  if (!isSupabaseConfigured) return null;
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .update({ archived, updated_at: Date.now() })
+    .eq('id', id)
+    .select('*')
+    .maybeSingle();
+  if (error && !isMissingRowError(error)) throw new Error(error.message);
+  if (!data) return null;
+  const sub = rowToSubscription(data);
+  const [merged] = await withNotificationIds([sub]);
+  return merged ?? null;
 }
 
 /**
- * Set (or clear) the scheduled renewal-reminder notification id on a row.
- * Bookkeeping only — generic edits never touch it.
+ * Set (or clear) the scheduled renewal-reminder notification id for a
+ * subscription. Device-local sidecar — never sent to Supabase.
  */
 export async function setNotificationId(id: string, notificationId: string | null): Promise<void> {
-  const db = await getDatabase();
-  await db.runAsync(
-    'UPDATE subscriptions SET notification_id = ? WHERE id = ?;',
-    [notificationId, id],
-  );
+  if (notificationId) {
+    await sidecarSetNotificationId(id, notificationId);
+  } else {
+    await deleteNotificationId(id);
+  }
 }
 
 /** Permanently delete a subscription. Use sparingly — prefer archive. */
 export async function deleteSubscription(id: string): Promise<void> {
-  const db = await getDatabase();
-  await db.runAsync('DELETE FROM subscriptions WHERE id = ?;', id);
+  if (!isSupabaseConfigured) return;
+  const { error } = await supabase.from('subscriptions').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+  await deleteNotificationId(id);
 }
 
-/** Wipe the entire subscriptions table. Used by Settings > Danger Zone. */
+/** Wipe every subscription the user owns (Settings > Danger Zone). */
 export async function deleteAllSubscriptions(): Promise<void> {
-  const db = await getDatabase();
-  await db.runAsync('DELETE FROM subscriptions;');
+  if (!isSupabaseConfigured) return;
+  // PostgREST refuses a bare DELETE — the match-all filter is a no-op
+  // (created_at >= 0) and RLS still scopes the delete to the user's rows.
+  const { error } = await supabase.from('subscriptions').delete().gte('created_at', 0);
+  if (error) throw new Error(error.message);
+  await clearAllNotificationIds();
 }
 
 // --- Helpers ----------------------------------------------------------------
 
-/** Generate a sortable unique id. Uses crypto.randomUUID when available. */
+/** Generate a UUID v4. Uses crypto.randomUUID when available. */
 function generateId(): string {
-  // Available in React Native's Hermes runtime as of RN 0.71+.
+  // Hermes has no WebCrypto, so this is usually undefined on device — the
+  // fallback below must produce a valid UUID (the DB column is `uuid`).
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  // Hex fallback with timestamp prefix for sortability.
-  const ts = Date.now().toString(16);
-  const rand = Math.random().toString(16).slice(2, 10);
-  return `${ts}-${rand}`;
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }

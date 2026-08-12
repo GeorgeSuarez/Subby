@@ -1,18 +1,17 @@
 /**
- * UI store — user preferences persisted across launches.
+ * UI store — user preferences across launches.
  *
- * Stored values:
- *  - `currency`     — default currency for new subscriptions (Settings).
- *  - `sort`         — current sort for the subscriptions list.
- *  - `filter`       — current filter for the subscriptions list.
- *  - `budget`       — monthly budget for the dashboard hero (0 = unset).
- *  - `remindersEnabled` — renewal-reminder notifications toggle.
+ * Split ownership:
+ *  - Account-level prefs (`currency`, `budget`, `remindersEnabled`) live in
+ *    Supabase `user_prefs` (RLS-scoped). Setters update local state
+ *    immediately and sync to the server best-effort; `hydratePrefs()` loads
+ *    them when the signed-in account changes and resets to defaults on
+ *    sign-out.
+ *  - Device-level prefs (`sort`, `filter`) stay in the SQLite-backed
+ *    `persistentStorage` adapter, so they survive restarts.
  *
  * The theme preference lives in `@/design/theme.ts` (`useThemeStore`) since it
- * is tied to the palette resolver. Currency/sort/filter are independent.
- *
- * Persistence uses the SQLite-backed `persistentStorage` adapter
- * (`@/design/storage`), so preferences survive restarts.
+ * is tied to the palette resolver.
  */
 
 import { Platform } from 'react-native';
@@ -20,10 +19,18 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 import { persistentStorage } from '@/design/storage';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { DEFAULT_CURRENCY } from '@/utils/constants';
 import type { CurrencyCode, SubscriptionFilter, SubscriptionSort } from '@/types/subscription';
 
 const UI_PREFS_KEY = Platform.OS === 'ios' ? 'subby.ios.uiPrefs' : 'subby.uiPrefs';
+
+/** Defaults for account-level prefs (also the user_prefs column defaults). */
+const ACCOUNT_PREF_DEFAULTS = {
+  currency: DEFAULT_CURRENCY,
+  budget: 0,
+  remindersEnabled: true,
+} as const;
 
 export interface UIStore {
   currency: CurrencyCode;
@@ -38,31 +45,82 @@ export interface UIStore {
   setFilter: (f: SubscriptionFilter) => void;
   setBudget: (b: number) => void;
   setRemindersEnabled: (enabled: boolean) => void;
+  /** Load account prefs from Supabase; reset to defaults when signed out. */
+  hydratePrefs: () => Promise<void>;
+}
+
+/** Sync account prefs to Supabase (best-effort upsert, errors swallowed). */
+async function syncAccountPrefs(
+  prefs: { currency: CurrencyCode; budget: number; remindersEnabled: boolean },
+): Promise<void> {
+  if (!isSupabaseConfigured) return;
+  await supabase.from('user_prefs').upsert(
+    {
+      currency: prefs.currency,
+      budget: prefs.budget,
+      reminders_enabled: prefs.remindersEnabled,
+      updated_at: Date.now(),
+    },
+    { onConflict: 'user_id' },
+  );
 }
 
 export const useUIStore = create<UIStore>()(
   persist(
-    (set) => ({
-      currency: DEFAULT_CURRENCY,
+    (set, get) => ({
+      ...ACCOUNT_PREF_DEFAULTS,
       sort: 'nextRenewal',
       filter: 'active',
-      budget: 0,
-      remindersEnabled: true,
-      setCurrency: (currency) => set({ currency }),
+
+      setCurrency: (currency) => {
+        set({ currency });
+        void syncAccountPrefs({ ...get(), currency });
+      },
       setSort: (sort) => set({ sort }),
       setFilter: (filter) => set({ filter }),
-      setBudget: (budget) => set({ budget }),
-      setRemindersEnabled: (remindersEnabled) => set({ remindersEnabled }),
+      setBudget: (budget) => {
+        set({ budget });
+        void syncAccountPrefs({ ...get(), budget });
+      },
+      setRemindersEnabled: (remindersEnabled) => {
+        set({ remindersEnabled });
+        void syncAccountPrefs({ ...get(), remindersEnabled });
+      },
+
+      hydratePrefs: async () => {
+        if (!isSupabaseConfigured) return;
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) {
+          // Signed out — no account prefs apply.
+          set({ ...ACCOUNT_PREF_DEFAULTS });
+          return;
+        }
+        const { data: prefs } = await supabase
+          .from('user_prefs')
+          .select('currency, budget, reminders_enabled')
+          .eq('user_id', data.session.user.id)
+          .maybeSingle();
+        if (!prefs) {
+          // First sign-in (or never touched): defaults; the row is created on
+          // the first write.
+          set({ ...ACCOUNT_PREF_DEFAULTS });
+          return;
+        }
+        set({
+          currency: prefs.currency as CurrencyCode,
+          budget: Number(prefs.budget),
+          remindersEnabled: prefs.reminders_enabled,
+        });
+      },
     }),
     {
       name: UI_PREFS_KEY,
       storage: createJSONStorage(() => persistentStorage),
-      partialize: (s): { currency: CurrencyCode; sort: SubscriptionSort; filter: SubscriptionFilter; budget: number; remindersEnabled: boolean } => ({
-        currency: s.currency,
+      // Only device-level prefs persist locally — account prefs come from
+      // Supabase.
+      partialize: (s): { sort: SubscriptionSort; filter: SubscriptionFilter } => ({
         sort: s.sort,
         filter: s.filter,
-        budget: s.budget,
-        remindersEnabled: s.remindersEnabled,
       }),
     },
   ),

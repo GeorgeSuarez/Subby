@@ -102,6 +102,20 @@ export const MIGRATIONS: readonly Migration[] = [
       ALTER TABLE subscriptions ADD COLUMN notification_id TEXT;
     `,
   },
+  {
+    version: 5,
+    description: 'create notification sidecar for Supabase-backed subscriptions',
+    // Subscriptions moved to Supabase; renewal-reminder notification ids are
+    // device-local bookkeeping (meaningless server-side), so they live in
+    // this map keyed by subscription id. The legacy `subscriptions` table
+    // stays for backwards-compatible migration history only.
+    sql: `
+      CREATE TABLE IF NOT EXISTS notification_map (
+        subscription_id TEXT PRIMARY KEY NOT NULL,
+        notification_id TEXT NOT NULL
+      );
+    `,
+  },
 ] as const;
 
 /** Highest migration version in the list. Bump when you append a migration. */

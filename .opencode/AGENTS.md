@@ -44,6 +44,10 @@ Run these from the project root before considering any task complete:
   edit it for local work. iOS simulator reaches the host via `127.0.0.1`;
   Android emulator needs `10.0.2.2`; physical devices need the Mac's LAN IP.
 - Email confirmation is ON (`enable_confirmations = true` in `supabase/config.toml`).
+- `supabase/migrations/` holds the schema: `subscriptions` and `user_prefs`
+  with RLS (all policies `(select auth.uid()) = user_id` — keep the
+  `(select …)` initplan wrapper and the explicit `grant` on new tables;
+  PostgREST also refuses filter-less `delete`, so wipes use `gte(created_at, 0)`).
 - Schema workflow: imperative migrations — create with `supabase migration new <name>`,
   iterate with `supabase db query` / `supabase db diff`, commit with
   `supabase db pull <descriptive-name> --local --yes`.
@@ -92,7 +96,11 @@ npm test -- --passWithNoTests
   Never swap to JS-based `@react-navigation/stack` or `bottom-tabs`.
 - **State**: `zustand` with selectors (NO React Context for shared app state).
   UI prefs persist via `zustand/middleware` (MMKV/AsyncStorage).
-- **DB**: `expo-sqlite` only. Schema lives in `src/db/schema.ts`; queries in `src/db/queries.ts`.
+- **DB**: Supabase (Postgres) is the source of truth for subscriptions and
+  account prefs — RLS-scoped per user. `expo-sqlite` remains only for
+  device-local bookkeeping (the `notification_map` sidecar and KV prefs).
+  SQLite schema lives in `src/db/schema.ts`; Supabase queries in
+  `src/db/queries.ts` (same API as before, so stores are unchanged).
 - **Lists**: `@shopify/flash-list` for every scrollable collection — never `ScrollView` + `.map`.
 - **Images**: `expo-image` only (never `react-native`'s `Image`).
 - **Animations**: Reanimated + gesture-handler. Animate **transform/opacity only**.
@@ -166,8 +174,13 @@ src/
   bundle requires Xcode/Android SDK so we typically rely on typecheck + lint + test
   for scaffold validation between Steps.
 - Subscribe to subscription updates ONLY through the Zustand store's selectors —
-  never call `db/queries.ts` directly inside a component (the store re-reads from DB
-  after each mutation and updates the cache).
+  never call `db/queries.ts` directly inside a component (the store re-reads from
+  Supabase after each mutation and updates the cache).
+- Account prefs (`currency`, `budget`, `remindersEnabled`) sync to `user_prefs`
+  via `useUIStore` setters + `hydratePrefs()` (called from the root layout on
+  account change); `sort`/`filter`/theme stay device-local. Notification ids
+  are device-local only (`notification_map` sidecar) — never send them to
+  Supabase.
 - The active theme is resolved by combining the persisted user preference with the
   device color scheme. Use `useTheme()` for a full palette or `useThemeColor(name)`
   inside a memoized row to re-render only when that color's hex actually changes.

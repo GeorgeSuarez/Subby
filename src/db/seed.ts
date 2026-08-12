@@ -1,10 +1,10 @@
 /**
  * Demo (seeded) data manager.
  *
- * Seeded rows are marked with the `seeded` column (migration v3) and are
- * filtered out of every read for any account other than the test account —
- * the DB is device-wide, so the marker column is what scopes demo data to
- * `test@subby.app`.
+ * Seeded rows are marked with the `seeded` column and are filtered out of
+ * every read for any account other than the test account. Rows are owned by
+ * the signed-in user (RLS), so the marker is about demo-data lifecycle, not
+ * cross-account visibility.
  *
  * THE RULE: every mutation here is guarded by `isTestAccountEmail` — only the
  * test account (`test@subby.app`) may load or remove demo data. The guard is
@@ -15,19 +15,21 @@
  * testable in plain Node Jest.
  */
 
-import { getDatabase } from '@/db/client';
 import { insertSubscription } from '@/db/queries';
 import { seedDrafts } from '@/db/seed-data';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { isTestAccountEmail } from '@/utils/constants';
 
 export type DemoActionResult = 'done' | 'nothingToDo' | 'denied';
 
 async function countSeededRows(): Promise<number> {
-  const db = await getDatabase();
-  const row = await db.getFirstAsync<{ n: number }>(
-    'SELECT COUNT(*) AS n FROM subscriptions WHERE seeded = 1;',
-  );
-  return row?.n ?? 0;
+  if (!isSupabaseConfigured) return 0;
+  const { count, error } = await supabase
+    .from('subscriptions')
+    .select('*', { count: 'exact', head: true })
+    .eq('seeded', true);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
 }
 
 /** Read-only status used by the Settings "Demo data" section. */
@@ -50,7 +52,7 @@ export async function getDemoDataInfo(email: string | null): Promise<DemoDataInf
 
 /**
  * Load the seed set — but ONLY for the test account, and only once (rows are
- * marked `seeded = 1`, so a second run is a no-op and rows are never
+ * marked `seeded = true`, so a second run is a no-op and rows are never
  * duplicated). Returns 'denied' for any other account.
  */
 export async function loadSeedData(email: string | null): Promise<DemoActionResult> {
@@ -58,12 +60,9 @@ export async function loadSeedData(email: string | null): Promise<DemoActionResu
 
   if ((await countSeededRows()) > 0) return 'nothingToDo';
 
-  const db = await getDatabase();
-  await db.withTransactionAsync(async () => {
-    for (const draft of seedDrafts()) {
-      await insertSubscription(draft, { seeded: true });
-    }
-  });
+  for (const draft of seedDrafts()) {
+    await insertSubscription(draft, { seeded: true });
+  }
   return 'done';
 }
 
@@ -76,8 +75,8 @@ export async function removeSeedData(email: string | null): Promise<DemoActionRe
 
   if ((await countSeededRows()) === 0) return 'nothingToDo';
 
-  const db = await getDatabase();
-  await db.runAsync('DELETE FROM subscriptions WHERE seeded = 1;');
+  const { error } = await supabase.from('subscriptions').delete().eq('seeded', true);
+  if (error) throw new Error(error.message);
   return 'done';
 }
 

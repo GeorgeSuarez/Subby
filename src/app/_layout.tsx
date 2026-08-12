@@ -35,6 +35,7 @@ import { useColorMode } from '@/design/theme';
 import { Toast } from '@/design/components/Toast';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
+import { useUIStore } from '@/store/useUIStore';
 
 // Keep the splash visible until our first data hydration resolves.
 SplashScreen.preventAutoHideAsync();
@@ -44,6 +45,7 @@ export default function RootLayout() {
   const colorMode = useColorMode();
   const hydrate = useSubscriptionsStore((s) => s.hydrate);
   const resetCache = useSubscriptionsStore((s) => s.resetCache);
+  const hydratePrefs = useUIStore((s) => s.hydratePrefs);
   const initializeAuth = useAuthStore((s) => s.initialize);
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
   // Account identity drives seeded-data visibility; re-hydrate when it
@@ -58,7 +60,7 @@ export default function RootLayout() {
     let cancelled = false;
     (async () => {
       try {
-        await Promise.all([hydrate(), initializeAuth()]);
+        await Promise.all([hydrate(), hydratePrefs(), initializeAuth()]);
       } finally {
         if (!cancelled) {
           SplashScreen.hideAsync();
@@ -68,7 +70,7 @@ export default function RootLayout() {
     return () => {
       cancelled = true;
     };
-  }, [resetCache, hydrate, initializeAuth, isSignedIn, email]);
+  }, [resetCache, hydrate, hydratePrefs, initializeAuth, isSignedIn, email]);
 
   const isDark = colorMode === 'dark';
 
