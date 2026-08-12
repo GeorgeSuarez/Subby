@@ -31,6 +31,30 @@ Run these from the project root before considering any task complete:
 | Submit to App Store | `npm run submit:ios`             |
 | Submit to Play Store| `npm run submit:android`         |
 
+## Local Supabase stack
+
+- Stack lives in `supabase/` (CLI v2.113.0). Start with `supabase start`, stop
+  with `supabase stop`. Requires Docker Desktop running.
+- Emails (confirmation links, password resets) land in **Mailpit** at
+  http://127.0.0.1:54324 — there is no real SMTP in local dev.
+- Other URLs: Studio http://127.0.0.1:54323, API http://127.0.0.1:54321
+  (publishable key `sb_publishable_...` printed by `supabase start`).
+- `.env.local` points the app at the local stack and overrides `.env` (hosted
+  project) in dev. `.env` is the hosted `wiungqhmzgavfpvvlkmj` project — do not
+  edit it for local work. iOS simulator reaches the host via `127.0.0.1`;
+  Android emulator needs `10.0.2.2`; physical devices need the Mac's LAN IP.
+- Email confirmation is ON (`enable_confirmations = true` in `supabase/config.toml`).
+- Schema workflow: imperative migrations — create with `supabase migration new <name>`,
+  iterate with `supabase db query` / `supabase db diff`, commit with
+  `supabase db pull <descriptive-name> --local --yes`.
+- Restart after `config.toml` changes: `supabase stop && supabase start` (there
+  is no `supabase restart` command).
+- Auth emails redirect to `site_url` (http://127.0.0.1:3000) after the token is
+  consumed. Serve the confirmation page with `npm run auth:confirm-page`
+  (scripts/serve-auth-confirm.mjs) so clicks land on a real page instead of a
+  dead connection. Tokens are single-use — a second click on the same link
+  always shows "invalid or expired".
+
 ## Build & Ship Config
 
 - `eas.json` defines three profiles: **development** (internal simulator/APK for
