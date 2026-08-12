@@ -209,9 +209,14 @@ export function AddEditScreen({
         toast("Subscription added");
         onSaved(saved.id);
       } else {
+        // The store swallows the underlying failure — surface its error so
+        // real problems aren't hidden behind a generic message.
+        const reason = useSubscriptionsStore.getState().error;
         Alert.alert(
           "Could not add subscription",
-          "Something went wrong saving. Try again.",
+          reason
+            ? `Something went wrong saving: ${reason}`
+            : "Something went wrong saving. Try again.",
         );
       }
     }
@@ -306,7 +311,9 @@ export function AddEditScreen({
                   />
                 </View>
                 {draft.trialEnds ? (
-                  <Button onPress={clearTrialEnds} variant="ghost" size="sm">Clear</Button>
+                  <Button onPress={clearTrialEnds} variant="ghost" size="sm">
+                    Clear
+                  </Button>
                 ) : null}
               </View>
             </FormField>
@@ -413,7 +420,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   notesInput: {
-    height: 84,
+    height: 48,
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
     textAlignVertical: "top",

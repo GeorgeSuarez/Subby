@@ -26,6 +26,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
     style,
     leading,
     trailing,
+    multiline,
     placeholderTextColor,
     ...rest
   },
@@ -38,6 +39,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
     <View
       style={[
         styles.container,
+        multiline ? styles.containerMultiline : null,
         {
           backgroundColor: colors.surfaceHigher,
           borderColor: focused ? colors.accent : colors.border,
@@ -77,11 +79,15 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 48,
+    // minHeight (not height) so multiline inputs can grow the box.
+    minHeight: 48,
     paddingHorizontal: spacing.md,
     borderWidth: 1,
     borderCurve: 'continuous',
     borderRadius: radius.md,
+  },
+  containerMultiline: {
+    alignItems: 'flex-start',
   },
   leading: {
     marginRight: spacing.xs,
