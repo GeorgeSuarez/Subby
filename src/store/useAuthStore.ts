@@ -23,6 +23,8 @@
 import { create } from 'zustand';
 import type { Session } from '@supabase/supabase-js';
 
+import { clearCacheForUser, clearQueueForUser } from '@/db/offline';
+import { isSessionExpiredError } from '@/lib/session-errors';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 
 export const NOT_CONFIGURED_MESSAGE =
@@ -32,6 +34,8 @@ interface AuthStore {
   isSignedIn: boolean;
   /** Email of the signed-in user, shown in Settings. */
   email: string | null;
+  /** Supabase user id of the signed-in user (keys offline cache/queue). */
+  userId: string | null;
   /** True until the initial session restore settles. */
   isLoading: boolean;
   /** Last auth failure message (cleared on the next attempt). */
@@ -75,8 +79,18 @@ interface AuthStore {
    * change flow). Throws 'Current password is incorrect.' on failure.
    */
   verifyCurrentPassword: (currentPassword: string) => Promise<void>;
+  /**
+   * Permanently delete the account server-side (Edge Function) and clear all
+   * local data for it. Throws on failure so the UI can surface the error.
+   */
+  deleteAccount: () => Promise<void>;
   /** Drop the recovery state (e.g. leaving the reset screen). */
   clearRecovery: () => void;
+  /**
+   * Sign out because the server-side session died (user deleted, tokens
+   * revoked). `message` is surfaced on the sign-in screen.
+   */
+  expireSession: (message: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -102,11 +116,20 @@ function decodeJwtSub(token: string): string | null {
   }
 }
 
+/** Turn GoTrue rate-limit errors into copy a user can act on. */
+function friendlyAuthError(message: string): string {
+  if (/email rate limit|over_email_send_rate_limit/i.test(message)) {
+    return 'Too many emails sent — please wait about an hour and try again.';
+  }
+  return message;
+}
+
 /** Mirror a session into the store. */
 function applySession(session: Session | null): void {
   useAuthStore.setState({
     isSignedIn: Boolean(session),
     email: session?.user.email ?? null,
+    userId: session?.user.id ?? null,
     isLoading: false,
     error: null,
     verificationEmail: null,
@@ -116,6 +139,7 @@ function applySession(session: Session | null): void {
 export const useAuthStore = create<AuthStore>()((set, get) => ({
   isSignedIn: false,
   email: null,
+  userId: null,
   isLoading: true,
   error: null,
   verificationEmail: null,
@@ -170,8 +194,9 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
       password,
     });
     if (error) {
-      set({ isLoading: false, error: error.message });
-      throw new Error(error.message);
+      const message = friendlyAuthError(error.message);
+      set({ isLoading: false, error: message });
+      throw new Error(message);
     }
     if (data.session) {
       applySession(data.session);
@@ -209,8 +234,9 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     set({ isLoading: true, error: null });
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
     if (error) {
-      set({ isLoading: false, error: error.message });
-      throw new Error(error.message);
+      const message = friendlyAuthError(error.message);
+      set({ isLoading: false, error: message });
+      throw new Error(message);
     }
     set({ isLoading: false, recoveryEmail: email.trim() });
   },
@@ -224,8 +250,9 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
       type: 'recovery',
     });
     if (error) {
-      set({ isLoading: false, error: error.message });
-      throw new Error(error.message);
+      const message = friendlyAuthError(error.message);
+      set({ isLoading: false, error: message });
+      throw new Error(message);
     }
     applySession(data.session);
     set({ recoveryPending: true, recoveryEmail: email.trim() });
@@ -274,8 +301,9 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     // variant is the API for it (no email needed for recovery).
     const { data, error } = await supabase.auth.verifyOtp({ token_hash: token, type: 'recovery' });
     if (error) {
-      set({ isLoading: false, error: error.message });
-      throw new Error(error.message);
+      const message = friendlyAuthError(error.message);
+      set({ isLoading: false, error: message });
+      throw new Error(message);
     }
     applySession(data.session);
     set({ recoveryPending: true });
@@ -286,6 +314,10 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     set({ isLoading: true, error: null });
     const { data, error } = await supabase.auth.updateUser({ password });
     if (error) {
+      if (isSessionExpiredError(error)) {
+        await get().expireSession('Your session expired — please sign in again.');
+        throw new Error('Your session expired — please sign in again.');
+      }
       set({ isLoading: false, error: error.message });
       throw new Error(error.message);
     }
@@ -321,6 +353,36 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   clearRecovery: () => set({ recoveryPending: false }),
+
+  deleteAccount: async () => {
+    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    const userId = get().userId;
+    if (!userId) throw new Error('No signed-in account.');
+    set({ isLoading: true, error: null });
+    const { error } = await supabase.functions.invoke('delete-account');
+    if (error) {
+      set({ isLoading: false, error: error.message });
+      throw new Error(error.message);
+    }
+    // Account is gone server-side — wipe everything local and sign out.
+    await clearCacheForUser(userId);
+    await clearQueueForUser(userId);
+    if (isSupabaseConfigured) {
+      await supabase.auth.signOut();
+    }
+    applySession(null);
+    set({ recoveryPending: false, recoveryEmail: null, isLoading: false });
+  },
+
+  expireSession: async (message) => {
+    if (isSupabaseConfigured) {
+      await supabase.auth.signOut().catch(() => {
+        // Local-only sign-out is fine — the server session is already dead.
+      });
+    }
+    applySession(null);
+    set({ recoveryPending: false, recoveryEmail: null, error: message });
+  },
 
   signOut: async () => {
     if (isSupabaseConfigured) {

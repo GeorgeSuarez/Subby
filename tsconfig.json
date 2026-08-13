@@ -25,6 +25,7 @@
     "jest.config.js",
     "__tests__/**",
     "android",
-    "ios"
+    "ios",
+    "supabase/functions"
   ]
 }

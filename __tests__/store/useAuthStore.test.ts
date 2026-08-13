@@ -1,5 +1,11 @@
 import { useAuthStore } from '@/store/useAuthStore';
 
+// offline.ts pulls in expo-sqlite (native) — mock it for the store test.
+jest.mock('@/db/offline', () => ({
+  clearCacheForUser: jest.fn().mockResolvedValue(undefined),
+  clearQueueForUser: jest.fn().mockResolvedValue(undefined),
+}));
+
 jest.mock('@/lib/supabase', () => {
   const authListeners = new Set<(event: string, session: unknown) => void>();
   const auth = {

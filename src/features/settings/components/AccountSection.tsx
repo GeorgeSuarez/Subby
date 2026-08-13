@@ -10,26 +10,55 @@
  *  - `ui-pressable`: design-system Button (Pressable-based).
  */
 
-import { useCallback } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { Alert, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Button, Card, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
 import { useAuthStore } from '@/store/useAuthStore';
-import { notifySuccess } from '@/utils/haptics';
+import { notifyError, notifySuccess } from '@/utils/haptics';
 
 export function AccountSection() {
   const { colors } = useTheme();
   const router = useRouter();
   const email = useAuthStore((s) => s.email);
   const signOut = useAuthStore((s) => s.signOut);
+  const deleteAccount = useAuthStore((s) => s.deleteAccount);
+  const [deleting, setDeleting] = useState(false);
 
   const onSignOut = useCallback(() => {
     signOut();
     void notifySuccess();
   }, [signOut]);
+
+  const onDeleteAccount = useCallback(() => {
+    Alert.alert(
+      'Delete account?',
+      'This permanently removes your account, subscriptions, and preferences. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            setDeleting(true);
+            void deleteAccount()
+              .then(() => notifySuccess())
+              .catch((e) => {
+                void notifyError();
+                Alert.alert(
+                  'Could not delete account',
+                  e instanceof Error ? e.message : 'Please try again.',
+                );
+              })
+              .finally(() => setDeleting(false));
+          },
+        },
+      ],
+    );
+  }, [deleteAccount]);
 
   return (
     <Card padding={spacing.lg} elevation="flat">
@@ -55,6 +84,18 @@ export function AccountSection() {
         </View>
         <Button onPress={() => router.push('/verify-password')} variant="ghost" size="sm">
           Change
+        </Button>
+      </View>
+
+      <View style={[styles.row, { borderColor: colors.border }]}>
+        <View style={styles.meta}>
+          <Text variant="body" weight="600" color="negative">Delete account</Text>
+          <Text variant="caption" color="textSecondary">
+            Permanently remove your account and all data
+          </Text>
+        </View>
+        <Button onPress={onDeleteAccount} variant="ghost" size="sm" disabled={deleting}>
+          {deleting ? 'Deleting…' : 'Delete'}
         </Button>
       </View>
     </Card>
