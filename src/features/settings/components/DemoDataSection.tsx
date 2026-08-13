@@ -25,6 +25,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useDemoDataStore } from '@/store/useDemoDataStore';
 import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
 import { TEST_ACCOUNT_EMAIL, TEST_ACCOUNT_PASSWORD } from '@/utils/constants';
+import { ENABLE_DEMO_DATA } from '@/utils/environment';
 import { notifySuccess, notifyWarning } from '@/utils/haptics';
 
 export function DemoDataSection() {
@@ -74,7 +75,7 @@ export function DemoDataSection() {
   }, [email, info?.count, refresh]);
 
   // Rule enforcement starts here: not the test account → nothing renders.
-  if (!info?.isAllowed) return null;
+  if (!ENABLE_DEMO_DATA || !info?.isAllowed) return null;
 
   return (
     <Card padding={spacing.lg} elevation="flat">

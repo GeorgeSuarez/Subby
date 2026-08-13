@@ -22,6 +22,7 @@ import { spacing } from '@/design/tokens';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
 import { isTestAccountEmail } from '@/utils/constants';
+import { ENABLE_DEMO_DATA } from '@/utils/environment';
 import { notifyWarning, notifySuccess } from '@/utils/haptics';
 
 export function DangerZoneSection() {
@@ -66,8 +67,8 @@ export function DangerZoneSection() {
   }, [subs.length, clearAll]);
 
   // The wipe is device-wide (it also removes demo rows), so it's restricted
-  // to the test account — same rule as the demo-data controls.
-  if (!isTestAccount) return null;
+  // to the test account — same rule as the demo-data controls, and dev-only.
+  if (!ENABLE_DEMO_DATA || !isTestAccount) return null;
 
   return (
     <Card padding={spacing.lg} elevation="flat">

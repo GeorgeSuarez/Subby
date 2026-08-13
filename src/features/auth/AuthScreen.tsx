@@ -51,6 +51,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
 import { loadSeedData } from '@/db/seed';
 import { isTestAccountEmail } from '@/utils/constants';
+import { ENABLE_DEMO_DATA } from '@/utils/environment';
 import { notifyError, notifySuccess, notifyWarning } from '@/utils/haptics';
 
 export interface AuthScreenProps {
@@ -119,8 +120,9 @@ export function AuthScreen({ mode }: AuthScreenProps) {
         }
       }
       // Rule: demo (seeded) data loads automatically, but only for the test
-      // account. `loadSeedData` re-checks the email and no-ops otherwise.
-      if (isTestAccountEmail(email)) {
+      // account, and only in development builds. `loadSeedData` re-checks the
+      // email and no-ops otherwise.
+      if (ENABLE_DEMO_DATA && isTestAccountEmail(email)) {
         await loadSeedData(email);
         await useSubscriptionsStore.getState().hydrate();
       }
