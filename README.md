@@ -8,13 +8,16 @@ A minimalistic subscription dashboard for tracking and managing monthly recurrin
   <img src="docs/screenshots/dashboard.png" width="240" alt="Subby dashboard showing monthly spend, upcoming renewals, and quick stats" />
   <img src="docs/screenshots/subscriptions.png" width="240" alt="Subby subscriptions list showing the history of all subscriptions" />
   <img src="docs/screenshots/add-subscriptions.png" width="240" alt="Subby add subscriptions workflow" />
+  <img src="docs/screenshots/auth.png" width="240" alt="Subby sign-in screen" />
+  <img src="docs/screenshots/settings.png" width="240" alt="Subby settings with account, budget, and theme controls" />
+  <img src="docs/screenshots/detail.png" width="240" alt="Subby subscription detail with renewal countdown and effective cost" />
 </p>
 
 ---
 
 ## Overview
 
-Subby is a personal subscription tracker. Add recurring expenses (Netflix, Spotify, iCloud+, etc.), see your monthly/yearly spend at a glance, get reminded of upcoming renewals, and archive or delete subscriptions you no longer use. All data stays on-device in SQLite — no backend, no sign-in, no network calls.
+Subby is a personal subscription tracker. Add recurring expenses (Netflix, Spotify, iCloud+, etc.), see your monthly/yearly spend at a glance, get reminded of upcoming renewals, and archive or delete subscriptions you no longer use. Accounts sync across devices via Supabase; the app works offline with cached data and a write queue that replays changes on reconnect.
 
 The project was built as a portfolio piece to demonstrate modern React Native engineering: native stack + native tab navigation (not JS-based), Zustand selectors over React Context, FlashList virtualization with memoized primitive-only rows, Reanimated 4 worklet-driven animations, and a custom design token system with dark-first theming.
 
@@ -24,8 +27,9 @@ The project was built as a portfolio piece to demonstrate modern React Native en
 - **Subscriptions list** — sort by name/cost/renewal date, filter by active/archived/all, full-text search, long-press native action sheet (Edit / Archive / Delete with two-step delete confirm)
 - **Subscription detail** — hero tile with brand color, renewal countdown with tone-themed badges, effective monthly/yearly cost breakdown, edit/archive/delete actions
 - **Add/Edit modal** — form with name, amount, billing cycle, next renewal date, category chips, icon + color picker, notes; live validation with field-level errors shown after touch or submit
-- **Settings** — theme toggle (System / Light / Dark) with cross-fade transition, currency picker (6 currencies), danger zone wipe with two-step native confirm
-- **Native tab bar** — four tabs (Dashboard, Subscriptions, Add, Settings) using platform-native `UITabBarController` / Material Bottom Navigation
+- **Settings** — theme toggle (System / Light / Dark) with cross-fade transition, currency picker (6 currencies), monthly budget, renewal-reminder toggle, password change with current-password verification, account deletion, and a dev-only demo-data section
+- **Native tab bar** — three tabs (Dashboard, Subscriptions, Settings) plus a floating add button using platform-native `UITabBarController` / Material Bottom Navigation
+- **Offline-first** — reads serve a per-user cache when offline; changes made offline are queued and sync automatically on reconnect (never dropped); an offline banner shows pending-change counts with a retry action
 - **Haptics** — selection ticks on chips/segmented controls, impact feedback on row taps, warning notification before destructive actions, success chime after save/wipe
 - **Animations** — FAB-less design (Add is a tab); count-up on dashboard stats; spring entrance on empty-state; theme cross-fade via remount-keyed `Animated.View`
 
@@ -36,7 +40,9 @@ The project was built as a portfolio piece to demonstrate modern React Native en
 | Framework  | Expo SDK 57, React 19, React Native 0.86, React Compiler ON            |
 | Navigation | `expo-router` with `unstable-native-tabs` (native stack + native tabs) |
 | State      | `zustand` with selectors (no React Context for shared state)           |
-| Database   | `expo-sqlite` with typed query layer + migration runner                |
+| Database   | Supabase (Postgres, RLS per user) + SQLite for offline cache/queue     |
+| Auth       | Supabase Auth — email/password, email confirmation, OTP-code resets    |
+| Offline    | Per-user snapshot cache + FIFO write queue, flushed on reconnect       |
 | Lists      | `@shopify/flash-list` v2 (auto-sizing, no `estimatedItemSize` needed)  |
 | Images     | `expo-image` exclusively (never RN `Image`)                            |
 | Animations | `react-native-reanimated` 4 + `react-native-gesture-handler`           |
@@ -149,14 +155,14 @@ Tokens live in `src/design/tokens.ts`. Icons generated from `scripts/generate-ic
 - **Native tabs are worth the API friction.** `expo-router/unstable-native-tabs` wraps `UITabBarController` / Material Bottom Navigation directly. The prop API differs from `@react-navigation/bottom-tabs` (e.g., `labelStyle: { default, selected }` instead of `tabBarActiveTintColor`), but the payoff is real native scroll-to-top, PiP avoidance, and platform-correct safe-area insets — all free.
 - **React Compiler changes the idioms.** Manual `useMemo`/`useCallback`/`memo()` become noise in most cases. The one adjustment that matters: Reanimated shared values need `.get()`/`.set()` instead of `.value` — the compiler can't track property access on proxy objects.
 - **Route files as thin re-exports.** Keeping expo-router imports out of `features/<area>/` means screen logic is Jest-testable in plain Node — no router mock needed. The route file is a one-liner: `export { DashboardScreen as default } from '@/features/dashboard'`.
-- **SQLite + Zustand as read-through cache.** Every mutation flows through the DB query layer, then the store re-reads all rows. The store never locally patches arrays — this eliminates an entire class of stale-cache bugs at the cost of one extra query per mutation.
+- **Supabase as the source of truth with an offline queue.** Mutations run against the server when online and are enqueued in a FIFO SQLite queue when offline (queue-invisible — no temp ids or optimistic patching). The store re-reads after each mutation, keeping a single code path and eliminating stale-cache bugs at the cost of one extra query per mutation.
 
 ## What I'd Do Next
 
-- **Date picker upgrade** — swap the YYYY-MM-DD text input for `@react-native-community/datetimepicker` (the free-text input is pragmatic but error-prone on mobile keyboards)
-- **Persistent UI prefs** — migrate from in-memory `memoryStorage` to `AsyncStorage` so theme/currency/sort/filter survive across app launches (the storage adapter is already stubbed in `src/design/storage.ts`)
+- **Push notifications for renewal reminders** — reminders are currently device-local (expo-notifications); cross-device reminders need Expo Push tokens + an Edge Function
 - **Stats tab** — add a fifth tab with `victory-native-xl` charts: donut by category, monthly trend bar, top 5 most expensive (deferred during MVP scoping)
 - **Export/import** — JSON + CSV export for data portability and backup
+- **Offline write conflict resolution** — the FIFO queue replays in order (last-write-wins); explicit conflict handling would cover multi-device editing of the same row
 - **Receipt scanning** — camera + Vision framework for auto-detecting amount/renewal date from a billing email screenshot (the `NSCameraUsageDescription` Info.plist entry is already in place)
 - **EAS project wiring** — run `npx eas init`, paste the project ID into `app.json`, fill submit credentials, and ship the first TestFlight build
 
