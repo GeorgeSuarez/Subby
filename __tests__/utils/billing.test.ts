@@ -54,7 +54,9 @@ describe('parseDate / toISODate', () => {
 describe('addMonths', () => {
   it('adds months without changing the day', () => {
     expect(toISODate(addMonths(parseDate('2026-01-15'), 1))).toBe('2026-02-15');
-    expect(toISODate(addMonths(parseDate('2026-01-15'), 12))).toBe('2027-01-15');
+    expect(toISODate(addMonths(parseDate('2026-01-15'), 12))).toBe(
+      '2027-01-15',
+    );
   });
 
   it('clamps Jan 31 + 1 month to Feb 28 (non-leap year)', () => {
@@ -68,23 +70,33 @@ describe('addMonths', () => {
   });
 
   it('handles negative months (subtraction)', () => {
-    expect(toISODate(addMonths(parseDate('2026-03-15'), -1))).toBe('2026-02-15');
+    expect(toISODate(addMonths(parseDate('2026-03-15'), -1))).toBe(
+      '2026-02-15',
+    );
   });
 });
 
 describe('daysBetween', () => {
   it('counts whole days between two dates', () => {
-    expect(daysBetween(parseDate('2026-07-16'), parseDate('2026-07-23'))).toBe(7);
-    expect(daysBetween(parseDate('2026-07-16'), parseDate('2026-07-16'))).toBe(0);
+    expect(daysBetween(parseDate('2026-07-16'), parseDate('2026-07-23'))).toBe(
+      7,
+    );
+    expect(daysBetween(parseDate('2026-07-16'), parseDate('2026-07-16'))).toBe(
+      0,
+    );
   });
 
   it('is negative if to < from', () => {
-    expect(daysBetween(parseDate('2026-07-23'), parseDate('2026-07-16'))).toBe(-7);
+    expect(daysBetween(parseDate('2026-07-23'), parseDate('2026-07-16'))).toBe(
+      -7,
+    );
   });
 
   it('crosses DST without +/- off-by-one (UTC anchor)', () => {
     // US DST 2026 starts March 8. UTC-anchored math shouldn't drift.
-    expect(daysBetween(parseDate('2026-03-01'), parseDate('2026-03-31'))).toBe(30);
+    expect(daysBetween(parseDate('2026-03-01'), parseDate('2026-03-31'))).toBe(
+      30,
+    );
   });
 });
 
@@ -127,7 +139,10 @@ describe('nextRenewalAfter', () => {
 describe('daysUntilRenewal', () => {
   // Real "today" drifts, so we test the wrapper only loosely — positive when future.
   it('returns a non-negative integer when the next renewal is in the future', () => {
-    const days = daysUntilRenewal({ nextRenewal: '2099-01-01', cycle: 'monthly' });
+    const days = daysUntilRenewal({
+      nextRenewal: '2099-01-01',
+      cycle: 'monthly',
+    });
     expect(days).toBeGreaterThanOrEqual(0);
     expect(Number.isInteger(days)).toBe(true);
   });
@@ -138,7 +153,9 @@ describe('monthlyEquivalent / yearlyEquivalent', () => {
     expect(monthlyEquivalent({ amount: 12, cycle: 'monthly' })).toBe(12);
   });
   it('quarterly divided by 3', () => {
-    expect(monthlyEquivalent({ amount: 30, cycle: 'quarterly' })).toBeCloseTo(10);
+    expect(monthlyEquivalent({ amount: 30, cycle: 'quarterly' })).toBeCloseTo(
+      10,
+    );
   });
   it('yearly divided by 12', () => {
     expect(monthlyEquivalent({ amount: 120, cycle: 'yearly' })).toBeCloseTo(10);
@@ -228,14 +245,24 @@ describe('renewalsThisMonth', () => {
   it('rolls a renewal dated today into the next cycle (excluded)', () => {
     // Matches app-wide semantics: a same-day renewal counts as already charged
     // and advances to the next cycle (see `nextRenewalAfter`).
-    const result = renewalsThisMonth([sub({ id: 'a', amount: 5, nextRenewal: '2026-07-16' })], from);
+    const result = renewalsThisMonth(
+      [sub({ id: 'a', amount: 5, nextRenewal: '2026-07-16' })],
+      from,
+    );
     expect(result.count).toBe(0);
     expect(result.total).toBe(0);
   });
 
   it('charges yearly subs at their full amount', () => {
     const result = renewalsThisMonth(
-      [sub({ id: 'a', amount: 120, cycle: 'yearly', nextRenewal: '2026-07-25' })],
+      [
+        sub({
+          id: 'a',
+          amount: 120,
+          cycle: 'yearly',
+          nextRenewal: '2026-07-25',
+        }),
+      ],
       from,
     );
     expect(result.total).toBe(120);
@@ -254,10 +281,32 @@ describe('renewalsThisMonth', () => {
 describe('categoryBreakdown', () => {
   it('groups by category, converts to monthly equivalents, and sorts desc', () => {
     const subs = [
-      sub({ id: 'a', amount: 12, category: 'streaming', nextRenewal: '2026-07-20' }),
-      sub({ id: 'b', amount: 120, cycle: 'yearly', category: 'music', nextRenewal: '2026-07-20' }), // 10/mo
-      sub({ id: 'c', amount: 6, category: 'streaming', nextRenewal: '2026-07-20' }),
-      sub({ id: 'd', amount: 999, category: 'music', archived: true, nextRenewal: '2026-07-20' }),
+      sub({
+        id: 'a',
+        amount: 12,
+        category: 'streaming',
+        nextRenewal: '2026-07-20',
+      }),
+      sub({
+        id: 'b',
+        amount: 120,
+        cycle: 'yearly',
+        category: 'music',
+        nextRenewal: '2026-07-20',
+      }), // 10/mo
+      sub({
+        id: 'c',
+        amount: 6,
+        category: 'streaming',
+        nextRenewal: '2026-07-20',
+      }),
+      sub({
+        id: 'd',
+        amount: 999,
+        category: 'music',
+        archived: true,
+        nextRenewal: '2026-07-20',
+      }),
     ];
     const items = categoryBreakdown(subs);
     expect(items[0]?.category).toBe('streaming'); // 18 > 10
@@ -278,16 +327,32 @@ describe('categoryBreakdown', () => {
 
 describe('budgetProgress', () => {
   it('treats an unset budget as neutral', () => {
-    expect(budgetProgress(50, 0)).toEqual({ pct: 0, over: false, overAmount: 0 });
-    expect(budgetProgress(50, -5)).toEqual({ pct: 0, over: false, overAmount: 0 });
+    expect(budgetProgress(50, 0)).toEqual({
+      pct: 0,
+      over: false,
+      overAmount: 0,
+    });
+    expect(budgetProgress(50, -5)).toEqual({
+      pct: 0,
+      over: false,
+      overAmount: 0,
+    });
   });
 
   it('reports progress under budget', () => {
-    expect(budgetProgress(25, 100)).toEqual({ pct: 0.25, over: false, overAmount: 0 });
+    expect(budgetProgress(25, 100)).toEqual({
+      pct: 0.25,
+      over: false,
+      overAmount: 0,
+    });
   });
 
   it('clamps at 100% when spending exactly the budget', () => {
-    expect(budgetProgress(100, 100)).toEqual({ pct: 1, over: false, overAmount: 0 });
+    expect(budgetProgress(100, 100)).toEqual({
+      pct: 1,
+      over: false,
+      overAmount: 0,
+    });
   });
 
   it('flags over-budget with the excess amount', () => {
@@ -348,8 +413,16 @@ describe('monthlyForecast', () => {
   });
 
   it('emits a contiguous series with zeroes for quiet months', () => {
-    const series = monthlyForecast([sub({ id: 'a', amount: 5, nextRenewal: '2027-01-01' })], 3, from);
-    expect(series.map((m) => m.month)).toEqual(['2026-07', '2026-08', '2026-09']);
+    const series = monthlyForecast(
+      [sub({ id: 'a', amount: 5, nextRenewal: '2027-01-01' })],
+      3,
+      from,
+    );
+    expect(series.map((m) => m.month)).toEqual([
+      '2026-07',
+      '2026-08',
+      '2026-09',
+    ]);
     expect(series.every((m) => m.total === 0 && m.count === 0)).toBe(true);
   });
 });

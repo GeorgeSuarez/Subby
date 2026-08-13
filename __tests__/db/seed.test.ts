@@ -7,7 +7,15 @@ describe('seedDrafts', () => {
   it('returns the expected brand list', () => {
     const names = seedDrafts(today).map((d) => d.name);
     expect(names).toEqual(
-      expect.arrayContaining(['Netflix', 'Spotify', 'iCloud+', 'GitHub', 'Figma', 'Disney+', 'New York Times']),
+      expect.arrayContaining([
+        'Netflix',
+        'Spotify',
+        'iCloud+',
+        'GitHub',
+        'Figma',
+        'Disney+',
+        'New York Times',
+      ]),
     );
   });
 
@@ -34,7 +42,9 @@ describe('seedDrafts', () => {
   it('seeds with default currency USD and known categories', () => {
     for (const d of seedDrafts(todayUTC())) {
       expect(d.currency).toBe('USD');
-      expect(d.category).toMatch(/^(streaming|music|cloud|developer|productivity|news)$/);
+      expect(d.category).toMatch(
+        /^(streaming|music|cloud|developer|productivity|news)$/,
+      );
     }
   });
 });

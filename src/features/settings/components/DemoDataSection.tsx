@@ -80,25 +80,36 @@ export function DemoDataSection() {
   return (
     <Card padding={spacing.lg} elevation="flat">
       <Card.Header>
-        <Text variant="headline" weight="600">Demo data</Text>
+        <Text variant="headline" weight="600">
+          Demo data
+        </Text>
         <Text variant="caption" color="textSecondary">
-          Test account: {TEST_ACCOUNT_EMAIL} / {TEST_ACCOUNT_PASSWORD} — demo controls are exclusive to it.
+          Test account: {TEST_ACCOUNT_EMAIL} / {TEST_ACCOUNT_PASSWORD} — demo
+          controls are exclusive to it.
         </Text>
       </Card.Header>
 
       <View style={[styles.row, { borderColor: colors.border }]}>
         <View style={styles.meta}>
           <Text variant="body" weight="600" color="textPrimary">
-            {info.loaded ? `${info.count} demo subscription${info.count === 1 ? '' : 's'} loaded` : 'No demo data loaded'}
+            {info.loaded
+              ? `${info.count} demo subscription${info.count === 1 ? '' : 's'} loaded`
+              : 'No demo data loaded'}
           </Text>
           <Text variant="caption" color="textSecondary">
-            {info.loaded ? 'Seeded rows are tracked separately from your data.' : 'Signing in loads the seed set automatically.'}
+            {info.loaded
+              ? 'Seeded rows are tracked separately from your data.'
+              : 'Signing in loads the seed set automatically.'}
           </Text>
         </View>
         {info.loaded ? (
-          <Button onPress={onRemove} variant="danger" size="sm">Remove</Button>
+          <Button onPress={onRemove} variant="danger" size="sm">
+            Remove
+          </Button>
         ) : (
-          <Button onPress={onLoad} variant="ghost" size="sm">Load</Button>
+          <Button onPress={onLoad} variant="ghost" size="sm">
+            Load
+          </Button>
         )}
       </View>
     </Card>

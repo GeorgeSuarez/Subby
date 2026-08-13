@@ -80,7 +80,9 @@ type RowInput = Omit<SubscriptionDraft, 'amount'> & {
 };
 
 /** Convert a domain Subscription to a PostgREST insert/update payload. */
-function subscriptionToRow(sub: RowInput): Omit<SubscriptionRowRemote, 'user_id'> {
+function subscriptionToRow(
+  sub: RowInput,
+): Omit<SubscriptionRowRemote, 'user_id'> {
   return {
     id: sub.id,
     name: sub.name,
@@ -106,7 +108,9 @@ function subscriptionsQuery() {
 }
 
 /** Merge device-local notification ids onto remote rows. */
-async function withNotificationIds(subs: Subscription[]): Promise<Subscription[]> {
+async function withNotificationIds(
+  subs: Subscription[],
+): Promise<Subscription[]> {
   if (subs.length === 0) return subs;
   const map = await getAllNotificationIds();
   return subs.map((s) => ({ ...s, notificationId: map[s.id] ?? undefined }));
@@ -123,7 +127,9 @@ function isMissingRowError(error: { code?: string } | null): boolean {
  * Demo (seeded) rows are only loaded for the test account — `includeSeeded`
  * must be `true` for it and `false` for everyone else (the default).
  */
-export async function getAllSubscriptions(includeSeeded = false): Promise<Subscription[]> {
+export async function getAllSubscriptions(
+  includeSeeded = false,
+): Promise<Subscription[]> {
   if (!isSupabaseConfigured) return [];
   let query = subscriptionsQuery();
   if (!includeSeeded) query = query.eq('seeded', false);
@@ -133,7 +139,9 @@ export async function getAllSubscriptions(includeSeeded = false): Promise<Subscr
 }
 
 /** Look up a single subscription by id. Returns null if not found. */
-export async function getSubscriptionById(id: string): Promise<Subscription | null> {
+export async function getSubscriptionById(
+  id: string,
+): Promise<Subscription | null> {
   if (!isSupabaseConfigured) return null;
   const { data, error } = await subscriptionsQuery().eq('id', id).maybeSingle();
   if (error) throw new Error(error.message);
@@ -164,13 +172,20 @@ export async function insertSubscription(
     archived: false,
     seeded: options.seeded ?? false,
   });
-  const { data, error } = await supabase.from('subscriptions').insert(row).select('*').single();
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .insert(row)
+    .select('*')
+    .single();
   if (error) throw new Error(error.message);
   return rowToSubscription(data);
 }
 
 /** Update fields on an existing subscription. Returns the new row or null. */
-export async function updateSubscription(id: string, patch: SubscriptionPatch): Promise<Subscription | null> {
+export async function updateSubscription(
+  id: string,
+  patch: SubscriptionPatch,
+): Promise<Subscription | null> {
   if (!isSupabaseConfigured) return null;
   const existing = await getSubscriptionById(id);
   if (!existing) return null;
@@ -196,7 +211,10 @@ export async function updateSubscription(id: string, patch: SubscriptionPatch): 
 }
 
 /** Set the archived flag on a subscription (soft delete). */
-export async function setArchived(id: string, archived: boolean): Promise<Subscription | null> {
+export async function setArchived(
+  id: string,
+  archived: boolean,
+): Promise<Subscription | null> {
   if (!isSupabaseConfigured) return null;
   const { data, error } = await supabase
     .from('subscriptions')
@@ -215,7 +233,10 @@ export async function setArchived(id: string, archived: boolean): Promise<Subscr
  * Set (or clear) the scheduled renewal-reminder notification id for a
  * subscription. Device-local sidecar — never sent to Supabase.
  */
-export async function setNotificationId(id: string, notificationId: string | null): Promise<void> {
+export async function setNotificationId(
+  id: string,
+  notificationId: string | null,
+): Promise<void> {
   if (notificationId) {
     await sidecarSetNotificationId(id, notificationId);
   } else {
@@ -236,7 +257,10 @@ export async function deleteAllSubscriptions(): Promise<void> {
   if (!isSupabaseConfigured) return;
   // PostgREST refuses a bare DELETE — the match-all filter is a no-op
   // (created_at >= 0) and RLS still scopes the delete to the user's rows.
-  const { error } = await supabase.from('subscriptions').delete().gte('created_at', 0);
+  const { error } = await supabase
+    .from('subscriptions')
+    .delete()
+    .gte('created_at', 0);
   if (error) throw new Error(error.message);
   await clearAllNotificationIds();
 }

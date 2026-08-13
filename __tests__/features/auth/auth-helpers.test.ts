@@ -2,15 +2,27 @@ import { defaultDraft, validateDraft } from '@/features/auth/auth-helpers';
 
 describe('validateDraft', () => {
   it('accepts a valid sign-in draft', () => {
-    expect(validateDraft({ email: 'ada@lovelace.dev', password: 'any', }, 'signIn')).toEqual({});
+    expect(
+      validateDraft({ email: 'ada@lovelace.dev', password: 'any' }, 'signIn'),
+    ).toEqual({});
   });
 
   it('accepts a valid sign-up draft', () => {
-    expect(validateDraft({ email: 'ada@lovelace.dev', password: 'sup3r-secret', }, 'signUp')).toEqual({});
+    expect(
+      validateDraft(
+        { email: 'ada@lovelace.dev', password: 'sup3r-secret' },
+        'signUp',
+      ),
+    ).toEqual({});
   });
 
   it('trims surrounding whitespace before checking the email', () => {
-    expect(validateDraft({ email: '  ada@lovelace.dev  ', password: 'any' }, 'signIn')).toEqual({});
+    expect(
+      validateDraft(
+        { email: '  ada@lovelace.dev  ', password: 'any' },
+        'signIn',
+      ),
+    ).toEqual({});
   });
 
   it('requires an email', () => {
@@ -19,21 +31,33 @@ describe('validateDraft', () => {
   });
 
   it('rejects a malformed email', () => {
-    const errors = validateDraft({ email: 'not-an-email', password: 'any' }, 'signIn');
+    const errors = validateDraft(
+      { email: 'not-an-email', password: 'any' },
+      'signIn',
+    );
     expect(errors.email).toBe('Enter a valid email address.');
   });
 
   it('requires a password', () => {
-    const errors = validateDraft({ email: 'ada@lovelace.dev', password: '' }, 'signIn');
+    const errors = validateDraft(
+      { email: 'ada@lovelace.dev', password: '' },
+      'signIn',
+    );
     expect(errors.password).toBe('Enter your password.');
   });
 
   it('allows short passwords on sign-in', () => {
-    expect(validateDraft({ email: 'ada@lovelace.dev', password: 'x' }, 'signIn').password).toBeUndefined();
+    expect(
+      validateDraft({ email: 'ada@lovelace.dev', password: 'x' }, 'signIn')
+        .password,
+    ).toBeUndefined();
   });
 
   it('enforces an 8-character minimum on sign-up', () => {
-    const errors = validateDraft({ email: 'ada@lovelace.dev', password: 'short' }, 'signUp');
+    const errors = validateDraft(
+      { email: 'ada@lovelace.dev', password: 'short' },
+      'signUp',
+    );
     expect(errors.password).toBe('Use at least 8 characters.');
   });
 

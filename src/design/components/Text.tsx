@@ -33,16 +33,40 @@ export type TextProps = Omit<ComponentProps<typeof RNText>, 'color'> & {
   weight?: FontWeight;
   align?: 'left' | 'center' | 'right';
   /** Number of lines to clamp before truncation. */
- numberOfLines?: number;
+  numberOfLines?: number;
 };
 
 const variantStyle = StyleSheet.create({
-  display: { fontSize: typeScale.display, lineHeight: lineHeight.display, fontWeight: fontWeight.semibold },
-  title: { fontSize: typeScale.title, lineHeight: lineHeight.title, fontWeight: fontWeight.semibold },
-  headline: { fontSize: typeScale.headline, lineHeight: lineHeight.headline, fontWeight: fontWeight.semibold },
-  body: { fontSize: typeScale.body, lineHeight: lineHeight.body, fontWeight: fontWeight.regular },
-  caption: { fontSize: typeScale.caption, lineHeight: lineHeight.caption, fontWeight: fontWeight.regular },
-  stat: { fontSize: typeScale.stat, lineHeight: lineHeight.stat, fontWeight: fontWeight.bold },
+  display: {
+    fontSize: typeScale.display,
+    lineHeight: lineHeight.display,
+    fontWeight: fontWeight.semibold,
+  },
+  title: {
+    fontSize: typeScale.title,
+    lineHeight: lineHeight.title,
+    fontWeight: fontWeight.semibold,
+  },
+  headline: {
+    fontSize: typeScale.headline,
+    lineHeight: lineHeight.headline,
+    fontWeight: fontWeight.semibold,
+  },
+  body: {
+    fontSize: typeScale.body,
+    lineHeight: lineHeight.body,
+    fontWeight: fontWeight.regular,
+  },
+  caption: {
+    fontSize: typeScale.caption,
+    lineHeight: lineHeight.caption,
+    fontWeight: fontWeight.regular,
+  },
+  stat: {
+    fontSize: typeScale.stat,
+    lineHeight: lineHeight.stat,
+    fontWeight: fontWeight.bold,
+  },
 });
 
 /**
@@ -50,7 +74,15 @@ const variantStyle = StyleSheet.create({
  * Skill rule `ui-styling`: weights/colors vary, not a sprawling type scale.
  */
 export const Text = forwardRef<RNText, TextProps>(function Text(
-  { variant = 'body', color = 'textPrimary', weight, align, style, numberOfLines, ...rest },
+  {
+    variant = 'body',
+    color = 'textPrimary',
+    weight,
+    align,
+    style,
+    numberOfLines,
+    ...rest
+  },
   ref,
 ) {
   const { colors } = useTheme();
@@ -74,5 +106,9 @@ export const Text = forwardRef<RNText, TextProps>(function Text(
 
 /** Convenience compound label for icon rows. */
 export function TextLabel({ children }: { children: ReactNode }) {
-  return <Text variant="caption" color="textSecondary">{children}</Text>;
+  return (
+    <Text variant="caption" color="textSecondary">
+      {children}
+    </Text>
+  );
 }

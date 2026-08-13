@@ -30,11 +30,19 @@ export interface DetailActionBarProps {
   onDelete: () => void;
 }
 
-export function DetailActionBar({ sub, onEdit, onArchive, onDelete }: DetailActionBarProps) {
+export function DetailActionBar({
+  sub,
+  onEdit,
+  onArchive,
+  onDelete,
+}: DetailActionBarProps) {
   return (
     <View style={styles.container}>
       <Button
-        onPress={() => { void impactLight(); onEdit(); }}
+        onPress={() => {
+          void impactLight();
+          onEdit();
+        }}
         variant="primary"
         size="lg"
       >
@@ -42,7 +50,10 @@ export function DetailActionBar({ sub, onEdit, onArchive, onDelete }: DetailActi
       </Button>
 
       <Button
-        onPress={() => { void selection(); onArchive(); }}
+        onPress={() => {
+          void selection();
+          onArchive();
+        }}
         variant="ghost"
         size="lg"
       >

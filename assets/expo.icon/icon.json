@@ -10,10 +10,7 @@
           "name": "recurring-arrow",
           "position": {
             "scale": 1,
-            "translation-in-points": [
-              0,
-              -16
-            ]
+            "translation-in-points": [0, -16]
           }
         }
       ],
@@ -28,9 +25,7 @@
     }
   ],
   "supported-platforms": {
-    "circles": [
-      "watchOS"
-    ],
+    "circles": ["watchOS"],
     "squares": "shared"
   }
 }

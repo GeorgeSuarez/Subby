@@ -15,7 +15,12 @@
  */
 
 import { type ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type PressableStateCallbackType } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type PressableStateCallbackType,
+} from 'react-native';
 
 import { Text } from '@/design/components/Text';
 import { useTheme } from '@/design/theme';
@@ -37,11 +42,18 @@ export interface SegmentedControlProps {
   testID?: string;
 }
 
-function normalizeSegments(segments: string[] | SegmentedOption[]): SegmentedOption[] {
+function normalizeSegments(
+  segments: string[] | SegmentedOption[],
+): SegmentedOption[] {
   return segments.map((s) => (typeof s === 'string' ? { label: s } : s));
 }
 
-export function SegmentedControl({ segments, selectedIndex, onSelect, testID }: SegmentedControlProps) {
+export function SegmentedControl({
+  segments,
+  selectedIndex,
+  onSelect,
+  testID,
+}: SegmentedControlProps) {
   const { colors } = useTheme();
   const options = normalizeSegments(segments);
 
@@ -49,7 +61,10 @@ export function SegmentedControl({ segments, selectedIndex, onSelect, testID }: 
     <View
       testID={testID}
       accessibilityRole="tablist"
-      style={[styles.container, { backgroundColor: colors.surfaceHigher, borderColor: colors.border }]}
+      style={[
+        styles.container,
+        { backgroundColor: colors.surfaceHigher, borderColor: colors.border },
+      ]}
     >
       {options.map((option, index) => {
         const selected = index === selectedIndex;

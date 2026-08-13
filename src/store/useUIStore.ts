@@ -23,9 +23,14 @@ import { applyMutation, readCache, writeCache } from '@/db/offline';
 import { getNetworkReachability } from '@/db/network';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { DEFAULT_CURRENCY } from '@/utils/constants';
-import type { CurrencyCode, SubscriptionFilter, SubscriptionSort } from '@/types/subscription';
+import type {
+  CurrencyCode,
+  SubscriptionFilter,
+  SubscriptionSort,
+} from '@/types/subscription';
 
-const UI_PREFS_KEY = Platform.OS === 'ios' ? 'subby.ios.uiPrefs' : 'subby.uiPrefs';
+const UI_PREFS_KEY =
+  Platform.OS === 'ios' ? 'subby.ios.uiPrefs' : 'subby.uiPrefs';
 
 /** Defaults for account-level prefs (also the user_prefs column defaults). */
 const ACCOUNT_PREF_DEFAULTS = {
@@ -52,9 +57,11 @@ export interface UIStore {
 }
 
 /** Sync account prefs via the sync coordinator (best-effort, errors swallowed). */
-async function syncAccountPrefs(
-  prefs: { currency: CurrencyCode; budget: number; remindersEnabled: boolean },
-): Promise<void> {
+async function syncAccountPrefs(prefs: {
+  currency: CurrencyCode;
+  budget: number;
+  remindersEnabled: boolean;
+}): Promise<void> {
   if (!isSupabaseConfigured) return;
   const { data } = await supabase.auth.getSession();
   const userId = data.session?.user.id;
@@ -112,7 +119,11 @@ export const useUIStore = create<UIStore>()(
           budget: number;
           remindersEnabled: boolean;
         }
-        const applyPrefs = (prefs: { currency: string; budget: number; remindersEnabled: boolean }) => {
+        const applyPrefs = (prefs: {
+          currency: string;
+          budget: number;
+          remindersEnabled: boolean;
+        }) => {
           set({
             currency: prefs.currency as CurrencyCode,
             budget: Number(prefs.budget),
@@ -122,7 +133,12 @@ export const useUIStore = create<UIStore>()(
         if ((await getNetworkReachability()) === false) {
           // Offline — serve the cached snapshot (defaults when none yet).
           const cached = await readCache<CachedPrefs>('prefs', userId);
-          applyPrefs(cached ?? { ...ACCOUNT_PREF_DEFAULTS, currency: ACCOUNT_PREF_DEFAULTS.currency });
+          applyPrefs(
+            cached ?? {
+              ...ACCOUNT_PREF_DEFAULTS,
+              currency: ACCOUNT_PREF_DEFAULTS.currency,
+            },
+          );
           return;
         }
         try {
@@ -158,7 +174,9 @@ export const useUIStore = create<UIStore>()(
       storage: createJSONStorage(() => persistentStorage),
       // Only device-level prefs persist locally — account prefs come from
       // Supabase.
-      partialize: (s): { sort: SubscriptionSort; filter: SubscriptionFilter } => ({
+      partialize: (
+        s,
+      ): { sort: SubscriptionSort; filter: SubscriptionFilter } => ({
         sort: s.sort,
         filter: s.filter,
       }),

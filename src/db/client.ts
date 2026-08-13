@@ -1,4 +1,4 @@
- /**
+/**
  * SQLite client + migration runner.
  *
  * Owns the singleton `SQLiteDatabase` instance. Migrations run on first open
@@ -18,9 +18,9 @@ let dbPromise: Promise<SQLiteDatabase> | null = null;
 /** Open (or return the cached) database connection and run migrations. */
 export function getDatabase(): Promise<SQLiteDatabase> {
   if (!dbPromise) {
-    dbPromise = openDatabaseAsync(DATABASE_NAME, { enableChangeListener: false }).then((db) =>
-      runMigrations(db).then(() => db),
-    );
+    dbPromise = openDatabaseAsync(DATABASE_NAME, {
+      enableChangeListener: false,
+    }).then((db) => runMigrations(db).then(() => db));
   }
   return dbPromise;
 }
@@ -47,7 +47,9 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
   const currentVersion = row?.value ? Number(row.value) : 0;
 
   // Filter to migrations strictly newer than the current version.
-  const pending: Migration[] = MIGRATIONS.filter((m) => m.version > currentVersion);
+  const pending: Migration[] = MIGRATIONS.filter(
+    (m) => m.version > currentVersion,
+  );
 
   if (pending.length === 0) return;
 

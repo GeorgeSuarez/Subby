@@ -63,7 +63,9 @@ export function AccountSection() {
   return (
     <Card padding={spacing.lg} elevation="flat">
       <Card.Header>
-        <Text variant="headline" weight="600">Account</Text>
+        <Text variant="headline" weight="600">
+          Account
+        </Text>
         <Text variant="caption" color="textSecondary">
           Signed in with {email ?? 'your account'}.
         </Text>
@@ -71,30 +73,51 @@ export function AccountSection() {
 
       <View style={[styles.row, { borderColor: colors.border }]}>
         <View style={styles.meta}>
-          <Text variant="body" weight="600" color="textPrimary">Signed in as</Text>
-          <Text variant="caption" color="textSecondary">{email ?? 'Unknown user'}</Text>
+          <Text variant="body" weight="600" color="textPrimary">
+            Signed in as
+          </Text>
+          <Text variant="caption" color="textSecondary">
+            {email ?? 'Unknown user'}
+          </Text>
         </View>
-        <Button onPress={onSignOut} variant="ghost" size="sm">Sign out</Button>
+        <Button onPress={onSignOut} variant="ghost" size="sm">
+          Sign out
+        </Button>
       </View>
 
       <View style={[styles.row, { borderColor: colors.border }]}>
         <View style={styles.meta}>
-          <Text variant="body" weight="600" color="textPrimary">Reset password</Text>
-          <Text variant="caption" color="textSecondary">Verify your current password and set a new one</Text>
+          <Text variant="body" weight="600" color="textPrimary">
+            Reset password
+          </Text>
+          <Text variant="caption" color="textSecondary">
+            Verify your current password and set a new one
+          </Text>
         </View>
-        <Button onPress={() => router.push('/verify-password')} variant="ghost" size="sm">
+        <Button
+          onPress={() => router.push('/verify-password')}
+          variant="ghost"
+          size="sm"
+        >
           Change
         </Button>
       </View>
 
       <View style={[styles.row, { borderColor: colors.border }]}>
         <View style={styles.meta}>
-          <Text variant="body" weight="600" color="negative">Delete account</Text>
+          <Text variant="body" weight="600" color="negative">
+            Delete account
+          </Text>
           <Text variant="caption" color="textSecondary">
             Permanently remove your account and all data
           </Text>
         </View>
-        <Button onPress={onDeleteAccount} variant="ghost" size="sm" disabled={deleting}>
+        <Button
+          onPress={onDeleteAccount}
+          variant="ghost"
+          size="sm"
+          disabled={deleting}
+        >
           {deleting ? 'Deleting…' : 'Delete'}
         </Button>
       </View>

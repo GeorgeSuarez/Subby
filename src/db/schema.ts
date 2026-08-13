@@ -83,7 +83,8 @@ export const MIGRATIONS: readonly Migration[] = [
   },
   {
     version: 5,
-    description: 'create notification sidecar for Supabase-backed subscriptions',
+    description:
+      'create notification sidecar for Supabase-backed subscriptions',
     // Subscriptions moved to Supabase; renewal-reminder notification ids are
     // device-local bookkeeping (meaningless server-side), so they live in
     // this map keyed by subscription id. The legacy `subscriptions` table
@@ -124,7 +125,8 @@ export const MIGRATIONS: readonly Migration[] = [
 ] as const;
 
 /** Highest migration version in the list. Bump when you append a migration. */
-export const LATEST_VERSION: number = MIGRATIONS[MIGRATIONS.length - 1]!.version;
+export const LATEST_VERSION: number =
+  MIGRATIONS[MIGRATIONS.length - 1]!.version;
 
 /** The SQLite database filename (under the app's default database directory). */
 export const DATABASE_NAME = 'subby.db';

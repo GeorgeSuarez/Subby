@@ -120,7 +120,10 @@ createServer((req, res) => {
     res.end(PAGE);
     return;
   }
-  if (req.method === 'GET' && (req.url === '/reset-password' || req.url.startsWith('/reset-password#'))) {
+  if (
+    req.method === 'GET' &&
+    (req.url === '/reset-password' || req.url.startsWith('/reset-password#'))
+  ) {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(RESET_PAGE);
     return;

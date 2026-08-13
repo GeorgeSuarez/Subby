@@ -54,9 +54,19 @@ describe('defaultDraft', () => {
 describe('draftFromSubscription', () => {
   it('copies editable fields only and returns a fresh object', () => {
     const sub: Subscription = {
-      id: 'abc', name: 'Spotify', amount: 9.99, currency: 'USD', cycle: 'monthly',
-      nextRenewal: '2026-08-01', category: 'music', icon: 'musical-notes-outline',
-      color: '#1DB954', notes: 'Family plan', createdAt: 100, updatedAt: 200, archived: false,
+      id: 'abc',
+      name: 'Spotify',
+      amount: 9.99,
+      currency: 'USD',
+      cycle: 'monthly',
+      nextRenewal: '2026-08-01',
+      category: 'music',
+      icon: 'musical-notes-outline',
+      color: '#1DB954',
+      notes: 'Family plan',
+      createdAt: 100,
+      updatedAt: 200,
+      archived: false,
     };
     const draft = draftFromSubscription(sub);
     // Match shape of SubscriptionDraft (no id/timestamps/archived).
@@ -72,9 +82,17 @@ describe('draftFromSubscription', () => {
 
   it('does not share references with the original', () => {
     const sub: Subscription = {
-      id: 'abc', name: 'X', amount: 1, currency: 'USD', cycle: 'monthly',
-      nextRenewal: '2026-08-01', category: 'other', icon: 'cube-outline',
-      createdAt: 0, updatedAt: 0, archived: false,
+      id: 'abc',
+      name: 'X',
+      amount: 1,
+      currency: 'USD',
+      cycle: 'monthly',
+      nextRenewal: '2026-08-01',
+      category: 'other',
+      icon: 'cube-outline',
+      createdAt: 0,
+      updatedAt: 0,
+      archived: false,
     };
     const draft = draftFromSubscription(sub);
     expect(draft).not.toBe(sub as unknown as SubscriptionDraft);
@@ -83,8 +101,13 @@ describe('draftFromSubscription', () => {
 
 describe('validateDraft', () => {
   const valid: SubscriptionDraft = {
-    name: 'Netflix', amount: '9.99', currency: 'USD', cycle: 'monthly',
-    nextRenewal: '2026-08-01', category: 'streaming', icon: 'film-outline',
+    name: 'Netflix',
+    amount: '9.99',
+    currency: 'USD',
+    cycle: 'monthly',
+    nextRenewal: '2026-08-01',
+    category: 'streaming',
+    icon: 'film-outline',
   };
 
   it('returns no errors for a valid draft', () => {
@@ -92,15 +115,16 @@ describe('validateDraft', () => {
   });
 
   it('rejects empty / whitespace-only name', () => {
-    expect(
-      validateDraft({ ...valid, name: '   ' }),
-    ).toContainEqual({ field: 'name', message: 'Name is required' });
+    expect(validateDraft({ ...valid, name: '   ' })).toContainEqual({
+      field: 'name',
+      message: 'Name is required',
+    });
   });
 
   it('rejects names over 64 chars', () => {
-    expect(
-      validateDraft({ ...valid, name: 'x'.repeat(65) }),
-    ).toContainEqual(expect.objectContaining({ field: 'name' }));
+    expect(validateDraft({ ...valid, name: 'x'.repeat(65) })).toContainEqual(
+      expect.objectContaining({ field: 'name' }),
+    );
   });
 
   it('rejects zero, negative, non-finite amount', () => {
@@ -116,37 +140,54 @@ describe('validateDraft', () => {
   });
 
   it('rejects absurdly large amounts', () => {
-    expect(
-      validateDraft({ ...valid, amount: '2000000' })[0]?.field,
-    ).toBe('amount');
+    expect(validateDraft({ ...valid, amount: '2000000' })[0]?.field).toBe(
+      'amount',
+    );
   });
 
   it('rejects unknown currency', () => {
     expect(
-      validateDraft({ ...valid, currency: 'BAD' as SubscriptionDraft['currency'] })[0]?.field,
+      validateDraft({
+        ...valid,
+        currency: 'BAD' as SubscriptionDraft['currency'],
+      })[0]?.field,
     ).toBe('currency');
   });
 
   it('rejects unknown cycle', () => {
     expect(
-      validateDraft({ ...valid, cycle: 'fortnightly' as SubscriptionDraft['cycle'] })[0]?.field,
+      validateDraft({
+        ...valid,
+        cycle: 'fortnightly' as SubscriptionDraft['cycle'],
+      })[0]?.field,
     ).toBe('cycle');
   });
 
   it('rejects invalid nextRenewal', () => {
-    expect(validateDraft({ ...valid, nextRenewal: 'tomorrow' })[0]?.field).toBe('nextRenewal');
-    expect(validateDraft({ ...valid, nextRenewal: '2026-13-01' })[0]?.field).toBe('nextRenewal');
+    expect(validateDraft({ ...valid, nextRenewal: 'tomorrow' })[0]?.field).toBe(
+      'nextRenewal',
+    );
+    expect(
+      validateDraft({ ...valid, nextRenewal: '2026-13-01' })[0]?.field,
+    ).toBe('nextRenewal');
   });
 
   it('rejects unknown category', () => {
     expect(
-      validateDraft({ ...valid, category: 'space-travel' as SubscriptionDraft['category'] })[0]?.field,
+      validateDraft({
+        ...valid,
+        category: 'space-travel' as SubscriptionDraft['category'],
+      })[0]?.field,
     ).toBe('category');
   });
 
   it('rejects invalid color formats only when color is provided', () => {
-    expect(validateDraft({ ...valid, color: '#abc' })[0]?.field).toBe(undefined);
-    expect(validateDraft({ ...valid, color: 'banana' })[0]?.field).toBe('color');
+    expect(validateDraft({ ...valid, color: '#abc' })[0]?.field).toBe(
+      undefined,
+    );
+    expect(validateDraft({ ...valid, color: 'banana' })[0]?.field).toBe(
+      'color',
+    );
   });
 
   it('caps notes at 280 characters', () => {
@@ -155,13 +196,19 @@ describe('validateDraft', () => {
   });
 
   it('accepts a valid future trial end', () => {
-    const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+    const tomorrow = new Date(Date.now() + 86_400_000)
+      .toISOString()
+      .slice(0, 10);
     expect(validateDraft({ ...valid, trialEnds: tomorrow })).toEqual([]);
   });
 
   it('rejects a malformed or past trial end', () => {
-    expect(validateDraft({ ...valid, trialEnds: 'not-a-date' })[0]?.field).toBe('trialEnds');
-    expect(validateDraft({ ...valid, trialEnds: '2020-01-01' })[0]?.field).toBe('trialEnds');
+    expect(validateDraft({ ...valid, trialEnds: 'not-a-date' })[0]?.field).toBe(
+      'trialEnds',
+    );
+    expect(validateDraft({ ...valid, trialEnds: '2020-01-01' })[0]?.field).toBe(
+      'trialEnds',
+    );
   });
 
   it('allows an unset trial end', () => {

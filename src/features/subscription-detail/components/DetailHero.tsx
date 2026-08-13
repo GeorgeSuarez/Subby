@@ -28,7 +28,10 @@ export function DetailHero({ sub }: DetailHeroProps) {
   const cat = categoryMeta(sub.category);
   const cycle = cycleMeta(sub.cycle);
 
-  const tint = typeof sub.color === 'string' && sub.color.length > 0 ? sub.color : colors.accent;
+  const tint =
+    typeof sub.color === 'string' && sub.color.length > 0
+      ? sub.color
+      : colors.accent;
   const badgeTone: BadgeTone = sub.archived ? 'warning' : 'accent';
 
   return (
@@ -49,10 +52,17 @@ export function DetailHero({ sub }: DetailHeroProps) {
 
       <View style={styles.body}>
         <View style={styles.labelRow}>
-          <Text variant="title" weight="700" color="textPrimary" numberOfLines={1}>
+          <Text
+            variant="title"
+            weight="700"
+            color="textPrimary"
+            numberOfLines={1}
+          >
             {sub.name}
           </Text>
-          <Badge tone={badgeTone}>{sub.archived ? 'Archived' : cat.label}</Badge>
+          <Badge tone={badgeTone}>
+            {sub.archived ? 'Archived' : cat.label}
+          </Badge>
         </View>
 
         <View style={styles.amountRow}>

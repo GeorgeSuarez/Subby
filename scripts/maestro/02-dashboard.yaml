@@ -4,18 +4,18 @@ appId: host.exp.Exponent
 - openLink: exp://127.0.0.1:8081
 - runFlow:
     when:
-      visible: "Sign in"
+      visible: 'Sign in'
     commands:
-      - tapOn: "you@example.com"
+      - tapOn: 'you@example.com'
       - eraseText
-      - inputText: "test@subby.app"
-      - tapOn: "Your password"
+      - inputText: 'test@subby.app'
+      - tapOn: 'Your password'
       - eraseText
-      - inputText: "subby123"
+      - inputText: 'subby123'
       - pressKey: Enter
 - extendedWaitUntil:
-    visible: "Monthly spend"
+    visible: 'Monthly spend'
     timeout: 180000
-- assertVisible: "Upcoming renewals · next 30 days"
-- assertVisible: "By category"
+- assertVisible: 'Upcoming renewals · next 30 days'
+- assertVisible: 'By category'
 - takeScreenshot: dashboard

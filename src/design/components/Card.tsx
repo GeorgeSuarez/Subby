@@ -65,7 +65,11 @@ function CardHeader({ children, style, ...rest }: ComponentProps<typeof View>) {
   );
 }
 
-function CardBody({ children, style, ...rest }: ComponentProps<typeof View> & { children?: ReactNode }) {
+function CardBody({
+  children,
+  style,
+  ...rest
+}: ComponentProps<typeof View> & { children?: ReactNode }) {
   return (
     <View style={[styles.body, style]} {...rest}>
       {children}

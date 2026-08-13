@@ -61,8 +61,17 @@ export function CategoryPicker({ value, onSelect }: CategoryPickerProps) {
           pressed ? styles.pressed : null,
         ]}
       >
-        <Ionicons name={current.icon as never} size={20} color={colors.accent} />
-        <Text variant="body" color="textPrimary" numberOfLines={1} style={styles.value}>
+        <Ionicons
+          name={current.icon as never}
+          size={20}
+          color={colors.accent}
+        />
+        <Text
+          variant="body"
+          color="textPrimary"
+          numberOfLines={1}
+          style={styles.value}
+        >
           {current.label}
         </Text>
         <Ionicons name="chevron-down" size={16} color={colors.textTertiary} />
@@ -70,8 +79,12 @@ export function CategoryPicker({ value, onSelect }: CategoryPickerProps) {
 
       <Sheet visible={visible} onDismiss={close}>
         <View style={styles.sheetHeader}>
-          <Text variant="headline" weight="600">Category</Text>
-          <Button variant="ghost" size="sm" onPress={close}>Cancel</Button>
+          <Text variant="headline" weight="600">
+            Category
+          </Text>
+          <Button variant="ghost" size="sm" onPress={close}>
+            Cancel
+          </Button>
         </View>
         <View style={styles.list}>
           {CATEGORIES.map((c) => {

@@ -20,52 +20,59 @@ import { Text } from '@/design/components/Text';
 import { useTheme } from '@/design/theme';
 import { radius, spacing } from '@/design/tokens';
 
-export interface SearchFieldProps extends Omit<TextInputProps, 'placeholderTextColor'> {
+export interface SearchFieldProps extends Omit<
+  TextInputProps,
+  'placeholderTextColor'
+> {
   /** Override the placeholder color token. Defaults to textTertiary. */
   placeholderColor?: 'textTertiary' | 'textSecondary';
 }
 
-export const SearchField = forwardRef<TextInput, SearchFieldProps>(function SearchField(
-  {
-    placeholder = 'Search',
-    placeholderColor = 'textTertiary',
-    style,
-    ...rest
-  },
-  ref,
-) {
-  const { colors } = useTheme();
+export const SearchField = forwardRef<TextInput, SearchFieldProps>(
+  function SearchField(
+    {
+      placeholder = 'Search',
+      placeholderColor = 'textTertiary',
+      style,
+      ...rest
+    },
+    ref,
+  ) {
+    const { colors } = useTheme();
 
-  return (
-    <View
-      style={[
-        styles.container,
-        {
-          backgroundColor: colors.surfaceHigher,
-          borderColor: colors.border,
-        },
-      ]}
-    >
-      <Ionicons name="search" size={18} color={colors[placeholderColor]} />
-      <TextInput
-        ref={ref}
-        placeholder={placeholder}
-        placeholderTextColor={colors[placeholderColor]}
-        returnKeyType="search"
-        autoCorrect={false}
-        spellCheck={false}
-        style={[styles.input, { color: colors.textPrimary }, style]}
-        {...rest}
-      />
-    </View>
-  );
-});
+    return (
+      <View
+        style={[
+          styles.container,
+          {
+            backgroundColor: colors.surfaceHigher,
+            borderColor: colors.border,
+          },
+        ]}
+      >
+        <Ionicons name="search" size={18} color={colors[placeholderColor]} />
+        <TextInput
+          ref={ref}
+          placeholder={placeholder}
+          placeholderTextColor={colors[placeholderColor]}
+          returnKeyType="search"
+          autoCorrect={false}
+          spellCheck={false}
+          style={[styles.input, { color: colors.textPrimary }, style]}
+          {...rest}
+        />
+      </View>
+    );
+  },
+);
 
 /** Lightweight hint row for "no results" inside search-filtered lists. */
 export function SearchHint({ message }: { message: string }) {
   return (
     <View style={styles.hint}>
-      <Text variant="caption" color="textTertiary">{message}</Text>
+      <Text variant="caption" color="textTertiary">
+        {message}
+      </Text>
     </View>
   );
 }

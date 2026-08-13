@@ -14,46 +14,51 @@ import { forwardRef, useState } from 'react';
 import { StyleSheet, View, type TextInput } from 'react-native';
 
 import { IconButton } from '@/design/components';
-import { TextField, type TextFieldProps } from '@/features/add-subscription/components/TextField';
+import {
+  TextField,
+  type TextFieldProps,
+} from '@/features/add-subscription/components/TextField';
 import { spacing } from '@/design/tokens';
 import { selection } from '@/utils/haptics';
 
-export type PasswordFieldProps = Omit<TextFieldProps, 'secureTextEntry' | 'textContentType'> & {
+export type PasswordFieldProps = Omit<
+  TextFieldProps,
+  'secureTextEntry' | 'textContentType'
+> & {
   /** Autofill hint; parent picks per mode (current-password / new-password). */
   textContentType: TextFieldProps['textContentType'];
 };
 
-export const PasswordField = forwardRef<TextInput, PasswordFieldProps>(function PasswordField(
-  { style, ...rest },
-  ref,
-) {
-  const [visible, setVisible] = useState(false);
+export const PasswordField = forwardRef<TextInput, PasswordFieldProps>(
+  function PasswordField({ style, ...rest }, ref) {
+    const [visible, setVisible] = useState(false);
 
-  return (
-    <View>
-      <TextField
-        ref={ref}
-        secureTextEntry={!visible}
-        autoCapitalize="none"
-        autoCorrect={false}
-        style={[styles.input, style]}
-        {...rest}
-      />
-      <IconButton
-        name={visible ? 'eye-off' : 'eye'}
-        size={20}
-        color="textTertiary"
-        onPress={() => {
-          setVisible((prev) => !prev);
-          void selection();
-        }}
-        accessibilityRole="button"
-        accessibilityLabel={visible ? 'Hide password' : 'Show password'}
-        style={styles.toggle}
-      />
-    </View>
-  );
-});
+    return (
+      <View>
+        <TextField
+          ref={ref}
+          secureTextEntry={!visible}
+          autoCapitalize="none"
+          autoCorrect={false}
+          style={[styles.input, style]}
+          {...rest}
+        />
+        <IconButton
+          name={visible ? 'eye-off' : 'eye'}
+          size={20}
+          color="textTertiary"
+          onPress={() => {
+            setVisible((prev) => !prev);
+            void selection();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={visible ? 'Hide password' : 'Show password'}
+          style={styles.toggle}
+        />
+      </View>
+    );
+  },
+);
 
 const styles = StyleSheet.create({
   input: {

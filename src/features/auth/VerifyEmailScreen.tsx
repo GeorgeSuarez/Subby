@@ -31,7 +31,9 @@ export function VerifyEmailScreen() {
   const router = useRouter();
   const verificationEmail = useAuthStore((s) => s.verificationEmail);
   const checkVerification = useAuthStore((s) => s.checkVerification);
-  const resendVerificationEmail = useAuthStore((s) => s.resendVerificationEmail);
+  const resendVerificationEmail = useAuthStore(
+    (s) => s.resendVerificationEmail,
+  );
 
   const [checking, setChecking] = useState(false);
   const [inlineError, setInlineError] = useState<string | null>(null);
@@ -83,7 +85,9 @@ export function VerifyEmailScreen() {
       toast('Confirmation link sent');
     } catch (e) {
       void notifyError();
-      setInlineError(e instanceof Error ? e.message : 'Could not resend the email.');
+      setInlineError(
+        e instanceof Error ? e.message : 'Could not resend the email.',
+      );
     }
   }, [resendVerificationEmail]);
 
@@ -102,20 +106,32 @@ export function VerifyEmailScreen() {
         <BrandLockup />
 
         <View style={styles.copy}>
-          <Text variant="title" align="center">Verify your email</Text>
+          <Text variant="title" align="center">
+            Verify your email
+          </Text>
           <Text variant="body" color="textSecondary" align="center">
-            We sent a confirmation link to {verificationEmail}. Tap it, then come back here.
+            We sent a confirmation link to {verificationEmail}. Tap it, then
+            come back here.
           </Text>
         </View>
 
         <View style={styles.actions}>
-          <Button variant="primary" size="lg" disabled={checking} onPress={onContinue}>
+          <Button
+            variant="primary"
+            size="lg"
+            disabled={checking}
+            onPress={onContinue}
+          >
             {"I've verified — continue"}
           </Button>
-          <Button variant="ghost" size="lg" onPress={onResend}>Resend email</Button>
+          <Button variant="ghost" size="lg" onPress={onResend}>
+            Resend email
+          </Button>
 
           {inlineError ? (
-            <Text variant="caption" color="negative" align="center">{inlineError}</Text>
+            <Text variant="caption" color="negative" align="center">
+              {inlineError}
+            </Text>
           ) : null}
 
           <Text variant="caption" color="textTertiary" align="center">

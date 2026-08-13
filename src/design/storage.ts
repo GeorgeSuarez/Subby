@@ -56,7 +56,8 @@ function getSqliteStorage(): Promise<StateStorage | null> {
         // requires statically, and Jest's plain-node env can't load this
         // module at all (the try/catch falls back to memory).
         // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { default: AsyncStorage } = require('expo-sqlite/kv-store') as typeof import('expo-sqlite/kv-store');
+        const { default: AsyncStorage } =
+          require('expo-sqlite/kv-store') as typeof import('expo-sqlite/kv-store');
         return {
           getItem: (name) => AsyncStorage.getItemAsync(name),
           setItem: (name, value) => AsyncStorage.setItemAsync(name, value),

@@ -6,7 +6,14 @@
  */
 
 import { forwardRef, type ComponentProps } from 'react';
-import { Pressable, StyleSheet, View, type PressableStateCallbackType, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type PressableStateCallbackType,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/design/theme';
@@ -14,7 +21,10 @@ import { radius, spacing, type Palette } from '@/design/tokens';
 
 type Variant = 'solid' | 'ghost';
 
-export interface IconButtonProps extends Omit<ComponentProps<typeof Pressable>, 'style'> {
+export interface IconButtonProps extends Omit<
+  ComponentProps<typeof Pressable>,
+  'style'
+> {
   /** Ionicons glyph name. */
   name: keyof typeof Ionicons.glyphMap | string;
   size?: number;

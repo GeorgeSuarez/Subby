@@ -7,27 +7,27 @@ appId: host.exp.Exponent
 # NOTE: run via the warm-up runner (app already open + signed in).
 - openLink: exp://127.0.0.1:8081/--/subscription/c20167ff-2d0b-4578-bf7c-2116fe60012f
 - extendedWaitUntil:
-    visible: "Effective cost"
+    visible: 'Effective cost'
     timeout: 60000
 - takeScreenshot: detail
-- tapOn: "Edit subscription"
+- tapOn: 'Edit subscription'
 - extendedWaitUntil:
-    visible: "Edit subscription"
+    visible: 'Edit subscription'
     timeout: 60000
-- tapOn: "15.99|16.99"
+- tapOn: '15.99|16.99'
 - eraseText
-- inputText: "16.99"
+- inputText: '16.99'
 - swipe:
-    start: "50%,30%"
-    end: "50%,10%"
+    start: '50%,30%'
+    end: '50%,10%'
 - swipe:
-    start: "50%,30%"
-    end: "50%,12%"
+    start: '50%,30%'
+    end: '50%,12%'
 - tapOn:
-    id: "add-submit"
+    id: 'add-submit'
 - extendedWaitUntil:
-    visible: "Effective cost"
+    visible: 'Effective cost'
     timeout: 60000
 - assertVisible:
-    text: ".*16.99.*"
+    text: '.*16.99.*'
     optional: true

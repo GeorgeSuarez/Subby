@@ -9,7 +9,7 @@
  * the `undefined` locale arg in a single place here.
  */
 
-import type { CurrencyCode , Cycle } from '@/types/subscription';
+import type { CurrencyCode, Cycle } from '@/types/subscription';
 import { currencyMeta, cycleMeta } from '@/utils/constants';
 
 // --- Currency ---------------------------------------------------------------
@@ -42,7 +42,10 @@ export function formatCurrency(amount: number, currency: CurrencyCode): string {
 }
 
 /** Compact form for stats — "$412" / "$1.2K" / "$12.4K". */
-export function formatCurrencyCompact(amount: number, currency: CurrencyCode): string {
+export function formatCurrencyCompact(
+  amount: number,
+  currency: CurrencyCode,
+): string {
   const abs = Math.abs(amount);
   const meta = currencyMeta(currency);
   if (abs >= 1000) {
@@ -92,8 +95,13 @@ export function formatWeekday(iso: string): string {
   return weekdayFormatter.format(d);
 }
 
-const monthKeyFormatter = new Intl.DateTimeFormat(undefined, { month: 'short', year: '2-digit' });
-const monthShortFormatter = new Intl.DateTimeFormat(undefined, { month: 'short' });
+const monthKeyFormatter = new Intl.DateTimeFormat(undefined, {
+  month: 'short',
+  year: '2-digit',
+});
+const monthShortFormatter = new Intl.DateTimeFormat(undefined, {
+  month: 'short',
+});
 
 /** Format a 'YYYY-MM' forecast key as "Jul ’26". */
 export function formatMonthKey(monthKey: string): string {
@@ -121,7 +129,8 @@ export function formatMonthShort(monthKey: string): string {
  *   else      → "In Md"
  */
 export function formatRenewalIn(days: number): string {
-  if (days < 0) return `Overdue ${Math.abs(days)} ${Math.abs(days) === 1 ? 'day' : 'days'}`;
+  if (days < 0)
+    return `Overdue ${Math.abs(days)} ${Math.abs(days) === 1 ? 'day' : 'days'}`;
   if (days === 0) return 'Today';
   if (days === 1) return 'Tomorrow';
   if (days < 7) return `In ${days} days`;

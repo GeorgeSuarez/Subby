@@ -56,7 +56,13 @@ export function Sheet({
         style={[styles.backdrop, { backgroundColor: colors[backdropTone] }]}
       >
         <View
-          style={[styles.sheet, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}
+          style={[
+            styles.sheet,
+            {
+              backgroundColor: colors.surfaceElevated,
+              borderColor: colors.border,
+            },
+          ]}
           // Stop taps on the sheet itself from dismissing.
           onStartShouldSetResponder={() => true}
         >

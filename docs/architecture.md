@@ -181,10 +181,10 @@ All worklet code uses `.get()` / `.set()` instead of `.value`:
 
 ```ts
 // ❌ opts out of React Compiler
-pressed.value = withTiming(1)
+pressed.value = withTiming(1);
 
 // ✅ compiler-safe
-pressed.set(withTiming(1))
+pressed.set(withTiming(1));
 ```
 
 ### Haptics
@@ -192,11 +192,10 @@ pressed.set(withTiming(1))
 Haptic feedback fires via `runOnJS` from worklet callbacks — the gesture handler stays on the UI thread while the haptic invocation is a JS-thread side effect:
 
 ```ts
-const tap = Gesture.Tap()
-  .onEnd(() => {
-    runOnJS(onPress)()
-    runOnJS(impactLight)()
-  })
+const tap = Gesture.Tap().onEnd(() => {
+  runOnJS(onPress)();
+  runOnJS(impactLight)();
+});
 ```
 
 ---
@@ -233,22 +232,22 @@ RootLayout (src/app/_layout.tsx)
 
 14 primitive components in `src/design/components/`:
 
-| Component | Purpose |
-|-----------|---------|
-| `Text` | Tokenized typography (6 variants, weight/align/color props) |
-| `Surface` | Themed View with optional border |
-| `Card` + `.Header` / `.Body` / `.Footer` | Compound container with elevation presets |
-| `Button` | Pressable-based, 3 variants (primary/ghost/danger), 3 sizes |
-| `IconButton` | Pressable with Ionicons glyph |
-| `Badge` | Status indicator (5 tones) |
-| `Chip` | Selectable category pill |
-| `Avatar` | `expo-image`-backed icon tile |
-| `ListRow` | FlashList row — memoized, primitive-only props, `onPressWithId`/`onLongPressWithId` |
-| `Stat` | Metric block with optional delta badge |
-| `SegmentedControl` | N-segment selector with stable `onSelect` |
-| `SearchField` | Themed native `TextInput` with leading magnifier |
-| `EmptyState` | ZoomIn + FadeInDown entrance animation |
-| `Sheet` | RN `Modal` wrapper (native platform modal, not JS bottom-sheet) |
+| Component                                | Purpose                                                                             |
+| ---------------------------------------- | ----------------------------------------------------------------------------------- |
+| `Text`                                   | Tokenized typography (6 variants, weight/align/color props)                         |
+| `Surface`                                | Themed View with optional border                                                    |
+| `Card` + `.Header` / `.Body` / `.Footer` | Compound container with elevation presets                                           |
+| `Button`                                 | Pressable-based, 3 variants (primary/ghost/danger), 3 sizes                         |
+| `IconButton`                             | Pressable with Ionicons glyph                                                       |
+| `Badge`                                  | Status indicator (5 tones)                                                          |
+| `Chip`                                   | Selectable category pill                                                            |
+| `Avatar`                                 | `expo-image`-backed icon tile                                                       |
+| `ListRow`                                | FlashList row — memoized, primitive-only props, `onPressWithId`/`onLongPressWithId` |
+| `Stat`                                   | Metric block with optional delta badge                                              |
+| `SegmentedControl`                       | N-segment selector with stable `onSelect`                                           |
+| `SearchField`                            | Themed native `TextInput` with leading magnifier                                    |
+| `EmptyState`                             | ZoomIn + FadeInDown entrance animation                                              |
+| `Sheet`                                  | RN `Modal` wrapper (native platform modal, not JS bottom-sheet)                     |
 
 All components import tokens from `@/design` (barrel file) — never reach into individual module paths. Tokens are consumed via `useTheme()` (full palette) or `useThemeColor(name)` (single color — for memoized rows).
 
@@ -258,17 +257,17 @@ All components import tokens from `@/design` (barrel file) — never reach into 
 
 Pure, RN-free helpers are fully unit-tested in plain Node Jest (no `jest-expo` preset needed):
 
-| Suite | Tests | What it covers |
-|-------|-------|----------------|
-| `utils/billing.test.ts` | 24 | Date math, month clamping, renewal walking, monthly/yearly equivalents, aggregates, renewalsWithin sorting |
-| `utils/format.test.ts` | 14 | Currency formatting (USD/JPY), compact K-suffix, date format, humanized renewal windows |
-| `utils/constants.test.ts` | 11 | Category slug/label/icon mapping, cycle month spans, currency fraction digits |
-| `features/subscriptions/subscriptions-filter.test.ts` | 14 | matchesQuery (multi-token AND), applyFilter (active/archived/all + shallow-copy), applySort (name/amount/nextRenewal, no input mutation), filterAndSortSubs composition |
-| `features/subscription-detail/detail-helpers.test.ts` | 12 | renewalToneFor (4 buckets), getRenewalStatus, getMonthlyCost/getYearlyCost |
-| `features/add-subscription/form-helpers.test.ts` | 21 | parseISO (valid/malformed/leap day), defaultDraft, draftFromSubscription, validateDraft (11 field rules), errorsByField |
-| `design/theme.test.ts` | 18 | normalizeSystem, resolveScheme (undefined pref + system unknown → dark-first), resolveTheme across all combos |
-| `db/seed.test.ts` | 3 | Brand list, parseable dates, relative-to-today behavior |
-| **Total** | **117** | **8 suites** |
+| Suite                                                 | Tests   | What it covers                                                                                                                                                          |
+| ----------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `utils/billing.test.ts`                               | 24      | Date math, month clamping, renewal walking, monthly/yearly equivalents, aggregates, renewalsWithin sorting                                                              |
+| `utils/format.test.ts`                                | 14      | Currency formatting (USD/JPY), compact K-suffix, date format, humanized renewal windows                                                                                 |
+| `utils/constants.test.ts`                             | 11      | Category slug/label/icon mapping, cycle month spans, currency fraction digits                                                                                           |
+| `features/subscriptions/subscriptions-filter.test.ts` | 14      | matchesQuery (multi-token AND), applyFilter (active/archived/all + shallow-copy), applySort (name/amount/nextRenewal, no input mutation), filterAndSortSubs composition |
+| `features/subscription-detail/detail-helpers.test.ts` | 12      | renewalToneFor (4 buckets), getRenewalStatus, getMonthlyCost/getYearlyCost                                                                                              |
+| `features/add-subscription/form-helpers.test.ts`      | 21      | parseISO (valid/malformed/leap day), defaultDraft, draftFromSubscription, validateDraft (11 field rules), errorsByField                                                 |
+| `design/theme.test.ts`                                | 18      | normalizeSystem, resolveScheme (undefined pref + system unknown → dark-first), resolveTheme across all combos                                                           |
+| `db/seed.test.ts`                                     | 3       | Brand list, parseable dates, relative-to-today behavior                                                                                                                 |
+| **Total**                                             | **117** | **8 suites**                                                                                                                                                            |
 
 React component tests (rendering, interaction, accessibility) are deferred — they'd require `jest-expo` + `@testing-library/react-native`, which we'll add in a future iteration.
 

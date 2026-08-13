@@ -10,7 +10,8 @@ import type { SubscriptionDraft } from '@/types/subscription';
 
 /** Build the seed drafts relative to today so renewals are imminent. */
 export function seedDrafts(today: Date = todayUTC()): SubscriptionDraft[] {
-  const inDays = (n: number) => toISODate(new Date(today.getTime() + n * 86_400_000));
+  const inDays = (n: number) =>
+    toISODate(new Date(today.getTime() + n * 86_400_000));
   const inMonths = (n: number) => toISODate(addMonths(today, n));
 
   return [

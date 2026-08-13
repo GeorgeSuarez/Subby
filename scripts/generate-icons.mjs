@@ -18,12 +18,10 @@
  */
 
 import sharp from 'sharp';
-import { writeFileSync } from 'fs';
 
 const DARK = '#0B0F14';
 const ELEVATED = '#131920';
 const CYAN = '#22D3EE';
-const CYAN_MUTED = '#0E7490';
 const ICON_DIR = 'assets/images';
 
 // ---------------------------------------------------------------------------
@@ -131,9 +129,24 @@ async function generate() {
     { svg: appIconSVG(), file: `${ICON_DIR}/icon.png`, w: 1024, h: 1024 },
     { svg: glyphSVG(), file: `${ICON_DIR}/splash-icon.png`, w: 200, h: 200 },
     { svg: glyphSVG(), file: `${ICON_DIR}/favicon.png`, w: 48, h: 48 },
-    { svg: adaptiveBackgroundSVG(), file: `${ICON_DIR}/android-icon-background.png`, w: 432, h: 432 },
-    { svg: adaptiveForegroundSVG(), file: `${ICON_DIR}/android-icon-foreground.png`, w: 432, h: 432 },
-    { svg: monochromeSVG(), file: `${ICON_DIR}/android-icon-monochrome.png`, w: 432, h: 432 },
+    {
+      svg: adaptiveBackgroundSVG(),
+      file: `${ICON_DIR}/android-icon-background.png`,
+      w: 432,
+      h: 432,
+    },
+    {
+      svg: adaptiveForegroundSVG(),
+      file: `${ICON_DIR}/android-icon-foreground.png`,
+      w: 432,
+      h: 432,
+    },
+    {
+      svg: monochromeSVG(),
+      file: `${ICON_DIR}/android-icon-monochrome.png`,
+      w: 432,
+      h: 432,
+    },
   ];
 
   for (const t of tasks) {

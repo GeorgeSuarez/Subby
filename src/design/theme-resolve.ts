@@ -44,7 +44,10 @@ export function normalizeSystem(scheme: SystemScheme): 'light' | 'dark' | null {
   return null;
 }
 
-export function resolveScheme(pref: ThemePreference | undefined, system: 'light' | 'dark' | null): ResolvedScheme {
+export function resolveScheme(
+  pref: ThemePreference | undefined,
+  system: 'light' | 'dark' | null,
+): ResolvedScheme {
   const effective = pref ?? DEFAULT_PREFERENCE;
   if (effective === 'system') {
     // Dark-first identity: when system is unknown or unspecified, default to dark.

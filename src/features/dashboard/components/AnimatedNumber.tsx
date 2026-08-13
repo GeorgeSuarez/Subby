@@ -46,9 +46,12 @@ export function AnimatedNumber({
   const [display, setDisplay] = useState<string>(format(0));
 
   // Stable updater so it can be safely listed in effect dependencies.
-  const push = useCallback((n: number) => {
-    setDisplay(() => format(n));
-  }, [format]);
+  const push = useCallback(
+    (n: number) => {
+      setDisplay(() => format(n));
+    },
+    [format],
+  );
 
   // Drive the animation whenever `value` changes. `withTiming` is a no-op when
   // the current value is already at the target, so we don't need to short-circuit.

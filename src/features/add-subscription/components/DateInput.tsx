@@ -17,7 +17,9 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
-import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import DateTimePicker, {
+  type DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Button, Text } from '@/design/components';
@@ -68,7 +70,9 @@ export function DateInput({ value, onChange }: DateInputProps) {
   const { colors } = useTheme();
   const scheme = useColorMode();
   const [visible, setVisible] = useState(false);
-  const [pending, setPending] = useState<Date>(() => isoToLocalDate(value) ?? defaultDate());
+  const [pending, setPending] = useState<Date>(
+    () => isoToLocalDate(value) ?? defaultDate(),
+  );
 
   const current = useMemo(() => isoToLocalDate(value), [value]);
   const minimumDate = useMemo(() => minDate(), []);
@@ -121,8 +125,17 @@ export function DateInput({ value, onChange }: DateInputProps) {
           pressed ? styles.pressed : null,
         ]}
       >
-        <Ionicons name="calendar-outline" size={20} color={colors.textTertiary} />
-        <Text variant="body" color={value ? 'textPrimary' : 'textTertiary'} numberOfLines={1} style={styles.value}>
+        <Ionicons
+          name="calendar-outline"
+          size={20}
+          color={colors.textTertiary}
+        />
+        <Text
+          variant="body"
+          color={value ? 'textPrimary' : 'textTertiary'}
+          numberOfLines={1}
+          style={styles.value}
+        >
           {value ? formatDate(value) : 'Pick a date'}
         </Text>
         <Ionicons name="chevron-down" size={16} color={colors.textTertiary} />
@@ -131,9 +144,15 @@ export function DateInput({ value, onChange }: DateInputProps) {
       {Platform.OS === 'ios' ? (
         <Sheet visible={visible} onDismiss={close}>
           <View style={styles.sheetHeader}>
-            <Button variant="ghost" size="sm" onPress={close}>Cancel</Button>
-            <Text variant="headline" weight="600">Next renewal</Text>
-            <Button variant="primary" size="sm" onPress={done}>Done</Button>
+            <Button variant="ghost" size="sm" onPress={close}>
+              Cancel
+            </Button>
+            <Text variant="headline" weight="600">
+              Next renewal
+            </Text>
+            <Button variant="primary" size="sm" onPress={done}>
+              Done
+            </Button>
           </View>
           <DateTimePicker
             value={pending}

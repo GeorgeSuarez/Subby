@@ -6,7 +6,11 @@ export { AmountInput } from '@/features/add-subscription/components/AmountInput'
 export { DateInput } from '@/features/add-subscription/components/DateInput';
 export { CyclePicker } from '@/features/add-subscription/components/CyclePicker';
 export { CategoryPicker } from '@/features/add-subscription/components/CategoryPicker';
-export { IconColorPicker, ICON_PALETTE, COLOR_PALETTE } from '@/features/add-subscription/components/IconColorPicker';
+export {
+  IconColorPicker,
+  ICON_PALETTE,
+  COLOR_PALETTE,
+} from '@/features/add-subscription/components/IconColorPicker';
 export {
   defaultDraft,
   draftFromSubscription,

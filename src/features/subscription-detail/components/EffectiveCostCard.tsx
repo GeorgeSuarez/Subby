@@ -11,7 +11,10 @@ import { StyleSheet, View } from 'react-native';
 import { Card, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
-import { getMonthlyCost, getYearlyCost } from '@/features/subscription-detail/detail-helpers';
+import {
+  getMonthlyCost,
+  getYearlyCost,
+} from '@/features/subscription-detail/detail-helpers';
 import { formatCurrency } from '@/utils/format';
 import { yearlySavingsHint } from '@/utils/billing';
 import type { Subscription } from '@/types/subscription';
@@ -30,7 +33,9 @@ export function EffectiveCostCard({ sub, notes }: EffectiveCostCardProps) {
 
   return (
     <Card padding={spacing.lg} elevation="low">
-      <Text variant="caption" color="textSecondary" weight="600">Effective cost</Text>
+      <Text variant="caption" color="textSecondary" weight="600">
+        Effective cost
+      </Text>
 
       <View style={[styles.row, { borderColor: colors.hairline }]}>
         <Stat label="Per month" value={monthly} currency={sub.currency} />
@@ -41,7 +46,8 @@ export function EffectiveCostCard({ sub, notes }: EffectiveCostCardProps) {
       {savings ? (
         <View style={[styles.hintRow, { borderTopColor: colors.hairline }]}>
           <Text variant="caption" color="accent" weight="600">
-            Billed yearly could save ~{formatCurrency(savings.savingsPerYear, sub.currency)}/yr
+            Billed yearly could save ~
+            {formatCurrency(savings.savingsPerYear, sub.currency)}/yr
           </Text>
           <Text variant="caption" color="textTertiary">
             Typical 15% discount (estimate)
@@ -51,8 +57,12 @@ export function EffectiveCostCard({ sub, notes }: EffectiveCostCardProps) {
 
       {notes ? (
         <View style={[styles.notesRow, { borderTopColor: colors.hairline }]}>
-          <Text variant="caption" color="textSecondary">Notes</Text>
-          <Text variant="body" color="textPrimary">{notes}</Text>
+          <Text variant="caption" color="textSecondary">
+            Notes
+          </Text>
+          <Text variant="body" color="textPrimary">
+            {notes}
+          </Text>
         </View>
       ) : null}
     </Card>
@@ -70,7 +80,9 @@ function Stat({
 }) {
   return (
     <View style={styles.stat}>
-      <Text variant="caption" color="textTertiary">{label}</Text>
+      <Text variant="caption" color="textTertiary">
+        {label}
+      </Text>
       <Text variant="headline" weight="700" color="textPrimary">
         {formatCurrency(value, currency)}
       </Text>
@@ -80,7 +92,9 @@ function Stat({
 
 function Divider() {
   const { colors } = useTheme();
-  return <View style={[styles.divider, { backgroundColor: colors.hairline }]} />;
+  return (
+    <View style={[styles.divider, { backgroundColor: colors.hairline }]} />
+  );
 }
 
 const styles = StyleSheet.create({

@@ -19,8 +19,16 @@ import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { Card, Text } from '@/design/components';
 import { useColorMode, useTheme } from '@/design/theme';
 import { layout, radius, spacing } from '@/design/tokens';
-import { useActiveSubscriptions, useIsLoadingSubscriptions } from '@/store/useSubscriptionsStore';
-import { budgetProgress, renewalsThisMonth, totalMonthlySpend, totalYearlySpend } from '@/utils/billing';
+import {
+  useActiveSubscriptions,
+  useIsLoadingSubscriptions,
+} from '@/store/useSubscriptionsStore';
+import {
+  budgetProgress,
+  renewalsThisMonth,
+  totalMonthlySpend,
+  totalYearlySpend,
+} from '@/utils/billing';
 import { formatCurrency, formatCurrencyCompact } from '@/utils/format';
 import { useBudget, useCurrency } from '@/store/useUIStore';
 import { AnimatedNumber } from '@/features/dashboard/components/AnimatedNumber';
@@ -43,14 +51,20 @@ export function HeroSpend() {
   const content = (
     <>
       <View style={styles.labelRow}>
-        <Text variant="caption" color="textSecondary">Monthly spend</Text>
-        <Text variant="caption" color="textTertiary" weight="500">/ {subs.length} active</Text>
+        <Text variant="caption" color="textSecondary">
+          Monthly spend
+        </Text>
+        <Text variant="caption" color="textTertiary" weight="500">
+          / {subs.length} active
+        </Text>
       </View>
 
       {/* Stat variant gives the oversized runner-up look */}
       <View style={styles.headlineRow}>
         {isLoading ? (
-          <Text variant="stat" color="textTertiary">—</Text>
+          <Text variant="stat" color="textTertiary">
+            —
+          </Text>
         ) : (
           <Text variant="stat" color="accent">
             <AnimatedNumber
@@ -67,25 +81,33 @@ export function HeroSpend() {
       <View style={styles.subRow}>
         <Text variant="caption" color="textSecondary" numberOfLines={1}>
           {formatCurrencyCompact(yearly, currency)} per year ·{' '}
-          {monthCharges.count} renewal{monthCharges.count === 1 ? '' : 's'} charging this month
+          {monthCharges.count} renewal{monthCharges.count === 1 ? '' : 's'}{' '}
+          charging this month
         </Text>
       </View>
 
       {/* Budget progress — only when a budget is set. */}
       {budget > 0 ? (
         <View style={styles.budget}>
-          <View style={[styles.track, { backgroundColor: colors.surfaceHigher }]}>
+          <View
+            style={[styles.track, { backgroundColor: colors.surfaceHigher }]}
+          >
             <View
               style={[
                 styles.fill,
                 {
                   width: `${Math.max(2, progress.pct * 100)}%`,
-                  backgroundColor: progress.over ? colors.negative : colors.accent,
+                  backgroundColor: progress.over
+                    ? colors.negative
+                    : colors.accent,
                 },
               ]}
             />
           </View>
-          <Text variant="caption" color={progress.over ? 'negative' : 'textSecondary'}>
+          <Text
+            variant="caption"
+            color={progress.over ? 'negative' : 'textSecondary'}
+          >
             {progress.over
               ? `Over budget by ${formatCurrency(progress.overAmount, currency)}`
               : `${Math.round(progress.pct * 100)}% of ${formatCurrency(budget, currency)} budget`}

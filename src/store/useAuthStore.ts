@@ -24,7 +24,10 @@ import { create } from 'zustand';
 import type { Session } from '@supabase/supabase-js';
 
 import { clearCacheForUser, clearQueueForUser } from '@/db/offline';
-import { isSessionExpiredError, SESSION_EXPIRED_MESSAGE } from '@/lib/session-errors';
+import {
+  isSessionExpiredError,
+  SESSION_EXPIRED_MESSAGE,
+} from '@/lib/session-errors';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 
 export const NOT_CONFIGURED_MESSAGE =
@@ -143,7 +146,10 @@ function messageOf(error: unknown): string {
  * is the documented exception (event-handler seam: returns boolean, never
  * throws).
  */
-function failAuthAction(set: (partial: Partial<AuthStore>) => void, error: unknown): Error {
+function failAuthAction(
+  set: (partial: Partial<AuthStore>) => void,
+  error: unknown,
+): Error {
   const message = friendlyAuthError(messageOf(error));
   set({ isLoading: false, error: message });
   return new Error(message);
@@ -197,14 +203,16 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     applySession(data.session);
 
     unsubscribeAuth?.();
-    const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
-      applySession(session);
-      // A recovery link opens the app with a fresh session — the reset
-      // screen keys off this flag to show the password form.
-      if (event === 'PASSWORD_RECOVERY') {
-        set({ recoveryPending: true });
-      }
-    });
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        applySession(session);
+        // A recovery link opens the app with a fresh session — the reset
+        // screen keys off this flag to show the password form.
+        if (event === 'PASSWORD_RECOVERY') {
+          set({ recoveryPending: true });
+        }
+      },
+    );
     unsubscribeAuth = subscription.subscription.unsubscribe;
 
     set({ hasInitialized: true });
@@ -267,7 +275,9 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   requestPasswordReset: async (email, redirectTo) => {
     if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
     set({ isLoading: true, error: null });
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo,
+    });
     if (error) {
       throw failAuthAction(set, error);
     }
@@ -291,7 +301,9 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
   handleAuthUrl: async (url) => {
     if (!isSupabaseConfigured) return false;
-    const params = new URLSearchParams((url.split('#')[1] ?? url.split('?')[1] ?? '').toString());
+    const params = new URLSearchParams(
+      (url.split('#')[1] ?? url.split('?')[1] ?? '').toString(),
+    );
     if (params.get('type') !== 'recovery') return false;
     const accessToken = params.get('access_token');
     const refreshToken = params.get('refresh_token');
@@ -312,7 +324,10 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
       return false;
     }
 
-    const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+    const { error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
     if (error) {
       set({ error: friendlyAuthError(error.message) });
       return false;
@@ -326,11 +341,15 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   verifyRecoveryLink: async (link) => {
     if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
     const token = parseRecoveryToken(link);
-    if (!token) throw new Error('That link does not look like a password reset link.');
+    if (!token)
+      throw new Error('That link does not look like a password reset link.');
     set({ isLoading: true, error: null });
     // Email links carry the hashed token in `token` — verifyOtp's token_hash
     // variant is the API for it (no email needed for recovery).
-    const { data, error } = await supabase.auth.verifyOtp({ token_hash: token, type: 'recovery' });
+    const { data, error } = await supabase.auth.verifyOtp({
+      token_hash: token,
+      type: 'recovery',
+    });
     if (error) {
       throw failAuthAction(set, error);
     }

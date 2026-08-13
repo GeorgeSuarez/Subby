@@ -6,6 +6,11 @@
     "noUncheckedIndexedAccess": false,
     "isolatedModules": false
   },
-  "include": ["__tests__/**/*.ts", "__tests__/**/*.tsx", "src/**/*.ts", "src/**/*.tsx"],
+  "include": [
+    "__tests__/**/*.ts",
+    "__tests__/**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
   "exclude": ["node_modules"]
 }

@@ -31,20 +31,33 @@ export function CategoryBreakdown() {
 
   return (
     <Card padding={spacing.lg} elevation="low">
-      <Text variant="caption" color="textSecondary" weight="600">By category</Text>
+      <Text variant="caption" color="textSecondary" weight="600">
+        By category
+      </Text>
       <View style={styles.stack}>
         {items.map((item) => (
           <View key={item.category} style={styles.item}>
             <View style={styles.itemHeader}>
-              <Text variant="body" weight="600" color="textPrimary" numberOfLines={1} style={styles.label}>
+              <Text
+                variant="body"
+                weight="600"
+                color="textPrimary"
+                numberOfLines={1}
+                style={styles.label}
+              >
                 {item.label}
-                <Text variant="caption" color="textTertiary"> · {item.count}</Text>
+                <Text variant="caption" color="textTertiary">
+                  {' '}
+                  · {item.count}
+                </Text>
               </Text>
               <Text variant="body" color="textSecondary">
                 {formatCurrency(item.monthlyTotal, currency)}
               </Text>
             </View>
-            <View style={[styles.track, { backgroundColor: colors.accentSoft }]}>
+            <View
+              style={[styles.track, { backgroundColor: colors.accentSoft }]}
+            >
               <View
                 style={[
                   styles.fill,

@@ -41,7 +41,9 @@ export function BudgetSection() {
   return (
     <Card padding={spacing.lg} elevation="flat">
       <Card.Header>
-        <Text variant="headline" weight="600">Budget</Text>
+        <Text variant="headline" weight="600">
+          Budget
+        </Text>
         <Text variant="caption" color="textSecondary">
           {budget > 0
             ? `Dashboard shows progress against ${formatCurrency(budget, currency)}/mo`
@@ -51,10 +53,16 @@ export function BudgetSection() {
 
       <View style={styles.row}>
         <View style={styles.input}>
-          <AmountInput currency={currency} value={text} onChangeText={onChange} />
+          <AmountInput
+            currency={currency}
+            value={text}
+            onChangeText={onChange}
+          />
         </View>
         {budget > 0 ? (
-          <Button onPress={onClear} variant="ghost" size="sm">Clear</Button>
+          <Button onPress={onClear} variant="ghost" size="sm">
+            Clear
+          </Button>
         ) : null}
       </View>
     </Card>

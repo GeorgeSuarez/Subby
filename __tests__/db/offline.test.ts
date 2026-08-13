@@ -56,11 +56,17 @@ jest.mock('@/db/client', () => ({
       // The module passes bound values either as an array or as spread args.
       const args = Array.isArray(params[0]) ? (params[0] as unknown[]) : params;
       if (sql.includes('INSERT OR REPLACE INTO sync_cache')) {
-        cache.set(args[0] as string, { value: args[1] as string, updated_at: args[2] as number });
+        cache.set(args[0] as string, {
+          value: args[1] as string,
+          updated_at: args[2] as number,
+        });
       } else if (sql.includes('DELETE FROM sync_cache')) {
         const pattern = args[0] as string;
-        for (const key of [...cache.keys()]) {
-          if (key.endsWith(`:${pattern.slice(2)}`) || key === pattern.slice(1)) {
+        for (const key of Array.from(cache.keys())) {
+          if (
+            key.endsWith(`:${pattern.slice(2)}`) ||
+            key === pattern.slice(1)
+          ) {
             cache.delete(key);
           }
         }
@@ -81,7 +87,8 @@ jest.mock('@/db/client', () => ({
         if (sql.includes("AND type = 'prefs'")) {
           const uid = args[0] as string;
           for (let i = queue.length - 1; i >= 0; i--) {
-            if (queue[i]?.user_id === uid && queue[i]?.type === 'prefs') queue.splice(i, 1);
+            if (queue[i]?.user_id === uid && queue[i]?.type === 'prefs')
+              queue.splice(i, 1);
           }
         } else if (sql.includes('WHERE user_id = ?')) {
           const uid = args[0] as string;
@@ -120,9 +127,15 @@ jest.mock('@/db/network', () => ({
 
 jest.mock('@/db/queries', () => ({
   getAllSubscriptions: jest.fn(async () => [{ id: 're-read' }]),
-  insertSubscription: jest.fn(async (draft: unknown) => ({ ...(draft as object), id: 'real-id' })),
+  insertSubscription: jest.fn(async (draft: unknown) => ({
+    ...(draft as object),
+    id: 'real-id',
+  })),
   updateSubscription: jest.fn(async (id: string) => ({ id, name: 'updated' })),
-  setArchived: jest.fn(async (id: string, archived: boolean) => ({ id, archived })),
+  setArchived: jest.fn(async (id: string, archived: boolean) => ({
+    id,
+    archived,
+  })),
   deleteSubscription: jest.fn(async () => undefined),
   deleteAllSubscriptions: jest.fn(async () => undefined),
 }));
@@ -141,13 +154,20 @@ jest.mock('@/utils/notifications', () => ({
 }));
 
 const queries = jest.requireMock('@/db/queries') as Record<string, jest.Mock>;
-const notifications = jest.requireMock('@/utils/notifications') as Record<string, jest.Mock>;
-const network = jest.requireMock('@/db/network') as { getNetworkReachability: jest.Mock };
+const notifications = jest.requireMock('@/utils/notifications') as Record<
+  string,
+  jest.Mock
+>;
+const network = jest.requireMock('@/db/network') as {
+  getNetworkReachability: jest.Mock;
+};
 const USER = 'user-1';
 const CTX = { includeSeeded: false, remindersEnabled: true };
 
 /** A complete SubscriptionDraft for the typed `add` op. */
-const draft = (overrides: Partial<SubscriptionDraft> = {}): SubscriptionDraft => ({
+const draft = (
+  overrides: Partial<SubscriptionDraft> = {},
+): SubscriptionDraft => ({
   name: 'Netflix',
   amount: '15.99',
   currency: 'USD',
@@ -225,7 +245,9 @@ describe('applyMutation', () => {
   });
 
   it('queues on a network failure mid-write', async () => {
-    queries.insertSubscription.mockRejectedValueOnce(new TypeError('Network request failed'));
+    queries.insertSubscription.mockRejectedValueOnce(
+      new TypeError('Network request failed'),
+    );
 
     const result = await applyMutation(
       { type: 'add', draft: draft({ name: 'Netflix' }) },
@@ -238,7 +260,9 @@ describe('applyMutation', () => {
 
   it('reports session-death errors separately', async () => {
     queries.insertSubscription.mockRejectedValueOnce(
-      new Error('new row violates foreign key constraint "subscriptions_user_id_fkey"'),
+      new Error(
+        'new row violates foreign key constraint "subscriptions_user_id_fkey"',
+      ),
     );
 
     const result = await applyMutation(
@@ -251,9 +275,11 @@ describe('applyMutation', () => {
   });
 
   it('cancels the reminder on remove (online path)', async () => {
-    jest.requireMock('@/db/notification-sidecar').getAllNotificationIds.mockResolvedValueOnce({
-      y: 'notif-y',
-    });
+    jest
+      .requireMock('@/db/notification-sidecar')
+      .getAllNotificationIds.mockResolvedValueOnce({
+        y: 'notif-y',
+      });
 
     const result = await applyMutation(
       { type: 'remove', id: 'y' },
@@ -266,11 +292,16 @@ describe('applyMutation', () => {
   });
 
   it('cancels reminders on clear_all', async () => {
-    const result = await applyMutation({ type: 'clear_all' }, { userId: USER, ...CTX });
+    const result = await applyMutation(
+      { type: 'clear_all' },
+      { userId: USER, ...CTX },
+    );
 
     expect(result.status).toBe('synced');
     expect(queries.deleteAllSubscriptions).toHaveBeenCalled();
-    expect(jest.requireMock('@/db/notification-sidecar').clearAllNotificationIds).toHaveBeenCalled();
+    expect(
+      jest.requireMock('@/db/notification-sidecar').clearAllNotificationIds,
+    ).toHaveBeenCalled();
   });
 
   it('coalesces queued prefs and caches the fresh prefs on a direct write', async () => {
@@ -280,7 +311,12 @@ describe('applyMutation', () => {
     const result = await applyMutation(
       {
         type: 'prefs',
-        prefs: { currency: 'GBP', budget: 200, reminders_enabled: false, updated_at: 2 },
+        prefs: {
+          currency: 'GBP',
+          budget: 200,
+          reminders_enabled: false,
+          updated_at: 2,
+        },
       },
       { userId: USER, ...CTX },
     );
@@ -303,7 +339,12 @@ describe('flush', () => {
     await enqueueOp(USER, 'edit', { id: 'x', patch: { amount: '17.99' } });
     await enqueueOp(USER, 'archive', { id: 'y', archived: true });
     await enqueueOp(USER, 'prefs', {
-      prefs: { currency: 'EUR', budget: 100, reminders_enabled: true, updated_at: 1 },
+      prefs: {
+        currency: 'EUR',
+        budget: 100,
+        reminders_enabled: true,
+        updated_at: 1,
+      },
     });
 
     const result = await flushPendingOps(USER, CTX);
@@ -312,15 +353,19 @@ describe('flush', () => {
     expect(queries.insertSubscription).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'Netflix', amount: '15.99' }),
     );
-    expect(queries.updateSubscription).toHaveBeenCalledWith('x', { amount: '17.99' });
+    expect(queries.updateSubscription).toHaveBeenCalledWith('x', {
+      amount: '17.99',
+    });
     expect(queries.setArchived).toHaveBeenCalledWith('y', true);
     expect(await pendingOpCount(USER)).toBe(0);
   });
 
   it('cancels the reminder when replaying a remove (the offline path)', async () => {
-    jest.requireMock('@/db/notification-sidecar').getAllNotificationIds.mockResolvedValueOnce({
-      y: 'notif-y',
-    });
+    jest
+      .requireMock('@/db/notification-sidecar')
+      .getAllNotificationIds.mockResolvedValueOnce({
+        y: 'notif-y',
+      });
     await enqueueOp(USER, 'remove', { id: 'y' });
 
     const result = await flushPendingOps(USER, CTX);

@@ -27,10 +27,13 @@ export function CurrencySection() {
   const setCurrency = useUIStore((s) => s.setCurrency);
   const [open, setOpen] = useState(false);
 
-  const onSelect = useCallback((code: CurrencyCode) => {
-    setCurrency(code);
-    setOpen(false);
-  }, [setCurrency]);
+  const onSelect = useCallback(
+    (code: CurrencyCode) => {
+      setCurrency(code);
+      setOpen(false);
+    },
+    [setCurrency],
+  );
 
   const meta = currencyMeta(currency);
 
@@ -38,7 +41,9 @@ export function CurrencySection() {
     <>
       <Card padding={spacing.lg} elevation="low">
         <Card.Header>
-          <Text variant="headline" weight="600" color="textPrimary">Currency</Text>
+          <Text variant="headline" weight="600" color="textPrimary">
+            Currency
+          </Text>
           <Text variant="caption" color="textSecondary">
             Default for new subscriptions
           </Text>
@@ -54,15 +59,19 @@ export function CurrencySection() {
           ]}
         >
           <Text variant="body" weight="600" color="textPrimary">
-            {meta.symbol}  {currency}
+            {meta.symbol} {currency}
           </Text>
-          <Text variant="caption" color="textTertiary">Tap to change</Text>
+          <Text variant="caption" color="textTertiary">
+            Tap to change
+          </Text>
         </Pressable>
       </Card>
 
       <Sheet visible={open} onDismiss={() => setOpen(false)}>
         <View style={styles.sheetHeader}>
-          <Text variant="headline" weight="600" color="textPrimary">Choose currency</Text>
+          <Text variant="headline" weight="600" color="textPrimary">
+            Choose currency
+          </Text>
           <Text variant="caption" color="textSecondary">
             Used as the default for new subscriptions
           </Text>
@@ -79,16 +88,26 @@ export function CurrencySection() {
                 style={({ pressed }) => [
                   styles.currencyRow,
                   {
-                    backgroundColor: selected ? colors.accentSoft : colors.surfaceHigher,
+                    backgroundColor: selected
+                      ? colors.accentSoft
+                      : colors.surfaceHigher,
                     borderColor: selected ? colors.accent : colors.border,
                   },
                   pressed ? { opacity: 0.6 } : null,
                 ]}
               >
-                <Text variant="body" weight={selected ? '700' : '500'} color={selected ? 'accent' : 'textPrimary'}>
+                <Text
+                  variant="body"
+                  weight={selected ? '700' : '500'}
+                  color={selected ? 'accent' : 'textPrimary'}
+                >
                   {c.symbol}
                 </Text>
-                <Text variant="body" weight={selected ? '700' : '500'} color={selected ? 'accent' : 'textPrimary'}>
+                <Text
+                  variant="body"
+                  weight={selected ? '700' : '500'}
+                  color={selected ? 'accent' : 'textPrimary'}
+                >
                   {c.code}
                 </Text>
                 <Text variant="caption" color="textSecondary">

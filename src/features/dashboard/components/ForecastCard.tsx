@@ -37,7 +37,9 @@ export function ForecastCard() {
 
   return (
     <Card padding={spacing.lg} elevation="low">
-      <Text variant="caption" color="textSecondary" weight="600">Next {FORECAST_MONTHS} months</Text>
+      <Text variant="caption" color="textSecondary" weight="600">
+        Next {FORECAST_MONTHS} months
+      </Text>
 
       <View style={styles.chart}>
         {forecast.map((m, i) => {
@@ -57,20 +59,34 @@ export function ForecastCard() {
                       },
                     ]}
                   >
-                    <Text variant="caption" weight="700" color="accent" numberOfLines={1}>
+                    <Text
+                      variant="caption"
+                      weight="700"
+                      color="accent"
+                      numberOfLines={1}
+                    >
                       {formatCurrency(m.total, currency)}
                     </Text>
                   </View>
                 ) : null}
               </View>
 
-              <View style={[styles.track, { backgroundColor: colors.accentSoft }]}>
+              <View
+                style={[styles.track, { backgroundColor: colors.accentSoft }]}
+              >
                 <View
                   style={[
                     styles.fill,
                     {
-                      height: m.total === 0 ? 0 : `${Math.max(8, (m.total / (peakTotal || 1)) * 100)}%`,
-                      backgroundColor: isCurrent ? colors.accent : isPeak ? colors.accentMuted : colors.accentSoftStrong,
+                      height:
+                        m.total === 0
+                          ? 0
+                          : `${Math.max(8, (m.total / (peakTotal || 1)) * 100)}%`,
+                      backgroundColor: isCurrent
+                        ? colors.accent
+                        : isPeak
+                          ? colors.accentMuted
+                          : colors.accentSoftStrong,
                     },
                   ]}
                 />

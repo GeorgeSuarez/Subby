@@ -94,16 +94,18 @@ All four must pass before considering any change complete:
 
 ```bash
 npm run typecheck      # tsc --noEmit        → 0 errors
-npm run lint           # expo lint           → 0 errors, 0 warnings
+npm run lint           # oxlint             → 0 errors, 0 warnings
 npm test               # jest                → 117 tests across 8 suites
 npx expo-doctor        # dependency audit    → 20/20 checks
 ```
+
+Formatting is enforced with oxfmt: `npm run format` writes canonical formatting, `npm run format:check` verifies it in CI.
 
 ## Engineering Principles
 
 Built following the [React Native skills guide](.opencode/AGENTS.md):
 
-- **No `&&` for conditional rendering** — ternaries or `!!value` only (lint-enforced via `react/jsx-no-leaked-render`)
+- **No `&&` for conditional rendering** — ternaries or `!!value` only (lint-enforced via `react/jsx-no-leaked-render`, run by oxlint)
 - **Pressable, not Touchable** — never `TouchableOpacity`/`TouchableHighlight`
 - **List rows receive primitive props only** — memoized rows with stable `onPressWithId(id)` callbacks, no inline objects or closures
 - **State is ground truth** — derive visual values (totals, scales, opacities) during render, never store derived state in `useState`/`useEffect`

@@ -63,7 +63,10 @@ export function ResetPasswordScreen() {
   //    — the current password was already checked.
   // Any other signed-in visit goes through the verify-password screen first.
   // The gatekeeping decision lives in `auth-flow` (pure, tested).
-  const { from, verified } = useLocalSearchParams<{ from?: string; verified?: string }>();
+  const { from, verified } = useLocalSearchParams<{
+    from?: string;
+    verified?: string;
+  }>();
   const [urlChecked, setUrlChecked] = useState(isChangeFlow(from, verified));
   const mode: ResetFlowMode = resolveResetFlow({
     recoveryPending,
@@ -148,7 +151,15 @@ export function ResetPasswordScreen() {
     } finally {
       setEntering(false);
     }
-  }, [entering, code, link, email, handleAuthUrl, verifyRecoveryCode, verifyRecoveryLink]);
+  }, [
+    entering,
+    code,
+    link,
+    email,
+    handleAuthUrl,
+    verifyRecoveryCode,
+    verifyRecoveryLink,
+  ]);
 
   // Password-form entry.
   const [password, setPassword] = useState('');
@@ -171,7 +182,8 @@ export function ResetPasswordScreen() {
   const passwordError = useMemo(() => {
     if (!touched) return null;
     if (!password) return 'Enter a new password.';
-    if (password.length < PASSWORD_MIN) return `Use at least ${PASSWORD_MIN} characters.`;
+    if (password.length < PASSWORD_MIN)
+      return `Use at least ${PASSWORD_MIN} characters.`;
     if (confirm && password !== confirm) return 'Passwords do not match.';
     return null;
   }, [touched, password, confirm]);
@@ -204,12 +216,22 @@ export function ResetPasswordScreen() {
         router.replace('/');
       }
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Could not update the password.');
+      setSubmitError(
+        e instanceof Error ? e.message : 'Could not update the password.',
+      );
       void notifyError();
     } finally {
       setSubmitting(false);
     }
-  }, [submitting, passwordError, password, updatePassword, router, isChangeMode, backToSettings]);
+  }, [
+    submitting,
+    passwordError,
+    password,
+    updatePassword,
+    router,
+    isChangeMode,
+    backToSettings,
+  ]);
 
   return (
     <Surface background="surface" style={styles.root}>
@@ -227,7 +249,9 @@ export function ResetPasswordScreen() {
           <BrandLockup />
 
           <View style={styles.copy}>
-            <Text variant="title" align="center">Set a new password</Text>
+            <Text variant="title" align="center">
+              Set a new password
+            </Text>
             <Text variant="body" color="textSecondary" align="center">
               {canReset
                 ? 'Choose a new password for your account.'
@@ -238,7 +262,9 @@ export function ResetPasswordScreen() {
           {canReset ? (
             <View style={styles.form}>
               <View style={styles.fieldGroup}>
-                <Text variant="caption" color="textSecondary" weight="600">New password</Text>
+                <Text variant="caption" color="textSecondary" weight="600">
+                  New password
+                </Text>
                 <PasswordField
                   value={password}
                   onChangeText={setPassword}
@@ -252,7 +278,9 @@ export function ResetPasswordScreen() {
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text variant="caption" color="textSecondary" weight="600">Confirm password</Text>
+                <Text variant="caption" color="textSecondary" weight="600">
+                  Confirm password
+                </Text>
                 <PasswordField
                   ref={confirmRef}
                   value={confirm}
@@ -267,15 +295,25 @@ export function ResetPasswordScreen() {
               </View>
 
               {passwordError ? (
-                <Text variant="caption" color="negative">{passwordError}</Text>
+                <Text variant="caption" color="negative">
+                  {passwordError}
+                </Text>
               ) : null}
 
-              <Button testID="reset-submit" variant="primary" size="lg" disabled={!canSubmit} onPress={onSubmit}>
+              <Button
+                testID="reset-submit"
+                variant="primary"
+                size="lg"
+                disabled={!canSubmit}
+                onPress={onSubmit}
+              >
                 {isChangeMode ? 'Update password' : 'Set new password'}
               </Button>
 
               {submitError ? (
-                <Text variant="caption" color="negative" align="center">{submitError}</Text>
+                <Text variant="caption" color="negative" align="center">
+                  {submitError}
+                </Text>
               ) : null}
 
               <Pressable
@@ -292,13 +330,17 @@ export function ResetPasswordScreen() {
                 accessibilityLabel="Back"
                 style={styles.switchLink}
               >
-                <Text variant="body" color="textSecondary">Back</Text>
+                <Text variant="body" color="textSecondary">
+                  Back
+                </Text>
               </Pressable>
             </View>
           ) : (
             <View style={styles.form}>
               <View style={styles.fieldGroup}>
-                <Text variant="caption" color="textSecondary" weight="600">Email</Text>
+                <Text variant="caption" color="textSecondary" weight="600">
+                  Email
+                </Text>
                 <TextField
                   value={email}
                   onChangeText={setEmail}
@@ -312,7 +354,9 @@ export function ResetPasswordScreen() {
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text variant="caption" color="textSecondary" weight="600">Code from the email</Text>
+                <Text variant="caption" color="textSecondary" weight="600">
+                  Code from the email
+                </Text>
                 <TextField
                   value={code}
                   onChangeText={setCode}
@@ -324,7 +368,13 @@ export function ResetPasswordScreen() {
                 />
               </View>
 
-              <Button testID="reset-code-submit" variant="primary" size="lg" disabled={!canEnter} onPress={onEnter}>
+              <Button
+                testID="reset-code-submit"
+                variant="primary"
+                size="lg"
+                disabled={!canEnter}
+                onPress={onEnter}
+              >
                 Continue
               </Button>
 
@@ -346,7 +396,9 @@ export function ResetPasswordScreen() {
               </View>
 
               {linkError ? (
-                <Text variant="caption" color="negative" align="center">{linkError}</Text>
+                <Text variant="caption" color="negative" align="center">
+                  {linkError}
+                </Text>
               ) : null}
 
               <Pressable
@@ -355,7 +407,9 @@ export function ResetPasswordScreen() {
                 accessibilityLabel="Send a new reset code"
                 style={styles.switchLink}
               >
-                <Text variant="body" color="accent" weight="600">Send a new reset code</Text>
+                <Text variant="body" color="accent" weight="600">
+                  Send a new reset code
+                </Text>
               </Pressable>
             </View>
           )}

@@ -53,7 +53,9 @@ export function DangerZoneSection() {
                   text: 'Wipe',
                   style: 'destructive',
                   onPress: () => {
-                    void clearAll().then(() => { void notifySuccess(); });
+                    void clearAll().then(() => {
+                      void notifySuccess();
+                    });
                   },
                 },
               ],
@@ -73,7 +75,9 @@ export function DangerZoneSection() {
   return (
     <Card padding={spacing.lg} elevation="flat">
       <Card.Header>
-        <Text variant="headline" weight="600" color="negative">Danger zone</Text>
+        <Text variant="headline" weight="600" color="negative">
+          Danger zone
+        </Text>
         <Text variant="caption" color="textSecondary">
           Destructive actions below cannot be undone.
         </Text>
@@ -81,12 +85,16 @@ export function DangerZoneSection() {
 
       <View style={[styles.row, { borderColor: colors.border }]}>
         <View style={styles.meta}>
-          <Text variant="body" weight="600" color="textPrimary">Wipe all subscriptions</Text>
+          <Text variant="body" weight="600" color="textPrimary">
+            Wipe all subscriptions
+          </Text>
           <Text variant="caption" color="textSecondary">
             {subs.length} record{subs.length === 1 ? '' : 's'} stored
           </Text>
         </View>
-        <Button onPress={onWipe} variant="danger" size="sm">Wipe</Button>
+        <Button onPress={onWipe} variant="danger" size="sm">
+          Wipe
+        </Button>
       </View>
     </Card>
   );

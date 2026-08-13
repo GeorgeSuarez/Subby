@@ -30,7 +30,17 @@ export function toISODate(date: Date): string {
 /** Today's date in UTC, at noon. */
 export function todayUTC(): Date {
   const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12, 0, 0, 0));
+  return new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      12,
+      0,
+      0,
+      0,
+    ),
+  );
 }
 
 /** Days between two dates, floored. Negative if `to` is before `from`. */
@@ -60,7 +70,10 @@ export function addMonths(date: Date, months: number): Date {
  * advance it by the cycle length. If the stored date is already in the past,
  * we walk forward until we get a future date.
  */
-export function nextRenewalAfter(sub: { nextRenewal: string; cycle: Cycle }, from: Date = todayUTC()): string {
+export function nextRenewalAfter(
+  sub: { nextRenewal: string; cycle: Cycle },
+  from: Date = todayUTC(),
+): string {
   const spanMonths = cycleMeta(sub.cycle).months;
   let current = parseDate(sub.nextRenewal);
   // Advance until renewal is strictly in the future relative to `from`.
@@ -74,7 +87,10 @@ export function nextRenewalAfter(sub: { nextRenewal: string; cycle: Cycle }, fro
 }
 
 /** Days until the subscription's next renewal, relative to today (UTC). */
-export function daysUntilRenewal(sub: { nextRenewal: string; cycle: Cycle }): number {
+export function daysUntilRenewal(sub: {
+  nextRenewal: string;
+  cycle: Cycle;
+}): number {
   const next = parseDate(nextRenewalAfter(sub));
   return daysBetween(todayUTC(), next);
 }
@@ -84,25 +100,37 @@ export function daysUntilRenewal(sub: { nextRenewal: string; cycle: Cycle }): nu
  * Yearly amounts are divided by 12; quarterly by 3; monthly as-is.
  * Skill rule `react-state-minimize`: derive during render, don't store.
  */
-export function monthlyEquivalent(sub: { amount: number; cycle: Cycle }): number {
+export function monthlyEquivalent(sub: {
+  amount: number;
+  cycle: Cycle;
+}): number {
   const months = cycleMeta(sub.cycle).months;
   return sub.amount / months;
 }
 
 /** Convert any cycle's amount to its yearly equivalent. */
-export function yearlyEquivalent(sub: { amount: number; cycle: Cycle }): number {
+export function yearlyEquivalent(sub: {
+  amount: number;
+  cycle: Cycle;
+}): number {
   const months = cycleMeta(sub.cycle).months;
   return (sub.amount / months) * 12;
 }
 
 /** Total monthly spend across active subscriptions. */
 export function totalMonthlySpend(subs: readonly Subscription[]): number {
-  return subs.reduce((sum, s) => (s.archived ? sum : sum + monthlyEquivalent(s)), 0);
+  return subs.reduce(
+    (sum, s) => (s.archived ? sum : sum + monthlyEquivalent(s)),
+    0,
+  );
 }
 
 /** Total yearly spend across active subscriptions. */
 export function totalYearlySpend(subs: readonly Subscription[]): number {
-  return subs.reduce((sum, s) => (s.archived ? sum : sum + yearlyEquivalent(s)), 0);
+  return subs.reduce(
+    (sum, s) => (s.archived ? sum : sum + yearlyEquivalent(s)),
+    0,
+  );
 }
 
 /** Active subscription count. */
@@ -111,7 +139,9 @@ export function activeCount(subs: readonly Subscription[]): number {
 }
 
 /** Highest monthly equivalent among active subs. Returns 0 if none. */
-export function largestMonthly(subs: readonly Subscription[]): Subscription | null {
+export function largestMonthly(
+  subs: readonly Subscription[],
+): Subscription | null {
   let best: Subscription | null = null;
   let bestMonthly = -Infinity;
   for (const s of subs) {
@@ -142,11 +172,17 @@ export function renewalsWithin(
       const d = daysBetween(from, next);
       return d >= 0 && d <= days;
     })
-    .sort((a, b) => daysBetween(from, parseDate(nextRenewalAfter(a, from))) - daysBetween(from, parseDate(nextRenewalAfter(b, from))));
+    .sort(
+      (a, b) =>
+        daysBetween(from, parseDate(nextRenewalAfter(a, from))) -
+        daysBetween(from, parseDate(nextRenewalAfter(b, from))),
+    );
 }
 
 /** Bucket of active subs grouped by category slug. */
-export function groupByCategory(subs: readonly Subscription[]): Map<string, Subscription[]> {
+export function groupByCategory(
+  subs: readonly Subscription[],
+): Map<string, Subscription[]> {
   const m = new Map<string, Subscription[]>();
   for (const s of subs) {
     if (s.archived) continue;
@@ -177,7 +213,9 @@ export function renewalsThisMonth(
   from: Date = todayUTC(),
 ): MonthCharges {
   // Day 0 of next month (UTC noon) = last day of the current month.
-  const endOfMonth = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth() + 1, 0, 12, 0, 0, 0));
+  const endOfMonth = new Date(
+    Date.UTC(from.getUTCFullYear(), from.getUTCMonth() + 1, 0, 12, 0, 0, 0),
+  );
   const days = daysBetween(from, endOfMonth);
   const renewals = renewalsWithin(subs, days, from);
   return {
@@ -201,7 +239,9 @@ export interface CategoryBreakdownItem {
  * Monthly spend per category, sorted by amount (largest first). Archived subs
  * are excluded (inherited from `groupByCategory`).
  */
-export function categoryBreakdown(subs: readonly Subscription[]): CategoryBreakdownItem[] {
+export function categoryBreakdown(
+  subs: readonly Subscription[],
+): CategoryBreakdownItem[] {
   const grand = totalMonthlySpend(subs);
   const items: CategoryBreakdownItem[] = [];
   for (const [slug, list] of groupByCategory(subs)) {
@@ -267,11 +307,19 @@ export interface YearlySavingsHint {
  * Estimate what a MONTHLY subscription would cost billed yearly (typical 15%
  * discount). Returns null for non-monthly cycles (already billed optimally).
  */
-export function yearlySavingsHint(sub: { amount: number; cycle: Cycle }): YearlySavingsHint | null {
+export function yearlySavingsHint(sub: {
+  amount: number;
+  cycle: Cycle;
+}): YearlySavingsHint | null {
   if (sub.cycle !== 'monthly') return null;
   const yearlyPrice = sub.amount * 12;
-  const estimatedYearlyPrice = Math.round(yearlyPrice * (1 - YEARLY_SAVINGS_RATE) * 100) / 100;
-  return { savingsPerYear: Math.round((yearlyPrice - estimatedYearlyPrice) * 100) / 100, estimatedYearlyPrice };
+  const estimatedYearlyPrice =
+    Math.round(yearlyPrice * (1 - YEARLY_SAVINGS_RATE) * 100) / 100;
+  return {
+    savingsPerYear:
+      Math.round((yearlyPrice - estimatedYearlyPrice) * 100) / 100,
+    estimatedYearlyPrice,
+  };
 }
 
 /** One month of the forecast series. */
@@ -311,7 +359,9 @@ export function monthlyForecast(
 
   // Emit a contiguous series starting with the current month.
   const result: ForecastMonth[] = [];
-  const cursor = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), 1, 12, 0, 0, 0));
+  const cursor = new Date(
+    Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), 1, 12, 0, 0, 0),
+  );
   for (let i = 0; i < months; i++) {
     const key = `${cursor.getUTCFullYear()}-${String(cursor.getUTCMonth() + 1).padStart(2, '0')}`;
     const bucket = buckets.get(key) ?? { total: 0, count: 0 };

@@ -13,7 +13,14 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Button, Text } from '@/design/components';
@@ -51,7 +58,8 @@ export function VerifyPasswordScreen() {
     return null;
   }, [touched, password]);
 
-  const canSubmit = passwordError === null && password.length > 0 && !submitting;
+  const canSubmit =
+    passwordError === null && password.length > 0 && !submitting;
 
   const onContinue = useCallback(async () => {
     if (submitting) return;
@@ -66,7 +74,9 @@ export function VerifyPasswordScreen() {
       await verifyCurrentPassword(password);
       router.replace(CHANGE_FLOW_LINK);
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Could not verify the password.');
+      setSubmitError(
+        e instanceof Error ? e.message : 'Could not verify the password.',
+      );
       void notifyError();
     } finally {
       setSubmitting(false);
@@ -89,15 +99,20 @@ export function VerifyPasswordScreen() {
           <BrandLockup />
 
           <View style={styles.copy}>
-            <Text variant="title" align="center">Verify your password</Text>
+            <Text variant="title" align="center">
+              Verify your password
+            </Text>
             <Text variant="body" color="textSecondary" align="center">
-              Confirm it&apos;s you before setting a new password{email ? ` for ${email}` : ''}.
+              Confirm it&apos;s you before setting a new password
+              {email ? ` for ${email}` : ''}.
             </Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.fieldGroup}>
-              <Text variant="caption" color="textSecondary" weight="600">Current password</Text>
+              <Text variant="caption" color="textSecondary" weight="600">
+                Current password
+              </Text>
               <PasswordField
                 value={password}
                 onChangeText={setPassword}
@@ -109,16 +124,26 @@ export function VerifyPasswordScreen() {
                 onSubmitEditing={onContinue}
               />
               {passwordError ? (
-                <Text variant="caption" color="negative">{passwordError}</Text>
+                <Text variant="caption" color="negative">
+                  {passwordError}
+                </Text>
               ) : null}
             </View>
 
-            <Button testID="verify-submit" variant="primary" size="lg" disabled={!canSubmit} onPress={onContinue}>
+            <Button
+              testID="verify-submit"
+              variant="primary"
+              size="lg"
+              disabled={!canSubmit}
+              onPress={onContinue}
+            >
               Continue
             </Button>
 
             {submitError ? (
-              <Text variant="caption" color="negative" align="center">{submitError}</Text>
+              <Text variant="caption" color="negative" align="center">
+                {submitError}
+              </Text>
             ) : null}
           </View>
 
@@ -131,7 +156,9 @@ export function VerifyPasswordScreen() {
             accessibilityLabel="Back"
             style={styles.switchLink}
           >
-            <Text variant="body" color="textSecondary">Back</Text>
+            <Text variant="body" color="textSecondary">
+              Back
+            </Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>

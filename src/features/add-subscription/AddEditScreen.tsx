@@ -30,19 +30,19 @@ import {
   useRef,
   useState,
   type MutableRefObject,
-} from "react";
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
+} from 'react';
+import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 
-import { Button, Card, Text } from "@/design/components";
-import { Surface } from "@/design/components/Surface";
-import { spacing } from "@/design/tokens";
-import { FormField } from "@/features/add-subscription/components/FormField";
-import { TextField } from "@/features/add-subscription/components/TextField";
-import { AmountInput } from "@/features/add-subscription/components/AmountInput";
-import { DateInput } from "@/features/add-subscription/components/DateInput";
-import { CyclePicker } from "@/features/add-subscription/components/CyclePicker";
-import { CategoryPicker } from "@/features/add-subscription/components/CategoryPicker";
-import { IconColorPicker } from "@/features/add-subscription/components/IconColorPicker";
+import { Button, Card, Text } from '@/design/components';
+import { Surface } from '@/design/components/Surface';
+import { spacing } from '@/design/tokens';
+import { FormField } from '@/features/add-subscription/components/FormField';
+import { TextField } from '@/features/add-subscription/components/TextField';
+import { AmountInput } from '@/features/add-subscription/components/AmountInput';
+import { DateInput } from '@/features/add-subscription/components/DateInput';
+import { CyclePicker } from '@/features/add-subscription/components/CyclePicker';
+import { CategoryPicker } from '@/features/add-subscription/components/CategoryPicker';
+import { IconColorPicker } from '@/features/add-subscription/components/IconColorPicker';
 import {
   defaultDraft,
   draftFromSubscription,
@@ -50,15 +50,15 @@ import {
   validateDraft,
   categoryMeta,
   type FieldKey,
-} from "@/features/add-subscription/form-helpers";
+} from '@/features/add-subscription/form-helpers';
 import type {
   CurrencyCode,
   Subscription,
   SubscriptionDraft,
-} from "@/types/subscription";
-import { useUIStore } from "@/store/useUIStore";
-import { useSubscriptionsStore } from "@/store/useSubscriptionsStore";
-import { toast } from "@/store/useToastStore";
+} from '@/types/subscription';
+import { useUIStore } from '@/store/useUIStore';
+import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
+import { toast } from '@/store/useToastStore';
 
 export interface AddEditScreenProps {
   /** Pass an existing subscription to enter "edit" mode; undefined = add new. */
@@ -140,11 +140,11 @@ export function AddEditScreen({
     setDraft((prev) => ({ ...prev, trialEnds: undefined }));
   }, []);
 
-  const setCycle = useCallback((cycle: SubscriptionDraft["cycle"]) => {
+  const setCycle = useCallback((cycle: SubscriptionDraft['cycle']) => {
     setDraft((prev) => ({ ...prev, cycle }));
   }, []);
 
-  const setCategory = useCallback((category: SubscriptionDraft["category"]) => {
+  const setCategory = useCallback((category: SubscriptionDraft['category']) => {
     setDraft((prev) => {
       // If the user added nothing custom to the icon yet, follow the category
       // default for convenience. Otherwise leave their chosen icon alone.
@@ -193,7 +193,7 @@ export function AddEditScreen({
     if (isEdit && existing) {
       const saved = await editRef.current(existing.id, cleanedDraft);
       if (saved) {
-        toast("Changes saved");
+        toast('Changes saved');
         onSaved(saved.id);
       } else if (useSubscriptionsStore.getState().queuedChange) {
         // Offline — the edit is queued and will sync on reconnect.
@@ -202,15 +202,15 @@ export function AddEditScreen({
       } else {
         // Not found — surface a native alert and stay in the modal.
         Alert.alert(
-          "Subscription not found",
-          "It may have been deleted elsewhere. Please dismiss and try again.",
-          [{ text: "Dismiss", onPress: onDismiss }],
+          'Subscription not found',
+          'It may have been deleted elsewhere. Please dismiss and try again.',
+          [{ text: 'Dismiss', onPress: onDismiss }],
         );
       }
     } else {
       const saved = await addRef.current(cleanedDraft);
       if (saved) {
-        toast("Subscription added");
+        toast('Subscription added');
         onSaved(saved.id);
       } else if (useSubscriptionsStore.getState().queuedChange) {
         // Offline — the add is queued and will sync on reconnect.
@@ -221,10 +221,10 @@ export function AddEditScreen({
         // real problems aren't hidden behind a generic message.
         const reason = useSubscriptionsStore.getState().error;
         Alert.alert(
-          "Could not add subscription",
+          'Could not add subscription',
           reason
             ? `Something went wrong saving: ${reason}`
-            : "Something went wrong saving. Try again.",
+            : 'Something went wrong saving. Try again.',
         );
       }
     }
@@ -246,7 +246,7 @@ export function AddEditScreen({
         <Card padding={spacing.lg} elevation="flat">
           <View style={styles.header}>
             <Text variant="title" weight="700" color="textPrimary">
-              {isEdit ? "Edit subscription" : "New subscription"}
+              {isEdit ? 'Edit subscription' : 'New subscription'}
             </Text>
             <Button onPress={onDismiss} variant="ghost" size="sm">
               Cancel
@@ -260,12 +260,12 @@ export function AddEditScreen({
               field="name"
               label="Name"
               errorMap={errorMap}
-              showError={shouldShow("name")}
+              showError={shouldShow('name')}
             >
               <TextField
                 value={draft.name}
                 onChangeText={setName}
-                onEndEditing={() => markTouched("name")}
+                onEndEditing={() => markTouched('name')}
                 placeholder="e.g. Netflix"
                 returnKeyType="next"
               />
@@ -275,14 +275,14 @@ export function AddEditScreen({
               field="amount"
               label="Amount"
               errorMap={errorMap}
-              showError={shouldShow("amount")}
+              showError={shouldShow('amount')}
               helper={`Per ${cycleLabelFor(draft.cycle)}`}
             >
               <AmountInput
                 currency={draft.currency}
                 value={draft.amount}
                 onChangeText={setAmount}
-                onEndEditing={() => markTouched("amount")}
+                onEndEditing={() => markTouched('amount')}
               />
             </FormField>
 
@@ -290,14 +290,14 @@ export function AddEditScreen({
               field="nextRenewal"
               label="Next renewal"
               errorMap={errorMap}
-              showError={shouldShow("nextRenewal")}
+              showError={shouldShow('nextRenewal')}
               helper="The next time this subscription charges"
             >
               <DateInput
                 value={draft.nextRenewal}
                 onChange={(iso) => {
                   setDate(iso);
-                  markTouched("nextRenewal");
+                  markTouched('nextRenewal');
                 }}
               />
             </FormField>
@@ -306,16 +306,16 @@ export function AddEditScreen({
               field="trialEnds"
               label="Trial ends (optional)"
               errorMap={errorMap}
-              showError={shouldShow("trialEnds")}
+              showError={shouldShow('trialEnds')}
               helper="The last day of a free trial, if any"
             >
               <View style={styles.dateRow}>
                 <View style={styles.dateRowField}>
                   <DateInput
-                    value={draft.trialEnds ?? ""}
+                    value={draft.trialEnds ?? ''}
                     onChange={(iso) => {
                       setTrialEnds(iso);
-                      markTouched("trialEnds");
+                      markTouched('trialEnds');
                     }}
                   />
                 </View>
@@ -331,7 +331,7 @@ export function AddEditScreen({
               field="cycle"
               label="Billing cycle"
               errorMap={errorMap}
-              showError={shouldShow("cycle")}
+              showError={shouldShow('cycle')}
             >
               <CyclePicker value={draft.cycle} onSelect={setCycle} />
             </FormField>
@@ -340,7 +340,7 @@ export function AddEditScreen({
               field="category"
               label="Category"
               errorMap={errorMap}
-              showError={shouldShow("category")}
+              showError={shouldShow('category')}
             >
               <CategoryPicker value={draft.category} onSelect={setCategory} />
             </FormField>
@@ -350,11 +350,11 @@ export function AddEditScreen({
               color={draft.color}
               onSelectIcon={(name) => {
                 setIcon(name);
-                markTouched("icon");
+                markTouched('icon');
               }}
               onSelectColor={(hex) => {
                 setColor(hex);
-                markTouched("color");
+                markTouched('color');
               }}
             />
 
@@ -362,13 +362,13 @@ export function AddEditScreen({
               field="notes"
               label="Notes (optional)"
               errorMap={errorMap}
-              showError={shouldShow("notes")}
+              showError={shouldShow('notes')}
               helper="Up to 280 characters"
             >
               <TextField
-                value={draft.notes ?? ""}
+                value={draft.notes ?? ''}
                 onChangeText={setNotes}
-                onEndEditing={() => markTouched("notes")}
+                onEndEditing={() => markTouched('notes')}
                 placeholder="Renewal reminder, plan details…"
                 multiline
                 numberOfLines={3}
@@ -386,21 +386,21 @@ export function AddEditScreen({
           size="lg"
           disabled={!isValid && attemptedSubmit}
         >
-          {isEdit ? "Save changes" : "Add subscription"}
+          {isEdit ? 'Save changes' : 'Add subscription'}
         </Button>
       </ScrollView>
     </Surface>
   );
 }
 
-function cycleLabelFor(cycle: SubscriptionDraft["cycle"]): string {
+function cycleLabelFor(cycle: SubscriptionDraft['cycle']): string {
   switch (cycle) {
-    case "monthly":
-      return "month";
-    case "quarterly":
-      return "quarter";
-    case "yearly":
-      return "year";
+    case 'monthly':
+      return 'month';
+    case 'quarterly':
+      return 'quarter';
+    case 'yearly':
+      return 'year';
   }
 }
 
@@ -411,19 +411,19 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.lg,
     gap: spacing.lg,
-    paddingBottom: spacing["3xl"],
+    paddingBottom: spacing['3xl'],
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   stack: {
     gap: spacing.lg,
   },
   dateRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
   },
   dateRowField: {
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     height: 48,
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
-    textAlignVertical: "top",
+    textAlignVertical: 'top',
     includeFontPadding: false,
   },
 });

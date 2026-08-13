@@ -44,4 +44,4 @@ changes you make; they sync to the server when connectivity returns.
 Questions about this policy can be directed to the app developer at
 georgesuarezdev@gmail.com.
 
-*Last updated: August 2026*
+_Last updated: August 2026_

@@ -3,52 +3,52 @@ appId: host.exp.Exponent
 ---
 - openLink: exp://127.0.0.1:8081
 - extendedWaitUntil:
-    visible: "Sign in|Monthly spend"
+    visible: 'Sign in|Monthly spend'
     timeout: 180000
 - runFlow:
     when:
-      visible: "Sign in"
+      visible: 'Sign in'
     commands:
-      - tapOn: "you@example.com"
+      - tapOn: 'you@example.com'
       - eraseText
-      - inputText: "test@subby.app"
-      - tapOn: "Your password"
+      - inputText: 'test@subby.app'
+      - tapOn: 'Your password'
       - eraseText
-      - inputText: "subby123"
+      - inputText: 'subby123'
       - pressKey: Enter
 - extendedWaitUntil:
-    visible: "Monthly spend"
+    visible: 'Monthly spend'
     timeout: 180000
 - openLink: exp://127.0.0.1:8081/--/subscription/add
 - extendedWaitUntil:
-    visible: "New subscription"
+    visible: 'New subscription'
     timeout: 60000
-- tapOn: "e.g. Netflix"
-- inputText: "Apple One"
-- tapOn: "0.00"
-- inputText: "19.95"
+- tapOn: 'e.g. Netflix'
+- inputText: 'Apple One'
+- tapOn: '0.00'
+- inputText: '19.95'
 - swipe:
-    start: "50%,30%"
-    end: "50%,8%"
+    start: '50%,30%'
+    end: '50%,8%'
 - extendedWaitUntil:
-    visible: "Renewal reminder, plan details…"
+    visible: 'Renewal reminder, plan details…'
     timeout: 15000
-- tapOn: "Renewal reminder, plan details…"
-- inputText: "iCloud family plan"
+- tapOn: 'Renewal reminder, plan details…'
+- inputText: 'iCloud family plan'
 - swipe:
-    start: "50%,30%"
-    end: "50%,10%"
+    start: '50%,30%'
+    end: '50%,10%'
 - takeScreenshot: add-subscriptions
 - extendedWaitUntil:
-    visible: "Add subscription"
+    visible: 'Add subscription'
     timeout: 15000
 - tapOn:
-    id: "add-submit"
+    id: 'add-submit'
 - runFlow:
     when:
       visible: "Don't Allow"
     commands:
       - tapOn: "Don't Allow"
 - assertVisible:
-    text: "Subscription added"
+    text: 'Subscription added'
     optional: true

@@ -150,125 +150,137 @@ function applyResult(
   }
 }
 
-export const useSubscriptionsStore = create<SubscriptionsStore>()((set, get) => ({
-  subs: [],
-  isLoading: false,
-  error: null,
-  isOffline: false,
-  pendingCount: 0,
-  syncError: null,
-  queuedChange: false,
+export const useSubscriptionsStore = create<SubscriptionsStore>()(
+  (set, get) => ({
+    subs: [],
+    isLoading: false,
+    error: null,
+    isOffline: false,
+    pendingCount: 0,
+    syncError: null,
+    queuedChange: false,
 
-  resetCache: () => set({ subs: [], error: null }),
+    resetCache: () => set({ subs: [], error: null }),
 
-  setNetworkState: (reachable) => {
-    set({ isOffline: reachable === false, syncError: reachable === false ? null : get().syncError });
-  },
-
-  hydrate: async () => {
-    set({ isLoading: true, error: null });
-    const userId = await currentUserId();
-    const includeSeeded = seededVisibility();
-    try {
-      const reachable = await getNetworkReachability();
-      if (reachable === false) {
-        // Offline — serve the last-synced snapshot.
-        const cached = userId ? await readCache<Subscription[]>('subs', userId) : null;
-        set({
-          subs: cached ?? [],
-          isLoading: false,
-          isOffline: true,
-          queuedChange: false,
-        });
-        return;
-      }
-      const subs = await getAllSubscriptions(includeSeeded);
-      if (userId) await writeCache('subs', userId, subs);
-      set({ subs, isLoading: false, isOffline: false, queuedChange: false });
-      await refreshPendingCount(set);
-    } catch (e) {
-      // Never leave a stale/previous account's rows visible on failure —
-      // empty beats wrong.
-      set({ isLoading: false, error: errorMessage(e), subs: [] });
-      if (e instanceof Error && /session|jwt|foreign key/i.test(e.message)) {
-        void useAuthStore.getState().expireSession(SESSION_EXPIRED_MESSAGE);
-        return;
-      }
-      if (isNetworkError(e) && userId) {
-        const cached = await readCache<Subscription[]>('subs', userId);
-        set({ subs: cached ?? [], isOffline: true });
-      }
-    }
-  },
-
-  add: async (draft) => {
-    const ctx = syncContext();
-    if (!ctx) return null;
-    const result = await applyMutation({ type: 'add', draft }, ctx);
-    return applyResult(set, get, result);
-  },
-
-  edit: async (id, patch) => {
-    const ctx = syncContext();
-    if (!ctx) return null;
-    const result = await applyMutation({ type: 'edit', id, patch }, ctx);
-    return applyResult(set, get, result, id);
-  },
-
-  archive: async (id, archived) => {
-    const ctx = syncContext();
-    if (!ctx) return null;
-    const result = await applyMutation({ type: 'archive', id, archived }, ctx);
-    return applyResult(set, get, result, id);
-  },
-
-  remove: async (id) => {
-    const ctx = syncContext();
-    if (!ctx) return;
-    const result = await applyMutation({ type: 'remove', id }, ctx);
-    applyResult(set, get, result);
-  },
-
-  clearAll: async () => {
-    const ctx = syncContext();
-    if (!ctx) return;
-    const result = await applyMutation({ type: 'clear_all' }, ctx);
-    applyResult(set, get, result);
-  },
-
-  getById: (id) => get().subs.find((s) => s.id === id),
-
-  flushPending: async () => {
-    const userId = await currentUserId();
-    if (!userId) return;
-    try {
-      const result = await flushPendingOps(userId, {
-        includeSeeded: seededVisibility(),
-        remindersEnabled: useUIStore.getState().remindersEnabled,
-      });
-      if (result.applied > 0) {
-        // Authoritative re-read after a clean flush.
-        const subs = await getAllSubscriptions(seededVisibility());
-        await writeCache('subs', userId, subs);
-        set({ subs });
-      }
+    setNetworkState: (reachable) => {
       set({
-        syncError: result.error,
-        queuedChange: false,
-        isOffline: false,
+        isOffline: reachable === false,
+        syncError: reachable === false ? null : get().syncError,
       });
-      await refreshPendingCount(set);
-    } catch (e) {
-      set({ syncError: errorMessage(e) });
-    }
-  },
-}));
+    },
+
+    hydrate: async () => {
+      set({ isLoading: true, error: null });
+      const userId = await currentUserId();
+      const includeSeeded = seededVisibility();
+      try {
+        const reachable = await getNetworkReachability();
+        if (reachable === false) {
+          // Offline — serve the last-synced snapshot.
+          const cached = userId
+            ? await readCache<Subscription[]>('subs', userId)
+            : null;
+          set({
+            subs: cached ?? [],
+            isLoading: false,
+            isOffline: true,
+            queuedChange: false,
+          });
+          return;
+        }
+        const subs = await getAllSubscriptions(includeSeeded);
+        if (userId) await writeCache('subs', userId, subs);
+        set({ subs, isLoading: false, isOffline: false, queuedChange: false });
+        await refreshPendingCount(set);
+      } catch (e) {
+        // Never leave a stale/previous account's rows visible on failure —
+        // empty beats wrong.
+        set({ isLoading: false, error: errorMessage(e), subs: [] });
+        if (e instanceof Error && /session|jwt|foreign key/i.test(e.message)) {
+          void useAuthStore.getState().expireSession(SESSION_EXPIRED_MESSAGE);
+          return;
+        }
+        if (isNetworkError(e) && userId) {
+          const cached = await readCache<Subscription[]>('subs', userId);
+          set({ subs: cached ?? [], isOffline: true });
+        }
+      }
+    },
+
+    add: async (draft) => {
+      const ctx = syncContext();
+      if (!ctx) return null;
+      const result = await applyMutation({ type: 'add', draft }, ctx);
+      return applyResult(set, get, result);
+    },
+
+    edit: async (id, patch) => {
+      const ctx = syncContext();
+      if (!ctx) return null;
+      const result = await applyMutation({ type: 'edit', id, patch }, ctx);
+      return applyResult(set, get, result, id);
+    },
+
+    archive: async (id, archived) => {
+      const ctx = syncContext();
+      if (!ctx) return null;
+      const result = await applyMutation(
+        { type: 'archive', id, archived },
+        ctx,
+      );
+      return applyResult(set, get, result, id);
+    },
+
+    remove: async (id) => {
+      const ctx = syncContext();
+      if (!ctx) return;
+      const result = await applyMutation({ type: 'remove', id }, ctx);
+      applyResult(set, get, result);
+    },
+
+    clearAll: async () => {
+      const ctx = syncContext();
+      if (!ctx) return;
+      const result = await applyMutation({ type: 'clear_all' }, ctx);
+      applyResult(set, get, result);
+    },
+
+    getById: (id) => get().subs.find((s) => s.id === id),
+
+    flushPending: async () => {
+      const userId = await currentUserId();
+      if (!userId) return;
+      try {
+        const result = await flushPendingOps(userId, {
+          includeSeeded: seededVisibility(),
+          remindersEnabled: useUIStore.getState().remindersEnabled,
+        });
+        if (result.applied > 0) {
+          // Authoritative re-read after a clean flush.
+          const subs = await getAllSubscriptions(seededVisibility());
+          await writeCache('subs', userId, subs);
+          set({ subs });
+        }
+        set({
+          syncError: result.error,
+          queuedChange: false,
+          isOffline: false,
+        });
+        await refreshPendingCount(set);
+      } catch (e) {
+        set({ syncError: errorMessage(e) });
+      }
+    },
+  }),
+);
 
 // --- Selectors (skill `react-state-minimize`) ------------------------------
 
 /** All active (non-archived) subscriptions. Use inside components. */
 export function useActiveSubscriptions(): Subscription[] {
-  return useSubscriptionsStore(useShallow((s) => s.subs.filter((x) => !x.archived)));
+  return useSubscriptionsStore(
+    useShallow((s) => s.subs.filter((x) => !x.archived)),
+  );
 }
 
 /** A single subscription by id (or undefined). Re-renders only when that row

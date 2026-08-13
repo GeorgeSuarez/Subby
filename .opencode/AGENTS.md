@@ -7,29 +7,31 @@ expo-router (native stack + native tabs), Zustand, and expo-sqlite.
 
 Run these from the project root before considering any task complete:
 
-| Task                | Command                          |
-| ------------------- | -------------------------------- |
-| Install deps        | `npm install`                    |
-| Start dev ( Expo )  | `npm run start`                  |
-| Start iOS           | `npm run ios`                    |
-| Start Android       | `npm run android`                |
-| Lint                | `npm run lint`                   |
-| Lint + autofix      | `npm run lint:fix`               |
-| Typecheck           | `npm run typecheck`              |
-| Unit tests          | `npm run test`                   |
-| Watch tests         | `npm run test:watch`             |
-| Doctor (dep audit)  | `npm run doctor`                 |
-| Regenerate icons    | `npm run icons`                  |
-| Prebuild iOS        | `npm run prebuild:ios`           |
-| Prebuild Android    | `npm run prebuild:android`       |
-| Build dev ( iOS )   | `npm run build:dev:ios`         |
-| Build dev ( Android)| `npm run build:dev:android`     |
-| Build preview ( iOS)| `npm run build:preview:ios`     |
-| Build preview ( Droid) | `npm run build:preview:android` |
-| Build production iOS| `npm run build:production:ios`  |
-| Build prod ( Android)| `npm run build:production:android` |
-| Submit to App Store | `npm run submit:ios`             |
-| Submit to Play Store| `npm run submit:android`         |
+| Task                   | Command                            |
+| ---------------------- | ---------------------------------- |
+| Install deps           | `npm install`                      |
+| Start dev ( Expo )     | `npm run start`                    |
+| Start iOS              | `npm run ios`                      |
+| Start Android          | `npm run android`                  |
+| Lint                   | `npm run lint`                     |
+| Lint + autofix         | `npm run lint:fix`                 |
+| Format                 | `npm run format`                   |
+| Check formatting       | `npm run format:check`             |
+| Typecheck              | `npm run typecheck`                |
+| Unit tests             | `npm run test`                     |
+| Watch tests            | `npm run test:watch`               |
+| Doctor (dep audit)     | `npm run doctor`                   |
+| Regenerate icons       | `npm run icons`                    |
+| Prebuild iOS           | `npm run prebuild:ios`             |
+| Prebuild Android       | `npm run prebuild:android`         |
+| Build dev ( iOS )      | `npm run build:dev:ios`            |
+| Build dev ( Android)   | `npm run build:dev:android`        |
+| Build preview ( iOS)   | `npm run build:preview:ios`        |
+| Build preview ( Droid) | `npm run build:preview:android`    |
+| Build production iOS   | `npm run build:production:ios`     |
+| Build prod ( Android)  | `npm run build:production:android` |
+| Submit to App Store    | `npm run submit:ios`               |
+| Submit to Play Store   | `npm run submit:android`           |
 
 ## Local Supabase stack
 
@@ -120,7 +122,7 @@ Run these from the project root before considering any task complete:
 
 - `eas.json` defines three profiles: **development** (internal simulator/APK for
   dev), **preview** (internal TestFlight/APK for QA), **production** (App Store
-  + Play Store submission).
+  - Play Store submission).
 - `app.json` configures the Subby bundle identifier `com.subby.app` and the
   iOS `.icon` asset catalog (`assets/expo.icon`) for the new Apple Icon
   Composer format (dark gradient fill + cyan recurring-arrow layer).
@@ -144,6 +146,7 @@ After **any** code change, run these and resolve all errors before stopping:
 npm run lint
 npm run typecheck
 npm test -- --passWithNoTests
+npm run format:check
 ```
 
 ## Tech Stack (do not change without user approval)
@@ -167,8 +170,9 @@ npm test -- --passWithNoTests
 
 These come from the React Native skills guide and must be followed:
 
-1. **No `&&` for conditional rendering** — use ternary or `!!value`. ESLint rule
-   `react/jsx-no-leaked-render` is enabled to catch this.
+1. **No `&&` for conditional rendering** — use ternary or `!!value`. Enforced by
+   `react/jsx-no-leaked-render` (loaded into oxlint via a JS plugin — the native
+   oxlint rule set does not include it).
 2. **All strings inside `<Text>`** — never as a direct child of `<View>`.
 3. **List items receive only primitive props** — no inline objects, no inline styles,
    no inline callbacks in `renderItem`. Wrap items in `memo()` (or rely on React Compiler).
@@ -212,7 +216,7 @@ src/
 
 ## Brand / Visual identity
 
-- **Theme**: dark-first.  Surface `#0B0F14`, elevated `#131920`, border `#1F2A36`.
+- **Theme**: dark-first. Surface `#0B0F14`, elevated `#131920`, border `#1F2A36`.
 - **Text**: primary `#F4F7FB`, secondary `#93A1B5`.
 - **Accent**: cyan `#22D3EE` (muted `#0E7490`).
 - **Typography**: system-ui with limited sizes (vary weight/color, not many sizes).

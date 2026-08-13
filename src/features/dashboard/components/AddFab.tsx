@@ -17,10 +17,10 @@
  * (GPU-accelerated) is animated; no layout properties touched.
  */
 
-import { useEffect } from "react";
-import { StyleSheet, View } from "react-native";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -30,13 +30,13 @@ import Animated, {
   interpolate,
   runOnJS,
   type AnimatedStyle,
-} from "react-native-reanimated";
-import type { AccessibilityRole, ViewStyle } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+} from 'react-native-reanimated';
+import type { AccessibilityRole, ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-import { useTheme } from "@/design/theme";
-import { layout, spacing } from "@/design/tokens";
-import { impactLight } from "@/utils/haptics";
+import { useTheme } from '@/design/theme';
+import { layout, spacing } from '@/design/tokens';
+import { impactLight } from '@/utils/haptics';
 
 export interface AddFabProps {
   onPress: () => void;
@@ -44,7 +44,7 @@ export interface AddFabProps {
   label?: string;
 }
 
-export function AddFab({ onPress, label = "Add subscription" }: AddFabProps) {
+export function AddFab({ onPress, label = 'Add subscription' }: AddFabProps) {
   const { colors, shadow } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -98,7 +98,7 @@ export function AddFab({ onPress, label = "Add subscription" }: AddFabProps) {
         <AnimatedFab
           accessibilityRole="button"
           accessibilityLabel={label}
-          shadow={shadow("glowAccent")}
+          shadow={shadow('glowAccent')}
           accent={colors.accent}
           fg={colors.textOnAccent}
           animatedStyle={animatedStyle}
@@ -140,7 +140,7 @@ function AnimatedFab({
 
 const styles = StyleSheet.create({
   container: {
-    position: "absolute",
+    position: 'absolute',
     right: spacing.xl,
     bottom: spacing.xl,
     zIndex: 10,
@@ -149,8 +149,8 @@ const styles = StyleSheet.create({
     width: layout.fabSize,
     height: layout.fabSize,
     borderRadius: layout.fabSize / 2,
-    alignItems: "center",
-    justifyContent: "center",
-    borderCurve: "continuous",
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderCurve: 'continuous',
   },
 });

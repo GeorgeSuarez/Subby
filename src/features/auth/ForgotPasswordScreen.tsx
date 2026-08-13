@@ -14,7 +14,14 @@
  */
 
 import { useCallback, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 
@@ -57,7 +64,8 @@ export function ForgotPasswordScreen() {
     return null;
   }, [touched, email]);
 
-  const canSubmit = emailError === null && email.trim().length > 0 && !submitting;
+  const canSubmit =
+    emailError === null && email.trim().length > 0 && !submitting;
 
   const onSubmit = useCallback(async () => {
     if (submitting) return;
@@ -73,7 +81,9 @@ export function ForgotPasswordScreen() {
       void notifySuccess();
       setSent(true);
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Could not send the reset email.');
+      setSubmitError(
+        e instanceof Error ? e.message : 'Could not send the reset email.',
+      );
       void notifyError();
     } finally {
       setSubmitting(false);
@@ -83,13 +93,18 @@ export function ForgotPasswordScreen() {
   if (sent) {
     return (
       <Surface background="surface" style={styles.root}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+        >
           <BrandLockup />
           <View style={styles.copy}>
-            <Text variant="title" align="center">Check your inbox</Text>
+            <Text variant="title" align="center">
+              Check your inbox
+            </Text>
             <Text variant="body" color="textSecondary" align="center">
-              We sent a 6-digit reset code to {email.trim()}. It expires in 15 minutes — enter
-              it to set a new password.
+              We sent a 6-digit reset code to {email.trim()}. It expires in 15
+              minutes — enter it to set a new password.
             </Text>
           </View>
           <Button
@@ -99,7 +114,11 @@ export function ForgotPasswordScreen() {
           >
             Enter the reset code
           </Button>
-          <Button variant="ghost" size="lg" onPress={() => router.replace('/auth/sign-in')}>
+          <Button
+            variant="ghost"
+            size="lg"
+            onPress={() => router.replace('/auth/sign-in')}
+          >
             Back to sign in
           </Button>
         </ScrollView>
@@ -122,15 +141,20 @@ export function ForgotPasswordScreen() {
           <BrandLockup />
 
           <View style={styles.copy}>
-            <Text variant="title" align="center">Reset your password</Text>
+            <Text variant="title" align="center">
+              Reset your password
+            </Text>
             <Text variant="body" color="textSecondary" align="center">
-              Enter your account email and we&apos;ll send you a link to set a new password.
+              Enter your account email and we&apos;ll send you a link to set a
+              new password.
             </Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.fieldGroup}>
-              <Text variant="caption" color="textSecondary" weight="600">Email</Text>
+              <Text variant="caption" color="textSecondary" weight="600">
+                Email
+              </Text>
               <TextField
                 value={email}
                 onChangeText={setEmail}
@@ -145,16 +169,26 @@ export function ForgotPasswordScreen() {
                 onSubmitEditing={onSubmit}
               />
               {emailError ? (
-                <Text variant="caption" color="negative">{emailError}</Text>
+                <Text variant="caption" color="negative">
+                  {emailError}
+                </Text>
               ) : null}
             </View>
 
-            <Button testID="forgot-submit" variant="primary" size="lg" disabled={!canSubmit} onPress={onSubmit}>
+            <Button
+              testID="forgot-submit"
+              variant="primary"
+              size="lg"
+              disabled={!canSubmit}
+              onPress={onSubmit}
+            >
               Send reset link
             </Button>
 
             {submitError ? (
-              <Text variant="caption" color="negative" align="center">{submitError}</Text>
+              <Text variant="caption" color="negative" align="center">
+                {submitError}
+              </Text>
             ) : null}
           </View>
 
@@ -164,7 +198,9 @@ export function ForgotPasswordScreen() {
             accessibilityLabel="Back to sign in"
             style={styles.switchLink}
           >
-            <Text variant="body" color="accent" weight="600">Back to sign in</Text>
+            <Text variant="body" color="accent" weight="600">
+              Back to sign in
+            </Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>

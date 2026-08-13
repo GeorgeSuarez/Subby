@@ -24,7 +24,10 @@ import { spacing } from '@/design/tokens';
 import { DetailHero } from '@/features/subscription-detail/components/DetailHero';
 import { RenewalCountdown } from '@/features/subscription-detail/components/RenewalCountdown';
 import { EffectiveCostCard } from '@/features/subscription-detail/components/EffectiveCostCard';
-import { DetailActionBar, confirmDelete } from '@/features/subscription-detail/components/DetailActionBar';
+import {
+  DetailActionBar,
+  confirmDelete,
+} from '@/features/subscription-detail/components/DetailActionBar';
 import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
 import { toast } from '@/store/useToastStore';
 import type { Subscription } from '@/types/subscription';
@@ -40,7 +43,12 @@ export interface DetailScreenProps {
   onDismiss: () => void;
 }
 
-export function DetailScreen({ sub, id, onEdit, onDismiss }: DetailScreenProps) {
+export function DetailScreen({
+  sub,
+  id,
+  onEdit,
+  onDismiss,
+}: DetailScreenProps) {
   const insets = useSafeAreaInsets();
   // Mutators from the store are stable references (Zustand).
   const archive = useSubscriptionsStore((s) => s.archive);
@@ -99,10 +107,8 @@ export function DetailScreen({ sub, id, onEdit, onDismiss }: DetailScreenProps) 
 
         <Card padding={spacing.lg} elevation="flat">
           <Text variant="caption" color="textTertiary">
-            {
-              `Added ${formatTimestamp(sub.createdAt)} · ` +
-              `Updated ${formatTimestamp(sub.updatedAt)}`
-            }
+            {`Added ${formatTimestamp(sub.createdAt)} · ` +
+              `Updated ${formatTimestamp(sub.updatedAt)}`}
           </Text>
         </Card>
 

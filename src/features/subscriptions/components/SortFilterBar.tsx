@@ -13,7 +13,10 @@ import { StyleSheet, View } from 'react-native';
 import { Chip, SegmentedControl, Text } from '@/design/components';
 import { spacing } from '@/design/tokens';
 import { selection } from '@/utils/haptics';
-import type { SubscriptionFilter, SubscriptionSort } from '@/types/subscription';
+import type {
+  SubscriptionFilter,
+  SubscriptionSort,
+} from '@/types/subscription';
 
 const SORT_LABELS: Record<SubscriptionSort, string> = {
   name: 'Name',
@@ -21,11 +24,12 @@ const SORT_LABELS: Record<SubscriptionSort, string> = {
   nextRenewal: 'Renewal',
 };
 
-const FILTER_OPTIONS: readonly { value: SubscriptionFilter; label: string }[] = [
-  { value: 'active', label: 'Active' },
-  { value: 'archived', label: 'Archived' },
-  { value: 'all', label: 'All' },
-];
+const FILTER_OPTIONS: readonly { value: SubscriptionFilter; label: string }[] =
+  [
+    { value: 'active', label: 'Active' },
+    { value: 'archived', label: 'Archived' },
+    { value: 'all', label: 'All' },
+  ];
 
 export interface SortFilterBarProps {
   sort: SubscriptionSort;
@@ -34,13 +38,20 @@ export interface SortFilterBarProps {
   onFilter: (f: SubscriptionFilter) => void;
 }
 
-export function SortFilterBar({ sort, filter, onSort, onFilter }: SortFilterBarProps) {
+export function SortFilterBar({
+  sort,
+  filter,
+  onSort,
+  onFilter,
+}: SortFilterBarProps) {
   const sortKeys = Object.keys(SORT_LABELS) as SubscriptionSort[];
   const selectedIndex = sortKeys.indexOf(sort);
 
   return (
     <View style={styles.container}>
-      <Text variant="caption" color="textTertiary" weight="600">Sort by</Text>
+      <Text variant="caption" color="textTertiary" weight="600">
+        Sort by
+      </Text>
       <SegmentedControl
         segments={sortKeys.map((k) => SORT_LABELS[k])}
         selectedIndex={selectedIndex}

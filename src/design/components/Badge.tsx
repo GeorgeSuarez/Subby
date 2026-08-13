@@ -15,7 +15,12 @@ import { Text } from '@/design/components/Text';
 import { useTheme } from '@/design/theme';
 import { radius, spacing, type Palette } from '@/design/tokens';
 
-export type BadgeTone = 'neutral' | 'positive' | 'negative' | 'warning' | 'accent';
+export type BadgeTone =
+  | 'neutral'
+  | 'positive'
+  | 'negative'
+  | 'warning'
+  | 'accent';
 
 export interface BadgeProps {
   children: ReactNode;

@@ -129,12 +129,23 @@ export function AuthScreen({ mode }: AuthScreenProps) {
       void notifySuccess();
       router.replace('/');
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'Something went wrong. Try again.');
+      setSubmitError(
+        e instanceof Error ? e.message : 'Something went wrong. Try again.',
+      );
       void notifyError();
     } finally {
       setSubmitting(false);
     }
-  }, [submitting, hasErrors, mode, draft.email, draft.password, signIn, signUp, router]);
+  }, [
+    submitting,
+    hasErrors,
+    mode,
+    draft.email,
+    draft.password,
+    signIn,
+    signUp,
+    router,
+  ]);
 
   const switchMode = useCallback(() => {
     router.push(mode === 'signIn' ? '/auth/sign-up' : '/auth/sign-in');
@@ -167,13 +178,19 @@ export function AuthScreen({ mode }: AuthScreenProps) {
           <BrandLockup />
 
           <View style={styles.copy}>
-            <Text variant="title" align="center">{copy.headline}</Text>
-            <Text variant="body" color="textSecondary" align="center">{copy.subline}</Text>
+            <Text variant="title" align="center">
+              {copy.headline}
+            </Text>
+            <Text variant="body" color="textSecondary" align="center">
+              {copy.subline}
+            </Text>
           </View>
 
           <View style={styles.form}>
             <View style={styles.fieldGroup}>
-              <Text variant="caption" color="textSecondary" weight="600">Email</Text>
+              <Text variant="caption" color="textSecondary" weight="600">
+                Email
+              </Text>
               <TextField
                 value={draft.email}
                 onChangeText={(value) => update('email', value)}
@@ -188,25 +205,35 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                 onSubmitEditing={() => passwordRef.current?.focus()}
               />
               {showError('email') ? (
-                <Text variant="caption" color="negative">{showError('email')}</Text>
+                <Text variant="caption" color="negative">
+                  {showError('email')}
+                </Text>
               ) : null}
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text variant="caption" color="textSecondary" weight="600">Password</Text>
+              <Text variant="caption" color="textSecondary" weight="600">
+                Password
+              </Text>
               <PasswordField
                 ref={passwordRef}
                 value={draft.password}
                 onChangeText={(value) => update('password', value)}
                 onBlur={() => markTouched('password')}
-                placeholder={mode === 'signUp' ? 'At least 8 characters' : 'Your password'}
+                placeholder={
+                  mode === 'signUp' ? 'At least 8 characters' : 'Your password'
+                }
                 textContentType={mode === 'signUp' ? 'newPassword' : 'password'}
-                autoComplete={mode === 'signUp' ? 'new-password' : 'current-password'}
+                autoComplete={
+                  mode === 'signUp' ? 'new-password' : 'current-password'
+                }
                 returnKeyType="go"
                 onSubmitEditing={onSubmit}
               />
               {showError('password') ? (
-                <Text variant="caption" color="negative">{showError('password')}</Text>
+                <Text variant="caption" color="negative">
+                  {showError('password')}
+                </Text>
               ) : null}
             </View>
 
@@ -221,12 +248,15 @@ export function AuthScreen({ mode }: AuthScreenProps) {
             </Button>
 
             {submitError ? (
-              <Text variant="caption" color="negative" align="center">{submitError}</Text>
+              <Text variant="caption" color="negative" align="center">
+                {submitError}
+              </Text>
             ) : null}
 
             {!isSupabaseConfigured ? (
               <Text variant="caption" color="textTertiary" align="center">
-                Supabase is not configured — add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to .env
+                Supabase is not configured — add EXPO_PUBLIC_SUPABASE_URL and
+                EXPO_PUBLIC_SUPABASE_ANON_KEY to .env
               </Text>
             ) : null}
           </View>
@@ -238,7 +268,9 @@ export function AuthScreen({ mode }: AuthScreenProps) {
               accessibilityLabel="Forgot password"
               style={styles.switchLink}
             >
-              <Text variant="body" color="accent" weight="600">Forgot password?</Text>
+              <Text variant="body" color="accent" weight="600">
+                Forgot password?
+              </Text>
             </Pressable>
           ) : null}
 
@@ -248,8 +280,12 @@ export function AuthScreen({ mode }: AuthScreenProps) {
             accessibilityLabel={`${copy.switchPrompt} ${copy.switchAction}`}
             style={styles.switchLink}
           >
-            <Text variant="body" color="textSecondary">{copy.switchPrompt} </Text>
-            <Text variant="body" color="accent" weight="600">{copy.switchAction}</Text>
+            <Text variant="body" color="textSecondary">
+              {copy.switchPrompt}{' '}
+            </Text>
+            <Text variant="body" color="accent" weight="600">
+              {copy.switchAction}
+            </Text>
           </Pressable>
         </ScrollView>
       </KeyboardAvoidingView>

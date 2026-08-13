@@ -2,13 +2,13 @@
 appId: host.exp.Exponent
 ---
 - extendedWaitUntil:
-    visible: "Sign in"
+    visible: 'Sign in'
     timeout: 60000
-- tapOn: "you@example.com"
-- inputText: "test@subby.app"
-- tapOn: "Your password"
-- inputText: "subby123"
+- tapOn: 'you@example.com'
+- inputText: 'test@subby.app'
+- tapOn: 'Your password'
+- inputText: 'subby123'
 - pressKey: Enter
 - extendedWaitUntil:
-    visible: "Monthly spend"
+    visible: 'Monthly spend'
     timeout: 120000

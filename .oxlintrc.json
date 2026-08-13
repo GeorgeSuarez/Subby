@@ -1,0 +1,42 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "unicorn", "import", "oxc"],
+  "env": {
+    "es2022": true
+  },
+  "settings": {
+    "react": {
+      "version": "19.2.3"
+    }
+  },
+  "ignorePatterns": [
+    "dist/*",
+    ".expo/*",
+    "node_modules/*",
+    "coverage/*",
+    "android/app/build"
+  ],
+  "jsPlugins": [
+    {
+      "name": "react-js",
+      "specifier": "eslint-plugin-react"
+    },
+    {
+      "name": "expo",
+      "specifier": "eslint-plugin-expo"
+    }
+  ],
+  "rules": {
+    "no-unused-vars": [
+      "warn",
+      { "args": "none", "ignoreRestSiblings": true, "caughtErrors": "all" }
+    ],
+    "react-js/jsx-no-leaked-render": [
+      "error",
+      { "validStrategies": ["ternary", "coerce"] }
+    ],
+    "expo/use-dom-exports": "error",
+    "expo/no-env-var-destructuring": "error",
+    "expo/no-dynamic-env-var": "error"
+  }
+}

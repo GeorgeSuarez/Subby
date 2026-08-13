@@ -23,11 +23,43 @@ const base = (overrides: Partial<Subscription>): Subscription => ({
 });
 
 const subs: Subscription[] = [
-  base({ id: 'a', name: 'Audible', amount: 14.95, nextRenewal: '2026-08-04', category: 'other', notes: 'audiobooks' }),
-  base({ id: 'b', name: 'Spotify', amount: 9.99, nextRenewal: '2026-08-01', category: 'music' }),
-  base({ id: 'c', name: 'GitHub', amount: 4, nextRenewal: '2026-08-12', category: 'developer', notes: 'pro' }),
-  base({ id: 'd', name: 'Netflix', amount: 15.99, nextRenewal: '2026-07-31', category: 'streaming' }),
-  base({ id: 'arch', name: 'Hulu', amount: 12.99, archived: true, category: 'streaming' }),
+  base({
+    id: 'a',
+    name: 'Audible',
+    amount: 14.95,
+    nextRenewal: '2026-08-04',
+    category: 'other',
+    notes: 'audiobooks',
+  }),
+  base({
+    id: 'b',
+    name: 'Spotify',
+    amount: 9.99,
+    nextRenewal: '2026-08-01',
+    category: 'music',
+  }),
+  base({
+    id: 'c',
+    name: 'GitHub',
+    amount: 4,
+    nextRenewal: '2026-08-12',
+    category: 'developer',
+    notes: 'pro',
+  }),
+  base({
+    id: 'd',
+    name: 'Netflix',
+    amount: 15.99,
+    nextRenewal: '2026-07-31',
+    category: 'streaming',
+  }),
+  base({
+    id: 'arch',
+    name: 'Hulu',
+    amount: 12.99,
+    archived: true,
+    category: 'streaming',
+  }),
 ];
 
 describe('matchesQuery', () => {
@@ -125,7 +157,11 @@ describe('applySort', () => {
 
 describe('filterAndSortSubs', () => {
   it('composes filter + query + sort in one pass', () => {
-    const result = filterAndSortSubs(subs, { query: 'au', sort: 'name', filter: 'all' });
+    const result = filterAndSortSubs(subs, {
+      query: 'au',
+      sort: 'name',
+      filter: 'all',
+    });
     // Active+archived subs whose haystack includes 'au': Audible (audiobooks in notes), Hulu (no)
     // Wait — 'au' in 'Audible' (substring yes) AND 'audiobooks' contains 'au'.
     // 'Hulu'? 'hulu'.includes('au') is false. So only Audible.
@@ -133,13 +169,21 @@ describe('filterAndSortSubs', () => {
   });
 
   it('returns a NEW array even when result is empty', () => {
-    const result = filterAndSortSubs(subs, { query: 'zzznomatch', sort: 'name', filter: 'all' });
+    const result = filterAndSortSubs(subs, {
+      query: 'zzznomatch',
+      sort: 'name',
+      filter: 'all',
+    });
     expect(result).toEqual([]);
     expect(Array.isArray(result)).toBe(true);
   });
 
   it("filter 'active' excludes archived before query applies", () => {
-    const result = filterAndSortSubs(subs, { query: '', sort: 'name', filter: 'active' });
+    const result = filterAndSortSubs(subs, {
+      query: '',
+      sort: 'name',
+      filter: 'active',
+    });
     const ids = result.map((s) => s.id);
     expect(ids).not.toContain('arch');
     expect(ids.length).toBe(4);

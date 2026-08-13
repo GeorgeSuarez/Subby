@@ -36,12 +36,18 @@ export function FormField({
 
   return (
     <View style={styles.container}>
-      <Text variant="caption" color="textSecondary" weight="600">{label}</Text>
+      <Text variant="caption" color="textSecondary" weight="600">
+        {label}
+      </Text>
       {children}
       {err ? (
-        <Text variant="caption" color="negative">{err}</Text>
+        <Text variant="caption" color="negative">
+          {err}
+        </Text>
       ) : helper ? (
-        <Text variant="caption" color="textTertiary">{helper}</Text>
+        <Text variant="caption" color="textTertiary">
+          {helper}
+        </Text>
       ) : null}
     </View>
   );

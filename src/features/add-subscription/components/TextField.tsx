@@ -21,59 +21,60 @@ export interface TextFieldProps extends TextInputProps {
   leading?: string;
 }
 
-export const TextField = forwardRef<TextInput, TextFieldProps>(function TextField(
-  {
-    style,
-    leading,
-    trailing,
-    multiline,
-    placeholderTextColor,
-    ...rest
-  },
-  ref,
-) {
-  const { colors } = useTheme();
-  const [focused, setFocused] = useState(false);
+export const TextField = forwardRef<TextInput, TextFieldProps>(
+  function TextField(
+    { style, leading, trailing, multiline, placeholderTextColor, ...rest },
+    ref,
+  ) {
+    const { colors } = useTheme();
+    const [focused, setFocused] = useState(false);
 
-  return (
-    <View
-      style={[
-        styles.container,
-        multiline ? styles.containerMultiline : null,
-        {
-          backgroundColor: colors.surfaceHigher,
-          borderColor: focused ? colors.accent : colors.border,
-        },
-        focused ? { boxShadow: '0 0 0 1px ' + colors.accent } : null,
-      ]}
-    >
-      {leading ? (
-        <Text variant="body" color={focused ? 'accent' : 'textTertiary'} style={styles.leading}>
-          {leading}
-        </Text>
-      ) : null}
-      <TextInput
-        ref={ref}
-        placeholderTextColor={placeholderTextColor ?? colors.textTertiary}
-        onFocus={(e) => {
-          setFocused(true);
-          rest.onFocus?.(e);
-        }}
-        onBlur={(e) => {
-          setFocused(false);
-          rest.onBlur?.(e);
-        }}
-        style={[styles.input, { color: colors.textPrimary }, style]}
-        {...rest}
-      />
-      {trailing ? (
-        <View style={[styles.trailing, { borderLeftColor: colors.border }]}>
-          <Text variant="caption" color="textSecondary" weight="600">{trailing}</Text>
-        </View>
-      ) : null}
-    </View>
-  );
-});
+    return (
+      <View
+        style={[
+          styles.container,
+          multiline ? styles.containerMultiline : null,
+          {
+            backgroundColor: colors.surfaceHigher,
+            borderColor: focused ? colors.accent : colors.border,
+          },
+          focused ? { boxShadow: '0 0 0 1px ' + colors.accent } : null,
+        ]}
+      >
+        {leading ? (
+          <Text
+            variant="body"
+            color={focused ? 'accent' : 'textTertiary'}
+            style={styles.leading}
+          >
+            {leading}
+          </Text>
+        ) : null}
+        <TextInput
+          ref={ref}
+          placeholderTextColor={placeholderTextColor ?? colors.textTertiary}
+          onFocus={(e) => {
+            setFocused(true);
+            rest.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            rest.onBlur?.(e);
+          }}
+          style={[styles.input, { color: colors.textPrimary }, style]}
+          {...rest}
+        />
+        {trailing ? (
+          <View style={[styles.trailing, { borderLeftColor: colors.border }]}>
+            <Text variant="caption" color="textSecondary" weight="600">
+              {trailing}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+    );
+  },
+);
 
 const styles = StyleSheet.create({
   container: {

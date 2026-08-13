@@ -35,7 +35,7 @@ concept get an entry; fuzzy terms get sharpened here.
   URL contract because the app reloads mid-flow in Expo Go.
 - **Gatekeeping** — `src/features/auth/auth-flow.ts`; the pure state machine
   deciding which form the reset screen shows (`entry | recovery | change |
-  verify`) and whether a visitor is redirected to the verify step.
+verify`) and whether a visitor is redirected to the verify step.
 - **Verify step** — the current-password screen signed-in users pass through
   before the change form.
 

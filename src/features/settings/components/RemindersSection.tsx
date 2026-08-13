@@ -25,7 +25,9 @@ export function RemindersSection() {
   return (
     <Card padding={spacing.lg} elevation="flat">
       <Card.Header>
-        <Text variant="headline" weight="600">Notifications</Text>
+        <Text variant="headline" weight="600">
+          Notifications
+        </Text>
         <Text variant="caption" color="textSecondary">
           Remind me a day before each renewal.
         </Text>
@@ -33,9 +35,13 @@ export function RemindersSection() {
 
       <View style={[styles.row, { borderColor: colors.border }]}>
         <View style={styles.meta}>
-          <Text variant="body" weight="600" color="textPrimary">Renewal reminders</Text>
+          <Text variant="body" weight="600" color="textPrimary">
+            Renewal reminders
+          </Text>
           <Text variant="caption" color="textSecondary">
-            {enabled ? 'Scheduled for new and edited subscriptions' : 'Off — nothing will be scheduled'}
+            {enabled
+              ? 'Scheduled for new and edited subscriptions'
+              : 'Off — nothing will be scheduled'}
           </Text>
         </View>
         <Switch

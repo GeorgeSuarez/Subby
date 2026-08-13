@@ -68,12 +68,20 @@ export function EmptyState({
         {decoration ? (
           decoration
         ) : (
-          <Ionicons name={decorationIcon as never} size={36} color={colors.accent} />
+          <Ionicons
+            name={decorationIcon as never}
+            size={36}
+            color={colors.accent}
+          />
         )}
       </Animated.View>
 
       <Animated.View
-        entering={FadeInDown.duration(280).springify().damping(16).stiffness(200).delay(180)}
+        entering={FadeInDown.duration(280)
+          .springify()
+          .damping(16)
+          .stiffness(200)
+          .delay(180)}
         style={styles.copy}
       >
         <Text variant="title" color="textPrimary" align="center">

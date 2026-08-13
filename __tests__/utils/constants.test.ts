@@ -1,8 +1,6 @@
 import {
   CATEGORIES,
   CATEGORY_BY_SLUG,
-  CYCLES,
-  CURRENCIES,
   categoryMeta,
   cycleMeta,
   currencyMeta,

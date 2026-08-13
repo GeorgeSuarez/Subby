@@ -19,11 +19,24 @@ import { radius, spacing } from '@/design/tokens';
 
 /** Sidebar of common subscription glyphs (Ionicons names). */
 export const ICON_PALETTE: readonly string[] = [
-  'film-outline', 'musical-notes-outline', 'cloud-outline', 'briefcase-outline',
-  'code-slash-outline', 'game-controller-outline', 'newspaper-outline',
-  'fitness-outline', 'school-outline', 'construct-outline', 'cube-outline',
-  'sparkles-outline', 'globe-outline', 'wifi-outline', 'logo-github',
-  'cart-outline', 'pricetag-outline', 'people-outline',
+  'film-outline',
+  'musical-notes-outline',
+  'cloud-outline',
+  'briefcase-outline',
+  'code-slash-outline',
+  'game-controller-outline',
+  'newspaper-outline',
+  'fitness-outline',
+  'school-outline',
+  'construct-outline',
+  'cube-outline',
+  'sparkles-outline',
+  'globe-outline',
+  'wifi-outline',
+  'logo-github',
+  'cart-outline',
+  'pricetag-outline',
+  'people-outline',
 ];
 
 /** Curated brand palette for the tint swatches. */
@@ -48,14 +61,19 @@ export interface IconColorPickerProps {
 }
 
 export function IconColorPicker({
-  icon, color, onSelectIcon, onSelectColor,
+  icon,
+  color,
+  onSelectIcon,
+  onSelectColor,
 }: IconColorPickerProps) {
   const { colors } = useTheme();
   const swatchSize = 32;
 
   return (
     <View style={styles.container}>
-      <Text variant="caption" color="textSecondary" weight="600">Icon</Text>
+      <Text variant="caption" color="textSecondary" weight="600">
+        Icon
+      </Text>
       <View style={styles.iconGrid}>
         {ICON_PALETTE.map((name) => {
           const selected = name === icon;
@@ -68,7 +86,9 @@ export function IconColorPicker({
               style={({ pressed }) => [
                 styles.iconTile,
                 {
-                  backgroundColor: selected ? colors.accentSoft : colors.surfaceHigher,
+                  backgroundColor: selected
+                    ? colors.accentSoft
+                    : colors.surfaceHigher,
                   borderColor: selected ? colors.accent : colors.border,
                 },
                 pressed ? { opacity: 0.6 } : null,
@@ -84,7 +104,12 @@ export function IconColorPicker({
         })}
       </View>
 
-      <Text variant="caption" color="textSecondary" weight="600" style={styles.colorLabel}>
+      <Text
+        variant="caption"
+        color="textSecondary"
+        weight="600"
+        style={styles.colorLabel}
+      >
         Color
       </Text>
       <View style={styles.colorRow}>

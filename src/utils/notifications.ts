@@ -72,7 +72,9 @@ export async function scheduleRenewalReminder(
 }
 
 /** Cancel a previously scheduled reminder (no-op when none was stored). */
-export async function cancelRenewalReminder(notificationId: string | null | undefined): Promise<void> {
+export async function cancelRenewalReminder(
+  notificationId: string | null | undefined,
+): Promise<void> {
   if (!notificationId) return;
   try {
     await Notifications.cancelScheduledNotificationAsync(notificationId);

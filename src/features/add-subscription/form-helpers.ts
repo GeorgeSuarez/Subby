@@ -39,16 +39,27 @@ export function parseISO(s: string | undefined): Date | null {
   const d = Number(m[3]);
   // Use UTC noon to dodge DST edges.
   const date = new Date(Date.UTC(y, mo - 1, d, 12, 0, 0, 0));
-  if (date.getUTCFullYear() !== y || date.getUTCMonth() !== mo - 1 || date.getUTCDate() !== d) {
+  if (
+    date.getUTCFullYear() !== y ||
+    date.getUTCMonth() !== mo - 1 ||
+    date.getUTCDate() !== d
+  ) {
     return null;
   }
   return date;
 }
 
 export type FieldKey =
-  | 'name' | 'amount' | 'currency' | 'cycle' | 'nextRenewal'
+  | 'name'
+  | 'amount'
+  | 'currency'
+  | 'cycle'
+  | 'nextRenewal'
   | 'trialEnds'
-  | 'category' | 'icon' | 'color' | 'notes';
+  | 'category'
+  | 'icon'
+  | 'color'
+  | 'notes';
 
 export interface FieldError {
   field: FieldKey;
@@ -70,7 +81,10 @@ export function validateDraft(draft: Partial<SubscriptionDraft>): FieldError[] {
   if (name.length === 0) {
     errors.push({ field: 'name', message: 'Name is required' });
   } else if (name.length > 64) {
-    errors.push({ field: 'name', message: 'Name must be 64 characters or fewer' });
+    errors.push({
+      field: 'name',
+      message: 'Name must be 64 characters or fewer',
+    });
   }
 
   // amount (raw input string; Number('') = 0, so empty is caught below)
@@ -95,16 +109,25 @@ export function validateDraft(draft: Partial<SubscriptionDraft>): FieldError[] {
 
   // nextRenewal
   if (!parseISO(draft.nextRenewal)) {
-    errors.push({ field: 'nextRenewal', message: 'Renewal date must be YYYY-MM-DD' });
+    errors.push({
+      field: 'nextRenewal',
+      message: 'Renewal date must be YYYY-MM-DD',
+    });
   }
 
   // trialEnds (optional — only validate when set)
   if (draft.trialEnds) {
     const trialDate = parseISO(draft.trialEnds);
     if (!trialDate) {
-      errors.push({ field: 'trialEnds', message: 'Trial end must be YYYY-MM-DD' });
+      errors.push({
+        field: 'trialEnds',
+        message: 'Trial end must be YYYY-MM-DD',
+      });
     } else if (trialDate.getTime() < todayUTC().getTime()) {
-      errors.push({ field: 'trialEnds', message: 'Trial end must be a future date' });
+      errors.push({
+        field: 'trialEnds',
+        message: 'Trial end must be a future date',
+      });
     }
   }
 
@@ -122,22 +145,32 @@ export function validateDraft(draft: Partial<SubscriptionDraft>): FieldError[] {
   // color (optional; only validate format when given)
   const color = draft.color;
   if (typeof color === 'string' && color.length > 0) {
-    if (!/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(color)
-      && !/^rgba?\([^)]+\)$/.test(color)) {
-      errors.push({ field: 'color', message: 'Color must be a #hex or rgba()' });
+    if (
+      !/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(color) &&
+      !/^rgba?\([^)]+\)$/.test(color)
+    ) {
+      errors.push({
+        field: 'color',
+        message: 'Color must be a #hex or rgba()',
+      });
     }
   }
 
   // notes (length-cap; no required check)
   if (typeof draft.notes === 'string' && draft.notes.length > 280) {
-    errors.push({ field: 'notes', message: 'Notes are limited to 280 characters' });
+    errors.push({
+      field: 'notes',
+      message: 'Notes are limited to 280 characters',
+    });
   }
 
   return errors;
 }
 
 /** Convert a validation error array into a quick lookup map for renderers. */
-export function errorsByField(errors: readonly FieldError[]): Partial<Record<FieldKey, string>> {
+export function errorsByField(
+  errors: readonly FieldError[],
+): Partial<Record<FieldKey, string>> {
   const map: Partial<Record<FieldKey, string>> = {};
   for (const e of errors) {
     if (!map[e.field]) map[e.field] = e.message;

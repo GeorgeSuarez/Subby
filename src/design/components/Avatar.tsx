@@ -35,13 +35,23 @@ export interface AvatarProps {
 }
 
 export const Avatar = forwardRef<View, AvatarProps>(function Avatar(
-  { source, icon = 'Cube', backgroundColor = 'surfaceHigher', iconColor, size = 'md', rounded = false },
+  {
+    source,
+    icon = 'Cube',
+    backgroundColor = 'surfaceHigher',
+    iconColor,
+    size = 'md',
+    rounded = false,
+  },
   ref,
 ) {
   const { colors } = useTheme();
   const dim = pixelsBySize[size];
   const r = rounded ? radius.pill : radius.md;
-  const resolvedIconColor = colors[iconColor ?? (backgroundColor === 'accent' ? 'textOnAccent' : 'accent')];
+  const resolvedIconColor =
+    colors[
+      iconColor ?? (backgroundColor === 'accent' ? 'textOnAccent' : 'accent')
+    ];
 
   return (
     <View
@@ -59,7 +69,11 @@ export const Avatar = forwardRef<View, AvatarProps>(function Avatar(
       {source ? (
         <Image source={source} style={styles.image} contentFit="cover" />
       ) : (
-        <Ionicons name={icon as never} size={iconBySize[size]} color={resolvedIconColor} />
+        <Ionicons
+          name={icon as never}
+          size={iconBySize[size]}
+          color={resolvedIconColor}
+        />
       )}
     </View>
   );

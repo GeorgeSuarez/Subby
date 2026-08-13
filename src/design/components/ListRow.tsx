@@ -15,14 +15,25 @@
  */
 
 import { memo, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type PressableStateCallbackType, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type PressableStateCallbackType,
+  type PressableProps,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
 import { Avatar } from '@/design/components/Avatar';
 import { Text, type TextColor } from '@/design/components/Text';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
 
-export interface ListRowProps extends Omit<PressableProps, 'style' | 'children' | 'onPress' | 'onLongPress'> {
+export interface ListRowProps extends Omit<
+  PressableProps,
+  'style' | 'children' | 'onPress' | 'onLongPress'
+> {
   /** Primary label (e.g. subscription name). */
   title: string;
   /** Optional secondary line (e.g. category, cycle). */
@@ -89,17 +100,29 @@ function ListRowInner({
       accessibilityState={{ disabled: Boolean(disabled) }}
       disabled={disabled}
       onPress={onPressWithId && id ? () => onPressWithId(id) : undefined}
-      onLongPress={onLongPressWithId && id ? () => onLongPressWithId(id) : undefined}
+      onLongPress={
+        onLongPressWithId && id ? () => onLongPressWithId(id) : undefined
+      }
       delayLongPress={delayLongPress ?? 400}
       style={pressableStyle}
       {...rest}
     >
-      <Avatar source={avatarSource} icon={icon} backgroundColor={avatarBackground} size="md" />
+      <Avatar
+        source={avatarSource}
+        icon={icon}
+        backgroundColor={avatarBackground}
+        size="md"
+      />
 
       <View style={styles.body}>
         <View style={styles.titleRow}>
           {leading}
-          <Text variant="body" weight="600" color="textPrimary" numberOfLines={1}>
+          <Text
+            variant="body"
+            weight="600"
+            color="textPrimary"
+            numberOfLines={1}
+          >
             {title}
           </Text>
         </View>
@@ -113,12 +136,23 @@ function ListRowInner({
       {(trailingTitle ?? trailingSubtitle) ? (
         <View style={styles.trailing}>
           {trailingTitle ? (
-            <Text variant="body" weight="600" color="textPrimary" align="right" numberOfLines={1}>
+            <Text
+              variant="body"
+              weight="600"
+              color="textPrimary"
+              align="right"
+              numberOfLines={1}
+            >
               {trailingTitle}
             </Text>
           ) : null}
           {trailingSubtitle ? (
-            <Text variant="caption" color={trailingSubtitleColor} align="right" numberOfLines={1}>
+            <Text
+              variant="caption"
+              color={trailingSubtitleColor}
+              align="right"
+              numberOfLines={1}
+            >
               {trailingSubtitle}
             </Text>
           ) : null}

@@ -29,7 +29,10 @@ export interface StatProps {
   accessoryRight?: ReactNode;
 }
 
-const toneForDelta: Record<'up-good' | 'up-bad' | 'down-good' | 'down-bad', BadgeTone> = {
+const toneForDelta: Record<
+  'up-good' | 'up-bad' | 'down-good' | 'down-bad',
+  BadgeTone
+> = {
   'up-good': 'positive',
   'up-bad': 'negative',
   'down-good': 'positive',
@@ -53,14 +56,18 @@ export function Stat({
         {label}
       </Text>
       <View style={styles.valueRow}>
-        <Text variant={oversize ? 'stat' : 'display'} weight="700" color={valueColor}>
+        <Text
+          variant={oversize ? 'stat' : 'display'}
+          weight="700"
+          color={valueColor}
+        >
           {value}
         </Text>
-        {accessoryRight ? <View style={styles.accessory}>{accessoryRight}</View> : null}
+        {accessoryRight ? (
+          <View style={styles.accessory}>{accessoryRight}</View>
+        ) : null}
       </View>
-      {delta ? (
-        <Badge tone={deltaTone}>{delta}</Badge>
-      ) : null}
+      {delta ? <Badge tone={deltaTone}>{delta}</Badge> : null}
     </View>
   );
 }

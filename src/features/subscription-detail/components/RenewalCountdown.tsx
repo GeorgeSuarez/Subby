@@ -15,7 +15,11 @@ import { StyleSheet, View } from 'react-native';
 import { Badge, Card, Text, type BadgeTone } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
-import { getRenewalStatus, getTrialStatus, type RenewalTone } from '@/features/subscription-detail/detail-helpers';
+import {
+  getRenewalStatus,
+  getTrialStatus,
+  type RenewalTone,
+} from '@/features/subscription-detail/detail-helpers';
 import { formatDate } from '@/utils/format';
 import type { Subscription } from '@/types/subscription';
 
@@ -68,23 +72,37 @@ export function RenewalCountdown({ sub }: RenewalCountdownProps) {
 
 // --- Helpers ----------------------------------------------------------------
 
-function toneSoftColor(tone: RenewalTone, c: ReturnType<typeof useTheme>['colors']): string {
+function toneSoftColor(
+  tone: RenewalTone,
+  c: ReturnType<typeof useTheme>['colors'],
+): string {
   switch (tone) {
-    case 'positive': return c.positiveSoft;
-    case 'negative': return c.negativeSoft;
-    case 'warning':  return c.warningSoft;
+    case 'positive':
+      return c.positiveSoft;
+    case 'negative':
+      return c.negativeSoft;
+    case 'warning':
+      return c.warningSoft;
     case 'neutral':
-    default:         return c.surfaceHigher;
+    default:
+      return c.surfaceHigher;
   }
 }
 
-function toneTextColor(tone: RenewalTone, c: ReturnType<typeof useTheme>['colors']): 'positive' | 'negative' | 'warning' | 'textPrimary' {
+function toneTextColor(
+  tone: RenewalTone,
+  c: ReturnType<typeof useTheme>['colors'],
+): 'positive' | 'negative' | 'warning' | 'textPrimary' {
   switch (tone) {
-    case 'positive': return 'positive';
-    case 'negative': return 'negative';
-    case 'warning':  return 'warning';
+    case 'positive':
+      return 'positive';
+    case 'negative':
+      return 'negative';
+    case 'warning':
+      return 'warning';
     case 'neutral':
-    default:         return 'textPrimary';
+    default:
+      return 'textPrimary';
   }
 }
 

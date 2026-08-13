@@ -25,12 +25,16 @@ export interface ResetFlowInput {
 }
 
 /** True when the URL carries the verify-password handoff into change mode. */
-export function isChangeFlow(from: string | undefined, verified: string | undefined): boolean {
+export function isChangeFlow(
+  from: string | undefined,
+  verified: string | undefined,
+): boolean {
   return from === 'settings' && verified === '1';
 }
 
 /** The handoff link the verify-password screen navigates to after success. */
-export const CHANGE_FLOW_LINK = '/reset-password?from=settings&verified=1' as const;
+export const CHANGE_FLOW_LINK =
+  '/reset-password?from=settings&verified=1' as const;
 
 /** Resolve which mode the reset screen is in. */
 export function resolveResetFlow(input: ResetFlowInput): ResetFlowMode {

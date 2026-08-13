@@ -40,5 +40,12 @@ export default function SubscriptionDetailRoute() {
     }
   }, [router]);
 
-  return <DetailScreen sub={sub ?? null} id={id ?? ''} onEdit={onEdit} onDismiss={onDismiss} />;
+  return (
+    <DetailScreen
+      sub={sub ?? null}
+      id={id ?? ''}
+      onEdit={onEdit}
+      onDismiss={onDismiss}
+    />
+  );
 }

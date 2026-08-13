@@ -15,7 +15,13 @@ import { radius, spacing } from '@/design/tokens';
 import { AnimatedNumber } from '@/features/dashboard/components/AnimatedNumber';
 import { useActiveSubscriptions } from '@/store/useSubscriptionsStore';
 import { useCurrency } from '@/store/useUIStore';
-import { activeCount, largestMonthly, monthlyEquivalent, totalMonthlySpend, totalYearlySpend } from '@/utils/billing';
+import {
+  activeCount,
+  largestMonthly,
+  monthlyEquivalent,
+  totalMonthlySpend,
+  totalYearlySpend,
+} from '@/utils/billing';
 import { formatCurrency } from '@/utils/format';
 
 export function QuickStats() {
@@ -30,7 +36,9 @@ export function QuickStats() {
 
   return (
     <Card padding={spacing.lg} elevation="low">
-      <Text variant="caption" color="textSecondary" weight="600">Quick stats</Text>
+      <Text variant="caption" color="textSecondary" weight="600">
+        Quick stats
+      </Text>
       <View style={styles.grid}>
         <Tile
           icon="calendar-number-outline"
@@ -68,7 +76,9 @@ export function QuickStats() {
                 delayMs={400}
                 duration={600}
               />
-            ) : '—'
+            ) : (
+              '—'
+            )
           }
           sublabel={biggest?.name}
         />
@@ -101,13 +111,22 @@ function Tile({
     >
       <View style={styles.tileHeader}>
         <Ionicons name={icon} size={16} color={colors.textTertiary} />
-        <Text variant="caption" color="textTertiary">{label}</Text>
+        <Text variant="caption" color="textTertiary">
+          {label}
+        </Text>
       </View>
-      <Text variant="headline" weight="700" color="textPrimary" numberOfLines={1}>
+      <Text
+        variant="headline"
+        weight="700"
+        color="textPrimary"
+        numberOfLines={1}
+      >
         {value}
       </Text>
       {sublabel ? (
-        <Text variant="caption" color="textSecondary" numberOfLines={1}>{sublabel}</Text>
+        <Text variant="caption" color="textSecondary" numberOfLines={1}>
+          {sublabel}
+        </Text>
       ) : null}
     </View>
   );

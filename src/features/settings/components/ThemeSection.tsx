@@ -24,15 +24,20 @@ export function ThemeSection() {
   const setPreference = useThemeStore((s) => s.setPreference);
 
   const resolved = preference ?? 'system';
-  const onSelect = useCallback((i: number) => {
-    void selection();
-    setPreference(PREFERENCES[i] ?? 'system');
-  }, [setPreference]);
+  const onSelect = useCallback(
+    (i: number) => {
+      void selection();
+      setPreference(PREFERENCES[i] ?? 'system');
+    },
+    [setPreference],
+  );
 
   return (
     <Card padding={spacing.lg} elevation="low">
       <Card.Header>
-        <Text variant="headline" weight="600" color="textPrimary">Theme</Text>
+        <Text variant="headline" weight="600" color="textPrimary">
+          Theme
+        </Text>
         <Text variant="caption" color="textSecondary">
           Active scheme: {colorMode}
         </Text>

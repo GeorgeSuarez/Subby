@@ -21,7 +21,13 @@ import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 
-import { EmptyState, ListRow, SearchField, SearchHint, Text } from '@/design/components';
+import {
+  EmptyState,
+  ListRow,
+  SearchField,
+  SearchHint,
+  Text,
+} from '@/design/components';
 import { Surface } from '@/design/components/Surface';
 import { radius, spacing } from '@/design/tokens';
 import { useTheme } from '@/design/theme';
@@ -38,7 +44,11 @@ import {
 } from '@/store/useSubscriptionsStore';
 import { useFilter, useSort, useUIStore } from '@/store/useUIStore';
 import { daysUntilRenewal, nextRenewalAfter } from '@/utils/billing';
-import { formatCurrency, formatMonthDay, formatRenewalIn } from '@/utils/format';
+import {
+  formatCurrency,
+  formatMonthDay,
+  formatRenewalIn,
+} from '@/utils/format';
 import { selection, impactMedium } from '@/utils/haptics';
 import type { Subscription } from '@/types/subscription';
 
@@ -79,23 +89,29 @@ export function SubscriptionsScreen() {
   );
 
   // Stable handlers — passed to every row. Skill `list-performance-callbacks`.
-  const onRowPress = useCallback((id: string) => {
-    void selection();
-    router.push(`/subscription/${id}`);
-  }, [router]);
+  const onRowPress = useCallback(
+    (id: string) => {
+      void selection();
+      router.push(`/subscription/${id}`);
+    },
+    [router],
+  );
 
-  const onRowLongPress = useCallback((id: string) => {
-    const target = subs.find((s) => s.id === id);
-    if (!target) return;
-    void impactMedium();
-    openRowActions({
-      name: target.name,
-      archived: target.archived,
-      onEdit: () => router.push(`/subscription/${id}`),
-      onArchive: () => archive(id, !target.archived),
-      onDelete: () => confirmDelete(target.name, () => remove(id)),
-    });
-  }, [subs, router, archive, remove]);
+  const onRowLongPress = useCallback(
+    (id: string) => {
+      const target = subs.find((s) => s.id === id);
+      if (!target) return;
+      void impactMedium();
+      openRowActions({
+        name: target.name,
+        archived: target.archived,
+        onEdit: () => router.push(`/subscription/${id}`),
+        onArchive: () => archive(id, !target.archived),
+        onDelete: () => confirmDelete(target.name, () => remove(id)),
+      });
+    },
+    [subs, router, archive, remove],
+  );
 
   const hasAnySubs = subs.length > 0;
   const filteredToZero = visible.length === 0;
@@ -122,7 +138,10 @@ export function SubscriptionsScreen() {
         <View
           style={[
             styles.offlineBanner,
-            { backgroundColor: colors.surfaceHigher, borderColor: colors.border },
+            {
+              backgroundColor: colors.surfaceHigher,
+              borderColor: colors.border,
+            },
           ]}
         >
           <Text variant="caption" color="textSecondary">
@@ -139,7 +158,9 @@ export function SubscriptionsScreen() {
               accessibilityLabel="Retry sync"
               hitSlop={8}
             >
-              <Text variant="caption" color="accent" weight="600">Retry</Text>
+              <Text variant="caption" color="accent" weight="600">
+                Retry
+              </Text>
             </Pressable>
           ) : pendingCount > 0 ? (
             <Pressable
@@ -148,13 +169,19 @@ export function SubscriptionsScreen() {
               accessibilityLabel="Sync now"
               hitSlop={8}
             >
-              <Text variant="caption" color="accent" weight="600">Sync now</Text>
+              <Text variant="caption" color="accent" weight="600">
+                Sync now
+              </Text>
             </Pressable>
           ) : null}
         </View>
       ) : null}
 
-      <SearchField value={query} onChangeText={setQuery} placeholder="Search subscriptions" />
+      <SearchField
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Search subscriptions"
+      />
 
       <SortFilterBar
         sort={sort}
@@ -168,7 +195,9 @@ export function SubscriptionsScreen() {
           {visible.length} shown
         </Text>
         {error ? (
-          <Text variant="caption" color="negative">{error}</Text>
+          <Text variant="caption" color="negative">
+            {error}
+          </Text>
         ) : null}
       </View>
     </View>
@@ -217,7 +246,10 @@ function rowSubtitle(sub: Subscription): string {
   return formatMonthDay(nextRenewalAfter(sub));
 }
 
-function rowTrailingSubtitle(sub: Subscription, activeIdSet: Set<string>): string {
+function rowTrailingSubtitle(
+  sub: Subscription,
+  activeIdSet: Set<string>,
+): string {
   if (sub.archived) return sub.category;
   // Only compute days-until for active subs — `daysUntilRenewal` walks forward
   // from `nextRenewal`, but archived subs don't need that visual urgency.

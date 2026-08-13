@@ -10,16 +10,26 @@ jest.mock('@/lib/supabase', () => {
   const authListeners = new Set<(event: string, session: unknown) => void>();
   const auth = {
     getSession: jest.fn().mockResolvedValue({ data: { session: null } }),
-    onAuthStateChange: jest.fn((callback: (event: string, session: unknown) => void) => {
-      authListeners.add(callback);
-      return { data: { subscription: { unsubscribe: () => authListeners.delete(callback) } } };
-    }),
+    onAuthStateChange: jest.fn(
+      (callback: (event: string, session: unknown) => void) => {
+        authListeners.add(callback);
+        return {
+          data: {
+            subscription: { unsubscribe: () => authListeners.delete(callback) },
+          },
+        };
+      },
+    ),
     signInWithPassword: jest.fn(),
     signUp: jest.fn(),
     resend: jest.fn().mockResolvedValue({ error: null }),
     resetPasswordForEmail: jest.fn().mockResolvedValue({ error: null }),
-    verifyOtp: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
-    setSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
+    verifyOtp: jest
+      .fn()
+      .mockResolvedValue({ data: { session: null }, error: null }),
+    setSession: jest
+      .fn()
+      .mockResolvedValue({ data: { session: null }, error: null }),
     updateUser: jest.fn().mockResolvedValue({
       data: { user: { email: 'ada@lovelace.dev' } },
       error: null,
@@ -33,7 +43,7 @@ jest.mock('@/lib/supabase', () => {
       functions: { invoke: jest.fn().mockResolvedValue({ error: null }) },
     },
     __emitAuth: (event: string, session: unknown) => {
-      for (const cb of [...authListeners]) cb(event, session);
+      for (const cb of authListeners) cb(event, session);
     },
   };
 });
@@ -50,21 +60,26 @@ const fakeJwt = (sub: string) => {
   return `${b64(JSON.stringify({ alg: 'none' }))}.${b64(JSON.stringify({ sub }))}.sig`;
 };
 
-const mockAuth = () => jest.requireMock('@/lib/supabase').supabase.auth as {
-  getSession: jest.Mock;
-  onAuthStateChange: jest.Mock;
-  signInWithPassword: jest.Mock;
-  signUp: jest.Mock;
-  resend: jest.Mock;
-  resetPasswordForEmail: jest.Mock;
-  verifyOtp: jest.Mock;
-  setSession: jest.Mock;
-  updateUser: jest.Mock;
-  signOut: jest.Mock;
-};
+const mockAuth = () =>
+  jest.requireMock('@/lib/supabase').supabase.auth as {
+    getSession: jest.Mock;
+    onAuthStateChange: jest.Mock;
+    signInWithPassword: jest.Mock;
+    signUp: jest.Mock;
+    resend: jest.Mock;
+    resetPasswordForEmail: jest.Mock;
+    verifyOtp: jest.Mock;
+    setSession: jest.Mock;
+    updateUser: jest.Mock;
+    signOut: jest.Mock;
+  };
 
 const emitAuth = (event: string, session: unknown) =>
-  (jest.requireMock('@/lib/supabase') as { __emitAuth: (e: string, s: unknown) => void }).__emitAuth(event, session);
+  (
+    jest.requireMock('@/lib/supabase') as {
+      __emitAuth: (e: string, s: unknown) => void;
+    }
+  ).__emitAuth(event, session);
 
 describe('useAuthStore', () => {
   beforeEach(() => {
@@ -92,7 +107,9 @@ describe('useAuthStore', () => {
   });
 
   it('restores a persisted session on initialize', async () => {
-    mockAuth().getSession.mockResolvedValueOnce({ data: { session: fakeSession() } });
+    mockAuth().getSession.mockResolvedValueOnce({
+      data: { session: fakeSession() },
+    });
 
     await useAuthStore.getState().initialize();
 
@@ -128,9 +145,9 @@ describe('useAuthStore', () => {
       error: { message: 'Invalid login credentials' },
     });
 
-    await expect(useAuthStore.getState().signIn('ada@lovelace.dev', 'wrong')).rejects.toThrow(
-      'Invalid login credentials',
-    );
+    await expect(
+      useAuthStore.getState().signIn('ada@lovelace.dev', 'wrong'),
+    ).rejects.toThrow('Invalid login credentials');
     expect(useAuthStore.getState().error).toBe('Invalid login credentials');
     expect(useAuthStore.getState().isSignedIn).toBe(false);
   });
@@ -151,14 +168,19 @@ describe('useAuthStore', () => {
   it('resends the verification email to the pending address', async () => {
     useAuthStore.setState({ verificationEmail: 'ada@lovelace.dev' });
     await useAuthStore.getState().resendVerificationEmail();
-    expect(mockAuth().resend).toHaveBeenCalledWith({ type: 'signup', email: 'ada@lovelace.dev' });
+    expect(mockAuth().resend).toHaveBeenCalledWith({
+      type: 'signup',
+      email: 'ada@lovelace.dev',
+    });
   });
 
   it('records the error when resending fails (one contract: set + throw)', async () => {
     useAuthStore.setState({ verificationEmail: 'ada@lovelace.dev' });
     mockAuth().resend.mockResolvedValueOnce({ error: { message: 'boom' } });
 
-    await expect(useAuthStore.getState().resendVerificationEmail()).rejects.toThrow('boom');
+    await expect(
+      useAuthStore.getState().resendVerificationEmail(),
+    ).rejects.toThrow('boom');
     expect(useAuthStore.getState().error).toBe('boom');
   });
 
@@ -170,30 +192,45 @@ describe('useAuthStore', () => {
 
     await expect(
       useAuthStore.getState().signIn('ada@lovelace.dev', 'secret'),
-    ).rejects.toThrow('Too many attempts — please wait a moment and try again.');
+    ).rejects.toThrow(
+      'Too many attempts — please wait a moment and try again.',
+    );
     expect(useAuthStore.getState().error).toBe(
       'Too many attempts — please wait a moment and try again.',
     );
   });
 
   it('records the error when deleting an account fails', async () => {
-    useAuthStore.setState({ isSignedIn: true, email: 'ada@lovelace.dev', userId: 'user-ada' });
-    (jest.requireMock('@/lib/supabase').supabase.functions.invoke as jest.Mock)
-      .mockResolvedValueOnce({ error: { message: 'invoke failed' } });
+    useAuthStore.setState({
+      isSignedIn: true,
+      email: 'ada@lovelace.dev',
+      userId: 'user-ada',
+    });
+    (
+      jest.requireMock('@/lib/supabase').supabase.functions.invoke as jest.Mock
+    ).mockResolvedValueOnce({ error: { message: 'invoke failed' } });
 
-    await expect(useAuthStore.getState().deleteAccount()).rejects.toThrow('invoke failed');
+    await expect(useAuthStore.getState().deleteAccount()).rejects.toThrow(
+      'invoke failed',
+    );
     expect(useAuthStore.getState().error).toBe('invoke failed');
   });
 
   it('records the error when no account is signed in for deletion', async () => {
     useAuthStore.setState({ isSignedIn: false, userId: null });
 
-    await expect(useAuthStore.getState().deleteAccount()).rejects.toThrow('No signed-in account.');
+    await expect(useAuthStore.getState().deleteAccount()).rejects.toThrow(
+      'No signed-in account.',
+    );
     expect(useAuthStore.getState().error).toBe('No signed-in account.');
   });
 
   it('signs out without recording an error', async () => {
-    useAuthStore.setState({ isSignedIn: true, email: 'ada@lovelace.dev', error: 'stale' });
+    useAuthStore.setState({
+      isSignedIn: true,
+      email: 'ada@lovelace.dev',
+      error: 'stale',
+    });
 
     await useAuthStore.getState().signOut();
 
@@ -205,7 +242,9 @@ describe('useAuthStore', () => {
   it('checkVerification reports confirmed once a session exists', async () => {
     expect(await useAuthStore.getState().checkVerification()).toBe(false);
 
-    mockAuth().getSession.mockResolvedValueOnce({ data: { session: fakeSession() } });
+    mockAuth().getSession.mockResolvedValueOnce({
+      data: { session: fakeSession() },
+    });
     expect(await useAuthStore.getState().checkVerification()).toBe(true);
     expect(useAuthStore.getState().isSignedIn).toBe(true);
     expect(useAuthStore.getState().verificationEmail).toBeNull();
@@ -233,11 +272,16 @@ describe('useAuthStore', () => {
   });
 
   it('requests a password reset with the deep-link redirect', async () => {
-    await useAuthStore.getState().requestPasswordReset('ada@lovelace.dev', 'exp://x/--/reset-password');
+    await useAuthStore
+      .getState()
+      .requestPasswordReset('ada@lovelace.dev', 'exp://x/--/reset-password');
 
-    expect(mockAuth().resetPasswordForEmail).toHaveBeenCalledWith('ada@lovelace.dev', {
-      redirectTo: 'exp://x/--/reset-password',
-    });
+    expect(mockAuth().resetPasswordForEmail).toHaveBeenCalledWith(
+      'ada@lovelace.dev',
+      {
+        redirectTo: 'exp://x/--/reset-password',
+      },
+    );
     expect(useAuthStore.getState().recoveryEmail).toBe('ada@lovelace.dev');
     expect(useAuthStore.getState().error).toBeNull();
   });
@@ -248,7 +292,9 @@ describe('useAuthStore', () => {
     });
 
     await expect(
-      useAuthStore.getState().requestPasswordReset('ada@lovelace.dev', 'exp://x'),
+      useAuthStore
+        .getState()
+        .requestPasswordReset('ada@lovelace.dev', 'exp://x'),
     ).rejects.toThrow('email_address_invalid');
     expect(useAuthStore.getState().error).toBe('email_address_invalid');
   });
@@ -261,9 +307,14 @@ describe('useAuthStore', () => {
 
     await useAuthStore
       .getState()
-      .verifyRecoveryLink('http://localhost:54321/auth/v1/verify?token=abc123&type=recovery');
+      .verifyRecoveryLink(
+        'http://localhost:54321/auth/v1/verify?token=abc123&type=recovery',
+      );
 
-    expect(mockAuth().verifyOtp).toHaveBeenCalledWith({ token_hash: 'abc123', type: 'recovery' });
+    expect(mockAuth().verifyOtp).toHaveBeenCalledWith({
+      token_hash: 'abc123',
+      type: 'recovery',
+    });
     expect(useAuthStore.getState().isSignedIn).toBe(true);
     expect(useAuthStore.getState().email).toBe('ada@lovelace.dev');
     expect(useAuthStore.getState().recoveryPending).toBe(true);
@@ -275,7 +326,9 @@ describe('useAuthStore', () => {
       error: null,
     });
 
-    await useAuthStore.getState().verifyRecoveryCode('ada@lovelace.dev', '483920');
+    await useAuthStore
+      .getState()
+      .verifyRecoveryCode('ada@lovelace.dev', '483920');
 
     expect(mockAuth().verifyOtp).toHaveBeenCalledWith({
       email: 'ada@lovelace.dev',
@@ -300,18 +353,24 @@ describe('useAuthStore', () => {
   });
 
   it('rejects a malformed recovery link without calling verifyOtp', async () => {
-    await expect(useAuthStore.getState().verifyRecoveryLink('https://example.com/nope')).rejects.toThrow(
-      'does not look like a password reset link',
-    );
+    await expect(
+      useAuthStore.getState().verifyRecoveryLink('https://example.com/nope'),
+    ).rejects.toThrow('does not look like a password reset link');
     expect(mockAuth().verifyOtp).not.toHaveBeenCalled();
   });
 
   it('updates the password and clears the recovery flag', async () => {
-    useAuthStore.setState({ isSignedIn: true, email: 'ada@lovelace.dev', recoveryPending: true });
+    useAuthStore.setState({
+      isSignedIn: true,
+      email: 'ada@lovelace.dev',
+      recoveryPending: true,
+    });
 
     await useAuthStore.getState().updatePassword('new-password-123');
 
-    expect(mockAuth().updateUser).toHaveBeenCalledWith({ password: 'new-password-123' });
+    expect(mockAuth().updateUser).toHaveBeenCalledWith({
+      password: 'new-password-123',
+    });
     expect(useAuthStore.getState().recoveryPending).toBe(false);
     expect(useAuthStore.getState().isSignedIn).toBe(true);
   });
@@ -339,9 +398,11 @@ describe('useAuthStore', () => {
       error: null,
     });
 
-    const handled = await useAuthStore.getState().handleAuthUrl(
-      'exp://127.0.0.1:8081/--/reset-password#access_token=at&refresh_token=rt&type=recovery',
-    );
+    const handled = await useAuthStore
+      .getState()
+      .handleAuthUrl(
+        'exp://127.0.0.1:8081/--/reset-password#access_token=at&refresh_token=rt&type=recovery',
+      );
 
     expect(handled).toBe(true);
     expect(mockAuth().setSession).toHaveBeenCalledWith({
@@ -357,11 +418,13 @@ describe('useAuthStore', () => {
       data: { session: fakeSession('ada@lovelace.dev') },
     });
 
-    const handled = await useAuthStore.getState().handleAuthUrl(
-      'exp://127.0.0.1:8081/--/reset-password#access_token=' +
-        fakeJwt('user-ada') +
-        '&refresh_token=rt&type=recovery',
-    );
+    const handled = await useAuthStore
+      .getState()
+      .handleAuthUrl(
+        'exp://127.0.0.1:8081/--/reset-password#access_token=' +
+          fakeJwt('user-ada') +
+          '&refresh_token=rt&type=recovery',
+      );
 
     expect(handled).toBe(true);
     expect(mockAuth().setSession).not.toHaveBeenCalled();
@@ -374,11 +437,13 @@ describe('useAuthStore', () => {
       data: { session: fakeSession('ada@lovelace.dev') },
     });
 
-    const handled = await useAuthStore.getState().handleAuthUrl(
-      'exp://127.0.0.1:8081/--/reset-password#access_token=' +
-        fakeJwt('user-grace') +
-        '&refresh_token=rt&type=recovery',
-    );
+    const handled = await useAuthStore
+      .getState()
+      .handleAuthUrl(
+        'exp://127.0.0.1:8081/--/reset-password#access_token=' +
+          fakeJwt('user-grace') +
+          '&refresh_token=rt&type=recovery',
+      );
 
     expect(handled).toBe(false);
     expect(mockAuth().setSession).not.toHaveBeenCalled();
@@ -388,7 +453,9 @@ describe('useAuthStore', () => {
   it('ignores non-recovery deep links', async () => {
     const handled = await useAuthStore
       .getState()
-      .handleAuthUrl('subby://reset-password#access_token=at&refresh_token=rt&type=signup');
+      .handleAuthUrl(
+        'subby://reset-password#access_token=at&refresh_token=rt&type=signup',
+      );
 
     expect(handled).toBe(false);
     expect(mockAuth().setSession).not.toHaveBeenCalled();
@@ -429,7 +496,9 @@ describe('useAuthStore', () => {
     await expect(
       useAuthStore.getState().verifyCurrentPassword('wrong-pass'),
     ).rejects.toThrow('Current password is incorrect.');
-    expect(useAuthStore.getState().error).toBe('Current password is incorrect.');
+    expect(useAuthStore.getState().error).toBe(
+      'Current password is incorrect.',
+    );
   });
 
   it('requires a signed-in account to verify a password', async () => {

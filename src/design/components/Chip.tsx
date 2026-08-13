@@ -8,7 +8,15 @@
  */
 
 import { forwardRef, type ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type PressableStateCallbackType, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type PressableStateCallbackType,
+  type PressableProps,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
 import { Text } from '@/design/components/Text';
 import { useTheme } from '@/design/theme';

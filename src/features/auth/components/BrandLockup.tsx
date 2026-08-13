@@ -11,14 +11,14 @@
  *    CSS string, no legacy shadow props.
  */
 
-import { StyleSheet, View } from "react-native";
-import { Image } from "expo-image";
+import { StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
 
-import { Text } from "@/design/components";
-import { useTheme } from "@/design/theme";
-import { radius, spacing } from "@/design/tokens";
+import { Text } from '@/design/components';
+import { useTheme } from '@/design/theme';
+import { radius, spacing } from '@/design/tokens';
 
-const GLYPH = require("@/assets/images/splash-icon.png");
+const GLYPH = require('@/assets/images/splash-icon.png');
 
 export function BrandLockup() {
   const { colors, shadow } = useTheme();
@@ -30,7 +30,7 @@ export function BrandLockup() {
           styles.ring,
           {
             borderColor: colors.border,
-            boxShadow: shadow("glowAccent"),
+            boxShadow: shadow('glowAccent'),
           },
         ]}
       >
@@ -45,17 +45,17 @@ export function BrandLockup() {
 
 const styles = StyleSheet.create({
   container: {
-    alignItems: "center",
+    alignItems: 'center',
     gap: spacing.lg,
   },
   ring: {
     width: 96,
     height: 96,
     borderWidth: 1,
-    borderCurve: "continuous",
+    borderCurve: 'continuous',
     borderRadius: radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: spacing.md,
   },
   glyph: {

@@ -4,35 +4,35 @@ appId: host.exp.Exponent
 - openLink: exp://127.0.0.1:8081
 - runFlow:
     when:
-      visible: "Sign in"
+      visible: 'Sign in'
     commands:
-      - tapOn: "you@example.com"
+      - tapOn: 'you@example.com'
       - eraseText
-      - inputText: "test@subby.app"
-      - tapOn: "Your password"
+      - inputText: 'test@subby.app'
+      - tapOn: 'Your password'
       - eraseText
-      - inputText: "subby123"
+      - inputText: 'subby123'
       - pressKey: Enter
 - extendedWaitUntil:
-    visible: "Monthly spend"
+    visible: 'Monthly spend'
     timeout: 180000
-- tapOn: "Subscriptions"
+- tapOn: 'Subscriptions'
 - extendedWaitUntil:
-    visible: ".*Netflix.*"
+    visible: '.*Netflix.*'
     timeout: 60000
-- assertVisible: ".*Spotify.*"
+- assertVisible: '.*Spotify.*'
 - assertVisible: ".*iCloud\\+.*"
 - takeScreenshot: subscriptions
-- tapOn: "Search subscriptions"
-- inputText: "net"
-- assertVisible: ".*Netflix.*"
-- assertNotVisible: ".*Spotify.*"
+- tapOn: 'Search subscriptions'
+- inputText: 'net'
+- assertVisible: '.*Netflix.*'
+- assertNotVisible: '.*Spotify.*'
 - eraseText
-- tapOn: "Sort by"
-- longPressOn: ".*Spotify.*"
+- tapOn: 'Sort by'
+- longPressOn: '.*Spotify.*'
 - extendedWaitUntil:
-    visible: "Archive"
+    visible: 'Archive'
     timeout: 30000
-- assertVisible: "Edit"
-- assertVisible: "Delete"
-- tapOn: "Cancel"
+- assertVisible: 'Edit'
+- assertVisible: 'Delete'
+- tapOn: 'Cancel'

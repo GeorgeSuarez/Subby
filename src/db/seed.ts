@@ -42,7 +42,9 @@ export interface DemoDataInfo {
   count: number;
 }
 
-export async function getDemoDataInfo(email: string | null): Promise<DemoDataInfo> {
+export async function getDemoDataInfo(
+  email: string | null,
+): Promise<DemoDataInfo> {
   if (!isTestAccountEmail(email)) {
     return { isAllowed: false, loaded: false, count: 0 };
   }
@@ -55,7 +57,9 @@ export async function getDemoDataInfo(email: string | null): Promise<DemoDataInf
  * marked `seeded = true`, so a second run is a no-op and rows are never
  * duplicated). Returns 'denied' for any other account.
  */
-export async function loadSeedData(email: string | null): Promise<DemoActionResult> {
+export async function loadSeedData(
+  email: string | null,
+): Promise<DemoActionResult> {
   if (!isTestAccountEmail(email)) return 'denied';
 
   if ((await countSeededRows()) > 0) return 'nothingToDo';
@@ -70,12 +74,17 @@ export async function loadSeedData(email: string | null): Promise<DemoActionResu
  * Remove exactly the seeded rows — ONLY for the test account.
  * Returns 'denied' for any other account.
  */
-export async function removeSeedData(email: string | null): Promise<DemoActionResult> {
+export async function removeSeedData(
+  email: string | null,
+): Promise<DemoActionResult> {
   if (!isTestAccountEmail(email)) return 'denied';
 
   if ((await countSeededRows()) === 0) return 'nothingToDo';
 
-  const { error } = await supabase.from('subscriptions').delete().eq('seeded', true);
+  const { error } = await supabase
+    .from('subscriptions')
+    .delete()
+    .eq('seeded', true);
   if (error) throw new Error(error.message);
   return 'done';
 }

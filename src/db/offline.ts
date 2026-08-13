@@ -41,7 +41,11 @@ import {
   scheduleRenewalReminder,
 } from '@/utils/notifications';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import type { Subscription, SubscriptionDraft, SubscriptionPatch } from '@/types/subscription';
+import type {
+  Subscription,
+  SubscriptionDraft,
+  SubscriptionPatch,
+} from '@/types/subscription';
 
 // --- Errors -----------------------------------------------------------------
 
@@ -49,7 +53,9 @@ import type { Subscription, SubscriptionDraft, SubscriptionPatch } from '@/types
 export function isNetworkError(e: unknown): boolean {
   if (e instanceof TypeError) return true;
   const message = e instanceof Error ? e.message : String(e);
-  return /network request failed|fetch failed|temporarily unavailable/i.test(message);
+  return /network request failed|fetch failed|temporarily unavailable/i.test(
+    message,
+  );
 }
 
 export function errorMessage(e: unknown): string {
@@ -63,7 +69,10 @@ function cacheKey(scope: string, userId: string): string {
   return `${scope}:${userId}`;
 }
 
-export async function readCache<T>(scope: string, userId: string): Promise<T | null> {
+export async function readCache<T>(
+  scope: string,
+  userId: string,
+): Promise<T | null> {
   const db = await getDatabase();
   const row = await db.getFirstAsync<{ value: string }>(
     'SELECT value FROM sync_cache WHERE key = ?;',
@@ -77,7 +86,11 @@ export async function readCache<T>(scope: string, userId: string): Promise<T | n
   }
 }
 
-export async function writeCache(scope: string, userId: string, value: unknown): Promise<void> {
+export async function writeCache(
+  scope: string,
+  userId: string,
+  value: unknown,
+): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(
     'INSERT OR REPLACE INTO sync_cache (key, value, updated_at) VALUES (?, ?, ?);',
@@ -92,7 +105,13 @@ export async function clearCacheForUser(userId: string): Promise<void> {
 
 // --- Queue ------------------------------------------------------------------
 
-export type QueueOpType = 'add' | 'edit' | 'archive' | 'remove' | 'clear_all' | 'prefs';
+export type QueueOpType =
+  | 'add'
+  | 'edit'
+  | 'archive'
+  | 'remove'
+  | 'clear_all'
+  | 'prefs';
 
 /** Typed payload per queue op type — the queue is JSON, the types are real. */
 type QueuePayloadMap = {
@@ -112,7 +131,9 @@ type QueuePayloadMap = {
 };
 
 /** A mutation ready to apply online or enqueue offline. */
-export type SyncOp = { [T in QueueOpType]: { type: T } & QueuePayloadMap[T] }[QueueOpType];
+export type SyncOp = {
+  [T in QueueOpType]: { type: T } & QueuePayloadMap[T];
+}[QueueOpType];
 
 /** Everything the pipeline needs from the caller's context. */
 export interface SyncContext {
@@ -183,7 +204,10 @@ export async function getPendingOps(userId: string): Promise<QueueOp[]> {
     created_at: number;
     attempts: number;
     last_error: string | null;
-  }>('SELECT * FROM sync_queue WHERE user_id = ? ORDER BY created_at ASC;', userId);
+  }>(
+    'SELECT * FROM sync_queue WHERE user_id = ? ORDER BY created_at ASC;',
+    userId,
+  );
   return rows.map((r) => ({
     opId: r.op_id,
     userId: r.user_id,
@@ -220,7 +244,10 @@ async function markOpFailure(opId: string, error: string): Promise<void> {
 /** Drop queued prefs ops (coalescing: a direct write supersedes them). */
 export async function clearQueuedPrefs(userId: string): Promise<void> {
   const db = await getDatabase();
-  await db.runAsync("DELETE FROM sync_queue WHERE user_id = ? AND type = 'prefs';", userId);
+  await db.runAsync(
+    "DELETE FROM sync_queue WHERE user_id = ? AND type = 'prefs';",
+    userId,
+  );
 }
 
 /** Wipe a user's queue (account deletion). */
@@ -246,7 +273,10 @@ function syncOpFromQueue(op: QueueOp): SyncOp {
  * lives here: session-death errors are reported separately so callers can
  * expire the session; everything else surfaces as a message.
  */
-export async function applyMutation(op: SyncOp, ctx: SyncContext): Promise<MutateResult> {
+export async function applyMutation(
+  op: SyncOp,
+  ctx: SyncContext,
+): Promise<MutateResult> {
   try {
     if ((await getNetworkReachability()) === false) {
       await enqueueOp(ctx.userId, op.type, stripType(op));
@@ -310,11 +340,17 @@ export async function flushPendingOps(
  * `applyMutation` (online) and `flushPendingOps` (replay), so the two paths
  * can never drift. Returns the written row (add/edit/archive) or null.
  */
-async function executeOp(op: SyncOp, ctx: SyncContext): Promise<Subscription | null> {
+async function executeOp(
+  op: SyncOp,
+  ctx: SyncContext,
+): Promise<Subscription | null> {
   switch (op.type) {
     case 'add': {
       const created = await insertSubscription(op.draft);
-      const notificationId = await scheduleRenewalReminder(created, ctx.remindersEnabled);
+      const notificationId = await scheduleRenewalReminder(
+        created,
+        ctx.remindersEnabled,
+      );
       if (notificationId) await setNotificationId(created.id, notificationId);
       return created;
     }

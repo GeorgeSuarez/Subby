@@ -14,26 +14,26 @@
  * memoized inside `ListRow` and receive only primitive props.
  */
 
-import { useCallback } from "react";
-import { Pressable, StyleSheet, View, type PressableProps } from "react-native";
-import { useRouter } from "expo-router";
+import { useCallback } from 'react';
+import { Pressable, StyleSheet, View, type PressableProps } from 'react-native';
+import { useRouter } from 'expo-router';
 
-import { Card, ListRow, Text } from "@/design/components";
-import { useTheme } from "@/design/theme";
-import { spacing } from "@/design/tokens";
-import { useActiveSubscriptions } from "@/store/useSubscriptionsStore";
+import { Card, ListRow, Text } from '@/design/components';
+import { useTheme } from '@/design/theme';
+import { spacing } from '@/design/tokens';
+import { useActiveSubscriptions } from '@/store/useSubscriptionsStore';
 import {
   daysUntilRenewal,
   nextRenewalAfter,
   renewalsWithin,
   renewalUrgencyTone,
   type RenewalUrgency,
-} from "@/utils/billing";
+} from '@/utils/billing';
 import {
   formatCurrency,
   formatMonthDay,
   formatRenewalIn,
-} from "@/utils/format";
+} from '@/utils/format';
 import type { TextColor } from '@/design/components/Text';
 
 /** Maximum rows shown on the Dashboard before "View all" takes the user to the list tab. */
@@ -98,7 +98,7 @@ export function RenewalsList() {
 
       <FooterLink
         label={`View all ${subs.length}`}
-        onPress={() => router.push("/subscriptions")}
+        onPress={() => router.push('/subscriptions')}
         borderColor={colors.hairline}
       />
     </Card>
@@ -125,7 +125,7 @@ function FooterLink({
   borderColor,
 }: {
   label: string;
-  onPress: PressableProps["onPress"];
+  onPress: PressableProps['onPress'];
   borderColor: string;
 }) {
   return (
@@ -148,13 +148,13 @@ function FooterLink({
 const styles = StyleSheet.create({
   empty: {
     padding: spacing.lg,
-    alignItems: "center",
+    alignItems: 'center',
     gap: spacing.xs,
   },
   footer: {
     borderTopWidth: 1,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    alignItems: "center",
+    alignItems: 'center',
   },
 });

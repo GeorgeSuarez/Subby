@@ -35,12 +35,19 @@ describe('resolveResetFlow', () => {
 
   it('recovery: recovery session active (signed in or out)', () => {
     expect(flow({ recoveryPending: true, isSignedIn: false })).toBe('recovery');
-    expect(flow({ recoveryPending: true, isSignedIn: true, urlChecked: true })).toBe('recovery');
+    expect(
+      flow({ recoveryPending: true, isSignedIn: true, urlChecked: true }),
+    ).toBe('recovery');
   });
 
   it('change: the verify-password handoff wins even with a stale recovery flag', () => {
     expect(
-      flow({ from: 'settings', verified: '1', recoveryPending: true, isSignedIn: true }),
+      flow({
+        from: 'settings',
+        verified: '1',
+        recoveryPending: true,
+        isSignedIn: true,
+      }),
     ).toBe('change');
   });
 

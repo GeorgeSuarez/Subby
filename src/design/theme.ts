@@ -44,7 +44,9 @@ export const useThemeStore = create<ThemeStore>()(
       name: storageKey.themePref,
       storage: createJSONStorage(() => persistentStorage),
       // Only persist the user's choice, never anything else.
-      partialize: (s): { preference: ThemePreference | undefined } => ({ preference: s.preference }),
+      partialize: (s): { preference: ThemePreference | undefined } => ({
+        preference: s.preference,
+      }),
     },
   ),
 );

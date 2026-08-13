@@ -2,8 +2,8 @@
 appId: host.exp.Exponent
 ---
 - tapOn:
-    point: "75%,94%"
+    point: '75%,94%'
 - extendedWaitUntil:
-    visible: "Theme"
+    visible: 'Theme'
     timeout: 30000
 - takeScreenshot: settings

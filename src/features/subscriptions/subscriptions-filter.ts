@@ -11,7 +11,11 @@ import type {
   SubscriptionFilter,
   SubscriptionSort,
 } from '@/types/subscription';
-import { monthlyEquivalent, nextRenewalAfter, parseDate } from '@/utils/billing';
+import {
+  monthlyEquivalent,
+  nextRenewalAfter,
+  parseDate,
+} from '@/utils/billing';
 
 export interface FilterSortOptions {
   query: string;
@@ -29,7 +33,9 @@ export function matchesQuery(sub: Subscription, rawQuery: string): boolean {
   const q = rawQuery.trim().toLowerCase();
   if (q.length === 0) return true;
 
-  const haystackParts = [sub.name, sub.category, sub.notes ?? ''].map((s) => s.toLowerCase());
+  const haystackParts = [sub.name, sub.category, sub.notes ?? ''].map((s) =>
+    s.toLowerCase(),
+  );
   const haystack = haystackParts.join(' ');
 
   // Each whitespace-separated token must appear somewhere in the haystack.
@@ -38,7 +44,10 @@ export function matchesQuery(sub: Subscription, rawQuery: string): boolean {
 }
 
 /** Apply the active/archived/all filter only. */
-export function applyFilter(subs: readonly Subscription[], filter: SubscriptionFilter): Subscription[] {
+export function applyFilter(
+  subs: readonly Subscription[],
+  filter: SubscriptionFilter,
+): Subscription[] {
   switch (filter) {
     case 'active':
       return subs.filter((s) => !s.archived);
@@ -51,12 +60,18 @@ export function applyFilter(subs: readonly Subscription[], filter: SubscriptionF
 }
 
 /** Sort a shallow-copied list of subscriptions by the requested key. */
-export function applySort(subs: Subscription[], sort: SubscriptionSort): Subscription[] {
+export function applySort(
+  subs: Subscription[],
+  sort: SubscriptionSort,
+): Subscription[] {
   const copy = subs.slice();
   switch (sort) {
     case 'name':
       return copy.sort((a, b) =>
-        a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }),
+        a.name.localeCompare(b.name, undefined, {
+          sensitivity: 'base',
+          numeric: true,
+        }),
       );
     case 'amount':
       // Largest monthly equivalent first (most expensive is most useful to see up top).
@@ -80,6 +95,8 @@ export function filterAndSortSubs(
   subs: readonly Subscription[],
   opts: FilterSortOptions,
 ): Subscription[] {
-  const filtered = applyFilter(subs, opts.filter).filter((s) => matchesQuery(s, opts.query));
+  const filtered = applyFilter(subs, opts.filter).filter((s) =>
+    matchesQuery(s, opts.query),
+  );
   return applySort(filtered, opts.sort);
 }

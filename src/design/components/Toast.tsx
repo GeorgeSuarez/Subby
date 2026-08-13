@@ -34,7 +34,10 @@ export function Toast() {
       onRequestClose={hide}
       statusBarTranslucent
     >
-      <View pointerEvents="box-none" style={[styles.host, { bottom: insets.bottom + 88 }]}>
+      <View
+        pointerEvents="box-none"
+        style={[styles.host, { bottom: insets.bottom + 88 }]}
+      >
         {message ? (
           <Animated.View
             key={id}
@@ -54,8 +57,18 @@ export function Toast() {
               accessibilityLabel="Dismiss notification"
               style={styles.pressable}
             >
-              <Ionicons name="checkmark-circle" size={20} color={colors.accent} />
-              <Text variant="body" weight="600" color="textPrimary" numberOfLines={1} style={styles.label}>
+              <Ionicons
+                name="checkmark-circle"
+                size={20}
+                color={colors.accent}
+              />
+              <Text
+                variant="body"
+                weight="600"
+                color="textPrimary"
+                numberOfLines={1}
+                style={styles.label}
+              >
                 {message}
               </Text>
             </Pressable>
