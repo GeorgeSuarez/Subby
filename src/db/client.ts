@@ -61,11 +61,3 @@ export async function runMigrations(db: SQLiteDatabase): Promise<void> {
     }
   });
 }
-
-/** For tests: get a fresh in-memory handle. Currently unused — placeholder so
- * we don't accidentally ship test-only wiring to production callers. */
-export async function _withTestDatabase(_task: (db: SQLiteDatabase) => Promise<void>): Promise<void> {
-  // Reserved for Step 12's query tests; we'll back this with expo-sqlite's
-  // in-memory option if it lands upstream, otherwise a temporary file.
-  throw new Error('not implemented');
-}

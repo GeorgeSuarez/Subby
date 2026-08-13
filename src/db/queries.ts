@@ -50,7 +50,7 @@ interface SubscriptionRowRemote {
 
 /** Coerce a PostgREST row into a domain Subscription. Numeric values arrive as
  * strings (numeric/bigint JSON) — coerced with Number(). */
-export function rowToSubscription(row: SubscriptionRowRemote): Subscription {
+function rowToSubscription(row: SubscriptionRowRemote): Subscription {
   return {
     id: row.id,
     name: row.name,
@@ -80,7 +80,7 @@ type RowInput = Omit<SubscriptionDraft, 'amount'> & {
 };
 
 /** Convert a domain Subscription to a PostgREST insert/update payload. */
-export function subscriptionToRow(sub: RowInput): Omit<SubscriptionRowRemote, 'user_id'> {
+function subscriptionToRow(sub: RowInput): Omit<SubscriptionRowRemote, 'user_id'> {
   return {
     id: sub.id,
     name: sub.name,
@@ -127,17 +127,6 @@ export async function getAllSubscriptions(includeSeeded = false): Promise<Subscr
   if (!isSupabaseConfigured) return [];
   let query = subscriptionsQuery();
   if (!includeSeeded) query = query.eq('seeded', false);
-  const { data, error } = await query;
-  if (error) throw new Error(error.message);
-  return withNotificationIds((data ?? []).map(rowToSubscription));
-}
-
-/** Get only active (non-archived) subscriptions. Same seeded-visibility rule. */
-export async function getActiveSubscriptions(includeSeeded = false): Promise<Subscription[]> {
-  if (!isSupabaseConfigured) return [];
-  let query = subscriptionsQuery();
-  if (!includeSeeded) query = query.eq('seeded', false);
-  query = query.eq('archived', false);
   const { data, error } = await query;
   if (error) throw new Error(error.message);
   return withNotificationIds((data ?? []).map(rowToSubscription));

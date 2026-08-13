@@ -79,5 +79,3 @@ export async function removeSeedData(email: string | null): Promise<DemoActionRe
   if (error) throw new Error(error.message);
   return 'done';
 }
-
-export { seedDrafts } from '@/db/seed-data';

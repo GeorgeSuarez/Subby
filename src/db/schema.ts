@@ -8,27 +8,6 @@
  * have already been applied.
  */
 
-/** SQLite row shape for the `subscriptions` table. Camel-cased domain objects
- * are produced in `db/queries.ts` from these rows. */
-export interface SubscriptionRow {
-  id: string;
-  name: string;
-  amount: number;
-  currency: string;
-  cycle: string;
-  next_renewal: string;
-  category: string;
-  icon: string;
-  color: string | null;
-  notes: string | null;
-  created_at: number;
-  updated_at: number;
-  archived: number; // 0/1
-  seeded: number; // 0/1 — demo data rows are invisible to non-test accounts
-  trial_ends: string | null; // ISO date — free-trial end (optional)
-  notification_id: string | null; // scheduled renewal reminder id (optional)
-}
-
 export interface Migration {
   version: number;
   description: string;
