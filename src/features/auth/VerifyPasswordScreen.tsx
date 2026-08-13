@@ -21,6 +21,7 @@ import { Surface } from '@/design/components/Surface';
 import { layout, spacing } from '@/design/tokens';
 import { BrandLockup } from '@/features/auth/components/BrandLockup';
 import { PasswordField } from '@/features/auth/components/PasswordField';
+import { CHANGE_FLOW_LINK } from '@/features/auth/auth-flow';
 import { useAuthStore } from '@/store/useAuthStore';
 import { notifyError } from '@/utils/haptics';
 
@@ -63,7 +64,7 @@ export function VerifyPasswordScreen() {
     setSubmitting(true);
     try {
       await verifyCurrentPassword(password);
-      router.replace('/reset-password?from=settings&verified=1');
+      router.replace(CHANGE_FLOW_LINK);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'Could not verify the password.');
       void notifyError();

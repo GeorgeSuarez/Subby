@@ -34,6 +34,12 @@ import * as Linking from 'expo-linking';
 import { Button, Text } from '@/design/components';
 import { Surface } from '@/design/components/Surface';
 import { layout, spacing } from '@/design/tokens';
+import {
+  canSeePasswordForm,
+  isChangeFlow,
+  resolveResetFlow,
+  type ResetFlowMode,
+} from '@/features/auth/auth-flow';
 import { TextField } from '@/features/add-subscription/components/TextField';
 import { BrandLockup } from '@/features/auth/components/BrandLockup';
 import { PasswordField } from '@/features/auth/components/PasswordField';
@@ -53,15 +59,21 @@ export function ResetPasswordScreen() {
 
   // Two change paths land on this screen:
   //  - recovery (code/link): `recoveryPending` — no current-password check.
-  //  - Settings (verified): `/reset-password?from=settings&verified=1` — the
-  //    verify-password screen already checked the current password.
+  //  - Settings (verified): the verify-password handoff (`from=settings&verified=1`)
+  //    — the current password was already checked.
   // Any other signed-in visit goes through the verify-password screen first.
+  // The gatekeeping decision lives in `auth-flow` (pure, tested).
   const { from, verified } = useLocalSearchParams<{ from?: string; verified?: string }>();
-  const fromSettingsVerified = from === 'settings' && verified === '1';
-  const isRecovery = recoveryPending && !fromSettingsVerified;
-  const isChangeMode = fromSettingsVerified;
-  const [urlChecked, setUrlChecked] = useState(fromSettingsVerified);
-  const needsVerify = urlChecked && isSignedIn && !isRecovery && !fromSettingsVerified;
+  const [urlChecked, setUrlChecked] = useState(isChangeFlow(from, verified));
+  const mode: ResetFlowMode = resolveResetFlow({
+    recoveryPending,
+    isSignedIn,
+    urlChecked,
+    from,
+    verified,
+  });
+  const isChangeMode = mode === 'change';
+  const canReset = canSeePasswordForm(mode);
 
   // The recovery deep link carries the session in the URL fragment —
   // supabase-js can't detect it on RN, so we parse it ourselves (cold start
@@ -74,7 +86,7 @@ export function ResetPasswordScreen() {
   // session and must not touch the URL machinery (a getSession on a stale
   // stored session there can fail a refresh and emit SIGNED_OUT).
   useEffect(() => {
-    if (fromSettingsVerified) {
+    if (isChangeFlow(from, verified)) {
       return;
     }
     let cancelled = false;
@@ -91,7 +103,7 @@ export function ResetPasswordScreen() {
       cancelled = true;
       sub.remove();
     };
-  }, [fromSettingsVerified, handleAuthUrl]);
+  }, [from, verified, handleAuthUrl]);
 
   // Recovery-entry (no session yet): code from the email (primary) or a
   // pasted link (fallback).
@@ -150,12 +162,10 @@ export function ResetPasswordScreen() {
   // Signed-in without a recovery session and without having just verified —
   // demand the current password before showing the change form.
   useEffect(() => {
-    if (needsVerify) {
+    if (mode === 'verify') {
       router.replace('/verify-password');
     }
-  }, [needsVerify, router]);
-
-  const canReset = isRecovery || isChangeMode;
+  }, [mode, router]);
 
   // Derived validation — never stored (skill `react-state-minimize`).
   const passwordError = useMemo(() => {

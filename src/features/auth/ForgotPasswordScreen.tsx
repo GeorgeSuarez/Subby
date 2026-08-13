@@ -26,8 +26,7 @@ import { BrandLockup } from '@/features/auth/components/BrandLockup';
 import { SUPABASE_URL } from '@/lib/supabase';
 import { useAuthStore } from '@/store/useAuthStore';
 import { notifyError, notifySuccess } from '@/utils/haptics';
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { isValidEmail } from '@/features/auth/auth-helpers';
 
 /**
  * Where the recovery email redirects after the token is consumed:
@@ -54,7 +53,7 @@ export function ForgotPasswordScreen() {
     if (!touched) return null;
     const value = email.trim();
     if (!value) return 'Enter your email address.';
-    if (!EMAIL_RE.test(value)) return 'Enter a valid email address.';
+    if (!isValidEmail(value)) return 'Enter a valid email address.';
     return null;
   }, [touched, email]);
 

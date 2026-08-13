@@ -47,6 +47,11 @@ export const copyByMode: Record<AuthMode, AuthCopy> = {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/** True for a syntactically valid email address. */
+export function isValidEmail(email: string): boolean {
+  return EMAIL_RE.test(email.trim());
+}
+
 export function defaultDraft(): AuthDraft {
   return { email: '', password: '' };
 }
@@ -62,7 +67,7 @@ export function validateDraft(draft: AuthDraft, mode: AuthMode): AuthErrors {
   const email = draft.email.trim();
   if (!email) {
     errors.email = 'Enter your email address.';
-  } else if (!EMAIL_RE.test(email)) {
+  } else if (!isValidEmail(email)) {
     errors.email = 'Enter a valid email address.';
   }
 

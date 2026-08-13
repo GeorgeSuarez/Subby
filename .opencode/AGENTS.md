@@ -100,9 +100,14 @@ Run these from the project root before considering any task complete:
   feeds stale link tokens into `setSession` over a live session — a failed
   `_getUser` ("Auth session missing") makes supabase-js wipe the stored
   session, so same-user links just set `recoveryPending` and cross-account
-  links are ignored. The new-password form uses `updateUser({ password })`. Settings → Account → Reset password lands on
+  links are ignored. The new-password form uses `updateUser({ password })`. The
+  gatekeeping for all of this (which form may be shown, who gets redirected)
+  lives in `src/features/auth/auth-flow.ts` — a pure, Jest-tested state
+  machine consuming `recoveryPending`/`isSignedIn`/`urlChecked` plus the
+  `from`/`verified` params. Settings → Account → Reset password lands on
   `/verify-password` first (current-password check via `verifyCurrentPassword`,
-  i.e. `signInWithPassword`), then `/reset-password?from=settings&verified=1`;
+  i.e. `signInWithPassword`), then `CHANGE_FLOW_LINK`
+  (`/reset-password?from=settings&verified=1`);
   any other signed-in visit to the reset screen is redirected through the same
   verify step.
 
