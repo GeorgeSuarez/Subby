@@ -68,6 +68,11 @@ Run these from the project root before considering any task complete:
   stores — no require cycles). A failed op halts the flush and is retried
   (never dropped). Session-death errors (FK/JWT) auto sign the user out via
   `expireSession` (`SESSION_EXPIRED_MESSAGE` in `src/lib/session-errors.ts`).
+  Auth actions follow one error contract: every user-invoked failure records
+  `store.error` (friendly copy via `friendlyAuthError`) AND throws — via
+  `failAuthAction`. `handleAuthUrl` is the documented exception (event-handler
+  seam: returns boolean, never throws). `signOut`/`expireSession` share
+  `clearLocalSession`.
 - Demo/test-account features (auto-seed, demo-data + danger-zone sections) are
   dev-only: gated by `ENABLE_DEMO_DATA` (`src/utils/environment.ts`, `__DEV__`,
   overridable with `EXPO_PUBLIC_ENABLE_DEMO`).

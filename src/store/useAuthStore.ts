@@ -121,7 +121,45 @@ function friendlyAuthError(message: string): string {
   if (/email rate limit|over_email_send_rate_limit/i.test(message)) {
     return 'Too many emails sent — please wait about an hour and try again.';
   }
+  if (/too many requests|rate limit/i.test(message)) {
+    return 'Too many attempts — please wait a moment and try again.';
+  }
   return message;
+}
+
+/** Extract a message from an auth error (Error instance or GoTrue object). */
+function messageOf(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String((error as { message: unknown }).message);
+  }
+  return String(error);
+}
+
+/**
+ * The single error contract for user-invoked auth actions: record the failure
+ * on `store.error` (friendly copy) and return a throwable Error, so callers
+ * always see one pattern — catch the throw, show `e.message`. `handleAuthUrl`
+ * is the documented exception (event-handler seam: returns boolean, never
+ * throws).
+ */
+function failAuthAction(set: (partial: Partial<AuthStore>) => void, error: unknown): Error {
+  const message = friendlyAuthError(messageOf(error));
+  set({ isLoading: false, error: message });
+  return new Error(message);
+}
+
+/** Local session teardown shared by sign-out and expire-session. */
+function clearLocalSession(
+  set: (partial: Partial<AuthStore>) => void,
+  message?: string,
+): void {
+  applySession(null);
+  set({
+    recoveryPending: false,
+    recoveryEmail: null,
+    ...(message ? { error: message } : null),
+  });
 }
 
 /** Mirror a session into the store. */
@@ -180,8 +218,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
       password,
     });
     if (error) {
-      set({ isLoading: false, error: error.message });
-      throw new Error(error.message);
+      throw failAuthAction(set, error);
     }
     applySession(data.session);
   },
@@ -194,9 +231,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
       password,
     });
     if (error) {
-      const message = friendlyAuthError(error.message);
-      set({ isLoading: false, error: message });
-      throw new Error(message);
+      throw failAuthAction(set, error);
     }
     if (data.session) {
       applySession(data.session);
@@ -216,7 +251,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     if (!email) throw new Error('No email awaiting verification.');
     if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
     const { error } = await supabase.auth.resend({ type: 'signup', email });
-    if (error) throw new Error(error.message);
+    if (error) throw failAuthAction(set, error);
   },
 
   checkVerification: async () => {
@@ -234,9 +269,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     set({ isLoading: true, error: null });
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
     if (error) {
-      const message = friendlyAuthError(error.message);
-      set({ isLoading: false, error: message });
-      throw new Error(message);
+      throw failAuthAction(set, error);
     }
     set({ isLoading: false, recoveryEmail: email.trim() });
   },
@@ -250,9 +283,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
       type: 'recovery',
     });
     if (error) {
-      const message = friendlyAuthError(error.message);
-      set({ isLoading: false, error: message });
-      throw new Error(message);
+      throw failAuthAction(set, error);
     }
     applySession(data.session);
     set({ recoveryPending: true, recoveryEmail: email.trim() });
@@ -283,7 +314,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
     const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
     if (error) {
-      set({ error: error.message });
+      set({ error: friendlyAuthError(error.message) });
       return false;
     }
     // setSession emits SIGNED_IN (handled above); the recovery flag drives
@@ -301,9 +332,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     // variant is the API for it (no email needed for recovery).
     const { data, error } = await supabase.auth.verifyOtp({ token_hash: token, type: 'recovery' });
     if (error) {
-      const message = friendlyAuthError(error.message);
-      set({ isLoading: false, error: message });
-      throw new Error(message);
+      throw failAuthAction(set, error);
     }
     applySession(data.session);
     set({ recoveryPending: true });
@@ -318,8 +347,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
         await get().expireSession(SESSION_EXPIRED_MESSAGE);
         throw new Error(SESSION_EXPIRED_MESSAGE);
       }
-      set({ isLoading: false, error: error.message });
-      throw new Error(error.message);
+      throw failAuthAction(set, error);
     }
     // updateUser returns the user, not a session — the recovery session stays.
     set({
@@ -336,14 +364,14 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     set({ isLoading: true, error: null });
     const email = get().email;
     if (!email) {
-      set({ isLoading: false, error: 'No signed-in account.' });
-      throw new Error('No signed-in account.');
+      throw failAuthAction(set, 'No signed-in account.');
     }
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password: currentPassword,
     });
     if (error) {
+      // The verify step hides the raw credential error behind one message.
       set({ isLoading: false, error: 'Current password is incorrect.' });
       throw new Error('Current password is incorrect.');
     }
@@ -357,12 +385,11 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   deleteAccount: async () => {
     if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
     const userId = get().userId;
-    if (!userId) throw new Error('No signed-in account.');
+    if (!userId) throw failAuthAction(set, 'No signed-in account.');
     set({ isLoading: true, error: null });
     const { error } = await supabase.functions.invoke('delete-account');
     if (error) {
-      set({ isLoading: false, error: error.message });
-      throw new Error(error.message);
+      throw failAuthAction(set, error);
     }
     // Account is gone server-side — wipe everything local and sign out.
     await clearCacheForUser(userId);
@@ -380,15 +407,13 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
         // Local-only sign-out is fine — the server session is already dead.
       });
     }
-    applySession(null);
-    set({ recoveryPending: false, recoveryEmail: null, error: message });
+    clearLocalSession(set, message);
   },
 
   signOut: async () => {
     if (isSupabaseConfigured) {
       await supabase.auth.signOut();
     }
-    applySession(null);
-    set({ recoveryPending: false, recoveryEmail: null });
+    clearLocalSession(set);
   },
 }));

@@ -28,7 +28,10 @@ jest.mock('@/lib/supabase', () => {
   };
   return {
     isSupabaseConfigured: true,
-    supabase: { auth },
+    supabase: {
+      auth,
+      functions: { invoke: jest.fn().mockResolvedValue({ error: null }) },
+    },
     __emitAuth: (event: string, session: unknown) => {
       for (const cb of [...authListeners]) cb(event, session);
     },
@@ -151,6 +154,54 @@ describe('useAuthStore', () => {
     expect(mockAuth().resend).toHaveBeenCalledWith({ type: 'signup', email: 'ada@lovelace.dev' });
   });
 
+  it('records the error when resending fails (one contract: set + throw)', async () => {
+    useAuthStore.setState({ verificationEmail: 'ada@lovelace.dev' });
+    mockAuth().resend.mockResolvedValueOnce({ error: { message: 'boom' } });
+
+    await expect(useAuthStore.getState().resendVerificationEmail()).rejects.toThrow('boom');
+    expect(useAuthStore.getState().error).toBe('boom');
+  });
+
+  it('maps a rate-limited sign-in to friendly copy', async () => {
+    mockAuth().signInWithPassword.mockResolvedValueOnce({
+      data: { session: null },
+      error: { message: 'Too many requests' },
+    });
+
+    await expect(
+      useAuthStore.getState().signIn('ada@lovelace.dev', 'secret'),
+    ).rejects.toThrow('Too many attempts — please wait a moment and try again.');
+    expect(useAuthStore.getState().error).toBe(
+      'Too many attempts — please wait a moment and try again.',
+    );
+  });
+
+  it('records the error when deleting an account fails', async () => {
+    useAuthStore.setState({ isSignedIn: true, email: 'ada@lovelace.dev', userId: 'user-ada' });
+    (jest.requireMock('@/lib/supabase').supabase.functions.invoke as jest.Mock)
+      .mockResolvedValueOnce({ error: { message: 'invoke failed' } });
+
+    await expect(useAuthStore.getState().deleteAccount()).rejects.toThrow('invoke failed');
+    expect(useAuthStore.getState().error).toBe('invoke failed');
+  });
+
+  it('records the error when no account is signed in for deletion', async () => {
+    useAuthStore.setState({ isSignedIn: false, userId: null });
+
+    await expect(useAuthStore.getState().deleteAccount()).rejects.toThrow('No signed-in account.');
+    expect(useAuthStore.getState().error).toBe('No signed-in account.');
+  });
+
+  it('signs out without recording an error', async () => {
+    useAuthStore.setState({ isSignedIn: true, email: 'ada@lovelace.dev', error: 'stale' });
+
+    await useAuthStore.getState().signOut();
+
+    expect(useAuthStore.getState().isSignedIn).toBe(false);
+    expect(useAuthStore.getState().email).toBeNull();
+    expect(useAuthStore.getState().error).toBeNull();
+  });
+
   it('checkVerification reports confirmed once a session exists', async () => {
     expect(await useAuthStore.getState().checkVerification()).toBe(false);
 
@@ -193,13 +244,13 @@ describe('useAuthStore', () => {
 
   it('records and rethrows reset request failures', async () => {
     mockAuth().resetPasswordForEmail.mockResolvedValueOnce({
-      error: { message: 'Rate limit exceeded' },
+      error: { message: 'email_address_invalid' },
     });
 
     await expect(
       useAuthStore.getState().requestPasswordReset('ada@lovelace.dev', 'exp://x'),
-    ).rejects.toThrow('Rate limit exceeded');
-    expect(useAuthStore.getState().error).toBe('Rate limit exceeded');
+    ).rejects.toThrow('email_address_invalid');
+    expect(useAuthStore.getState().error).toBe('email_address_invalid');
   });
 
   it('verifies a pasted recovery link and flags the recovery session', async () => {
