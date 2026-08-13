@@ -24,7 +24,7 @@ import { create } from 'zustand';
 import type { Session } from '@supabase/supabase-js';
 
 import { clearCacheForUser, clearQueueForUser } from '@/db/offline';
-import { isSessionExpiredError } from '@/lib/session-errors';
+import { isSessionExpiredError, SESSION_EXPIRED_MESSAGE } from '@/lib/session-errors';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 
 export const NOT_CONFIGURED_MESSAGE =
@@ -315,8 +315,8 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     const { data, error } = await supabase.auth.updateUser({ password });
     if (error) {
       if (isSessionExpiredError(error)) {
-        await get().expireSession('Your session expired — please sign in again.');
-        throw new Error('Your session expired — please sign in again.');
+        await get().expireSession(SESSION_EXPIRED_MESSAGE);
+        throw new Error(SESSION_EXPIRED_MESSAGE);
       }
       set({ isLoading: false, error: error.message });
       throw new Error(error.message);

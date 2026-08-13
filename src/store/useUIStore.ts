@@ -19,7 +19,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 import { persistentStorage } from '@/design/storage';
-import { clearQueuedPrefs, enqueueOp, readCache, writeCache } from '@/db/offline';
+import { applyMutation, readCache, writeCache } from '@/db/offline';
 import { getNetworkReachability } from '@/db/network';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { DEFAULT_CURRENCY } from '@/utils/constants';
@@ -51,7 +51,7 @@ export interface UIStore {
   hydratePrefs: () => Promise<void>;
 }
 
-/** Sync account prefs to Supabase (best-effort upsert, errors swallowed). */
+/** Sync account prefs via the sync coordinator (best-effort, errors swallowed). */
 async function syncAccountPrefs(
   prefs: { currency: CurrencyCode; budget: number; remindersEnabled: boolean },
 ): Promise<void> {
@@ -59,37 +59,21 @@ async function syncAccountPrefs(
   const { data } = await supabase.auth.getSession();
   const userId = data.session?.user.id;
   if (!userId) return;
-  // Offline (or unknown connectivity): queue the write instead — a direct
-  // write supersedes any queued prefs ops.
-  if ((await getNetworkReachability()) === false) {
-    await enqueueOp(userId, 'prefs', {
-      currency: prefs.currency,
-      budget: prefs.budget,
-      reminders_enabled: prefs.remindersEnabled,
-      updated_at: Date.now(),
-    });
-    return;
-  }
-  try {
-    await supabase.from('user_prefs').upsert(
-      {
+  // The coordinator decides: offline (or a network failure) → queue the
+  // write; online → write + refresh the prefs cache. A direct write also
+  // coalesces any previously queued prefs ops.
+  await applyMutation(
+    {
+      type: 'prefs',
+      prefs: {
         currency: prefs.currency,
         budget: prefs.budget,
         reminders_enabled: prefs.remindersEnabled,
         updated_at: Date.now(),
       },
-      { onConflict: 'user_id' },
-    );
-    await clearQueuedPrefs(userId);
-  } catch {
-    // Network hiccup mid-write — queue so the change isn't lost.
-    await enqueueOp(userId, 'prefs', {
-      currency: prefs.currency,
-      budget: prefs.budget,
-      reminders_enabled: prefs.remindersEnabled,
-      updated_at: Date.now(),
-    });
-  }
+    },
+    { userId, includeSeeded: false, remindersEnabled: prefs.remindersEnabled },
+  );
 }
 
 export const useUIStore = create<UIStore>()(

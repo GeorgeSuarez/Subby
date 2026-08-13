@@ -59,9 +59,15 @@ Run these from the project root before considering any task complete:
   writes made offline go into a FIFO queue (`sync_queue`, keyed by user) and
   are replayed by `flushPendingOps` on reconnect — queue-invisible by design
   (no temp ids; edits only ever target synced rows). Connectivity via
-  `expo-network` (`src/db/network.ts`); the coordinator is `src/db/offline.ts`.
-  A failed op halts the flush and is retried (never dropped). Session-death
-  errors (FK/JWT) auto sign the user out via `expireSession`.
+  `expo-network` (`src/db/network.ts`); **`src/db/offline.ts` is the sync
+  coordinator**: every mutation funnels through `applyMutation`, which owns
+  reachability → write-or-enqueue → notification side-effects → cache → re-read
+  → error classification, and the flush replays through the same per-type
+  execution (online/offline paths can't drift). Stores are thin front-ends.
+  `notifications.ts` takes `remindersEnabled` as a parameter (never reads
+  stores — no require cycles). A failed op halts the flush and is retried
+  (never dropped). Session-death errors (FK/JWT) auto sign the user out via
+  `expireSession` (`SESSION_EXPIRED_MESSAGE` in `src/lib/session-errors.ts`).
 - Demo/test-account features (auto-seed, demo-data + danger-zone sections) are
   dev-only: gated by `ENABLE_DEMO_DATA` (`src/utils/environment.ts`, `__DEV__`,
   overridable with `EXPO_PUBLIC_ENABLE_DEMO`).

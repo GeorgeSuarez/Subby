@@ -1,17 +1,21 @@
 /**
  * Subscriptions store.
  *
- * Zustand store that mirrors the Supabase subscriptions table. Online, the
- * server is the source of truth — the store re-fetches after each mutation so
- * React components subscribe to updates. Offline, reads serve the last-synced
- * cache (`db/offline.ts`) and mutations are enqueued (queue-invisible: local
- * state only ever holds synced rows), flushed in FIFO order on reconnect.
+ * Zustand store that mirrors the Supabase subscriptions table. It is a thin
+ * front-end over the sync coordinator (`db/offline.ts`): every mutation
+ * funnels through `applyMutation`, which owns reachability, queueing,
+ * notification side-effects, cache writes, re-reads, and error
+ * classification. The store owns state and the coordinator owns behaviour.
+ *
+ * Offline, reads serve the last-synced cache and mutations are enqueued
+ * (queue-invisible: local state only ever holds synced rows), flushed in
+ * FIFO order on reconnect.
  *
  * Skill rules followed:
  *  - `react-state-minimize`: no derived state is stored. Aggregates (totals,
  *    upcoming renewals, biggest) are computed during render from `subs`.
- *  - `react-state-dispatcher`: every mutator calls the DB then re-reads;
- *    we never locally mutate the array (avoids stale-cache bugs).
+ *  - `react-state-dispatcher`: every mutator goes through the coordinator then
+ *    applies the fresh re-read; we never locally mutate the array.
  *  - Zustand selectors used by components so list rows re-render only when
  *    their slice of state changes.
  *  - No React Context (skill `react-state-minimize`).
@@ -20,36 +24,28 @@
 import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 
+import { getAllSubscriptions } from '@/db/queries';
 import {
-  deleteAllSubscriptions,
-  deleteSubscription as dbDelete,
-  getAllSubscriptions,
-  insertSubscription as dbInsert,
-  setArchived as dbSetArchived,
-  setNotificationId as dbSetNotificationId,
-  updateSubscription as dbUpdate,
-} from '@/db/queries';
-import {
-  enqueueOp,
+  applyMutation,
+  errorMessage,
   flushPendingOps,
+  isNetworkError,
   pendingOpCount,
   readCache,
   writeCache,
+  type MutateResult,
+  type SyncContext,
 } from '@/db/offline';
 import { getNetworkReachability } from '@/db/network';
-import {
-  cancelRenewalReminder,
-  rescheduleRenewalReminder,
-  scheduleRenewalReminder,
-} from '@/utils/notifications';
+import { SESSION_EXPIRED_MESSAGE } from '@/lib/session-errors';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useUIStore } from '@/store/useUIStore';
+import { isTestAccountEmail } from '@/utils/constants';
 import type {
   Subscription,
   SubscriptionDraft,
   SubscriptionPatch,
 } from '@/types/subscription';
-import { useAuthStore } from '@/store/useAuthStore';
-import { isSessionExpiredError } from '@/lib/session-errors';
-import { isTestAccountEmail } from '@/utils/constants';
 
 /**
  * Demo (seeded) rows are visible ONLY to the test account. Every read of the
@@ -58,13 +54,6 @@ import { isTestAccountEmail } from '@/utils/constants';
  */
 function seededVisibility(): boolean {
   return isTestAccountEmail(useAuthStore.getState().email);
-}
-
-/** True when a network error (rather than a server-side one) occurred. */
-function isNetworkError(e: unknown): boolean {
-  if (e instanceof TypeError) return true;
-  const message = e instanceof Error ? e.message : String(e);
-  return /network request failed|fetch failed|temporarily unavailable/i.test(message);
 }
 
 export interface SubscriptionsStore {
@@ -104,14 +93,61 @@ export interface SubscriptionsStore {
   setNetworkState: (reachable: boolean | null) => void;
 }
 
+type Set = (partial: Partial<SubscriptionsStore>) => void;
+
 async function currentUserId(): Promise<string | null> {
   return useAuthStore.getState().userId;
 }
 
-async function refreshPendingCount(set: (partial: Partial<SubscriptionsStore>) => void): Promise<void> {
+async function refreshPendingCount(set: Set): Promise<void> {
   const userId = await currentUserId();
   const count = userId ? await pendingOpCount(userId) : 0;
   set({ pendingCount: count });
+}
+
+/** Build the coordinator context from the current session + UI state. */
+function syncContext(): SyncContext | null {
+  const userId = useAuthStore.getState().userId;
+  if (!userId) return null;
+  return {
+    userId,
+    includeSeeded: seededVisibility(),
+    remindersEnabled: useUIStore.getState().remindersEnabled,
+  };
+}
+
+/**
+ * Apply a coordinator result to store state. `notFoundId` marks ops where a
+ * `null` row on a synced result means "row missing" (edit/archive) rather
+ * than "nothing to return" (remove/clear_all).
+ */
+function applyResult(
+  set: Set,
+  get: () => SubscriptionsStore,
+  result: MutateResult,
+  notFoundId?: string,
+): Subscription | null {
+  switch (result.status) {
+    case 'synced': {
+      if (result.row === null && notFoundId) {
+        set({ error: `Subscription ${notFoundId} not found` });
+        return null;
+      }
+      set({ subs: result.subs ?? get().subs, error: null });
+      void refreshPendingCount(set);
+      return result.row;
+    }
+    case 'queued':
+      set({ queuedChange: true, syncError: null });
+      void refreshPendingCount(set);
+      return null;
+    case 'session-expired':
+      void useAuthStore.getState().expireSession(SESSION_EXPIRED_MESSAGE);
+      return null;
+    case 'error':
+      set({ error: result.message });
+      return null;
+  }
 }
 
 export const useSubscriptionsStore = create<SubscriptionsStore>()((set, get) => ({
@@ -154,8 +190,8 @@ export const useSubscriptionsStore = create<SubscriptionsStore>()((set, get) => 
       // Never leave a stale/previous account's rows visible on failure —
       // empty beats wrong.
       set({ isLoading: false, error: errorMessage(e), subs: [] });
-      if (isSessionExpiredError(e)) {
-        void useAuthStore.getState().expireSession('Your session expired — please sign in again.');
+      if (e instanceof Error && /session|jwt|foreign key/i.test(e.message)) {
+        void useAuthStore.getState().expireSession(SESSION_EXPIRED_MESSAGE);
         return;
       }
       if (isNetworkError(e) && userId) {
@@ -166,186 +202,38 @@ export const useSubscriptionsStore = create<SubscriptionsStore>()((set, get) => 
   },
 
   add: async (draft) => {
-    const userId = await currentUserId();
-    if (!userId) return null;
-    try {
-      if ((await getNetworkReachability()) === false) {
-        await enqueueOp(userId, 'add', { ...draft });
-        set({ queuedChange: true, syncError: null });
-        await refreshPendingCount(set);
-        return null;
-      }
-      const created = await dbInsert(draft);
-      // Schedule the renewal reminder and persist its id (best-effort — a
-      // denied permission or disabled toggle just leaves it unscheduled).
-      const notificationId = await scheduleRenewalReminder(created);
-      if (notificationId) {
-        await dbSetNotificationId(created.id, notificationId);
-      }
-      // Refresh cache from DB rather than mutating locally (single source of truth).
-      const subs = await getAllSubscriptions(seededVisibility());
-      if (userId) await writeCache('subs', userId, subs);
-      set({ subs, error: null });
-      await refreshPendingCount(set);
-      return created;
-    } catch (e) {
-      if (isNetworkError(e) && userId) {
-        await enqueueOp(userId, 'add', { ...draft });
-        set({ queuedChange: true, syncError: null });
-        await refreshPendingCount(set);
-        return null;
-      }
-      if (isSessionExpiredError(e)) {
-        void useAuthStore.getState().expireSession('Your session expired — please sign in again.');
-        return null;
-      }
-      set({ error: errorMessage(e) });
-      return null;
-    }
+    const ctx = syncContext();
+    if (!ctx) return null;
+    const result = await applyMutation({ type: 'add', draft }, ctx);
+    return applyResult(set, get, result);
   },
 
   edit: async (id, patch) => {
-    const userId = await currentUserId();
-    if (!userId) return null;
-    try {
-      if ((await getNetworkReachability()) === false) {
-        await enqueueOp(userId, 'edit', { id, patch });
-        set({ queuedChange: true, syncError: null });
-        await refreshPendingCount(set);
-        return null;
-      }
-      const previous = get().subs.find((x) => x.id === id);
-      const updated = await dbUpdate(id, patch);
-      if (!updated) {
-        set({ error: `Subscription ${id} not found` });
-        return null;
-      }
-      // Renewal date may have changed — reschedule the reminder.
-      const notificationId = await rescheduleRenewalReminder(updated, previous?.notificationId);
-      if (notificationId) {
-        await dbSetNotificationId(updated.id, notificationId);
-      }
-      const subs = await getAllSubscriptions(seededVisibility());
-      if (userId) await writeCache('subs', userId, subs);
-      set({ subs, error: null });
-      await refreshPendingCount(set);
-      return updated;
-    } catch (e) {
-      if (isNetworkError(e) && userId) {
-        await enqueueOp(userId, 'edit', { id, patch });
-        set({ queuedChange: true, syncError: null });
-        await refreshPendingCount(set);
-        return null;
-      }
-      if (isSessionExpiredError(e)) {
-        void useAuthStore.getState().expireSession('Your session expired — please sign in again.');
-        return null;
-      }
-      set({ error: errorMessage(e) });
-      return null;
-    }
+    const ctx = syncContext();
+    if (!ctx) return null;
+    const result = await applyMutation({ type: 'edit', id, patch }, ctx);
+    return applyResult(set, get, result, id);
   },
 
   archive: async (id, archived) => {
-    const userId = await currentUserId();
-    if (!userId) return null;
-    try {
-      if ((await getNetworkReachability()) === false) {
-        await enqueueOp(userId, 'archive', { id, archived });
-        set({ queuedChange: true, syncError: null });
-        await refreshPendingCount(set);
-        return null;
-      }
-      const previous = get().subs.find((x) => x.id === id);
-      const updated = await dbSetArchived(id, archived);
-      if (!updated) {
-        set({ error: `Subscription ${id} not found` });
-        return null;
-      }
-      // Archived subs stop charging — drop their reminder.
-      if (archived && previous?.notificationId) {
-        await cancelRenewalReminder(previous.notificationId);
-        await dbSetNotificationId(id, null);
-      }
-      const subs = await getAllSubscriptions(seededVisibility());
-      if (userId) await writeCache('subs', userId, subs);
-      set({ subs, error: null });
-      await refreshPendingCount(set);
-      return updated;
-    } catch (e) {
-      if (isNetworkError(e) && userId) {
-        await enqueueOp(userId, 'archive', { id, archived });
-        set({ queuedChange: true, syncError: null });
-        await refreshPendingCount(set);
-        return null;
-      }
-      if (isSessionExpiredError(e)) {
-        void useAuthStore.getState().expireSession('Your session expired — please sign in again.');
-        return null;
-      }
-      set({ error: errorMessage(e) });
-      return null;
-    }
+    const ctx = syncContext();
+    if (!ctx) return null;
+    const result = await applyMutation({ type: 'archive', id, archived }, ctx);
+    return applyResult(set, get, result, id);
   },
 
   remove: async (id) => {
-    const userId = await currentUserId();
-    if (!userId) return;
-    try {
-      if ((await getNetworkReachability()) === false) {
-        await enqueueOp(userId, 'remove', { id });
-        set({ queuedChange: true, syncError: null });
-        await refreshPendingCount(set);
-        return;
-      }
-      const target = get().subs.find((x) => x.id === id);
-      if (target?.notificationId) {
-        await cancelRenewalReminder(target.notificationId);
-      }
-      await dbDelete(id);
-      const subs = await getAllSubscriptions(seededVisibility());
-      if (userId) await writeCache('subs', userId, subs);
-      set({ subs, error: null });
-      await refreshPendingCount(set);
-    } catch (e) {
-      if (isNetworkError(e) && userId) {
-        await enqueueOp(userId, 'remove', { id });
-        set({ queuedChange: true, syncError: null });
-        await refreshPendingCount(set);
-        return;
-      }
-      if (isSessionExpiredError(e)) {
-        void useAuthStore.getState().expireSession('Your session expired — please sign in again.');
-        return;
-      }
-      set({ error: errorMessage(e) });
-    }
+    const ctx = syncContext();
+    if (!ctx) return;
+    const result = await applyMutation({ type: 'remove', id }, ctx);
+    applyResult(set, get, result);
   },
 
   clearAll: async () => {
-    const userId = await currentUserId();
-    if (!userId) return;
-    try {
-      if ((await getNetworkReachability()) === false) {
-        await enqueueOp(userId, 'clear_all', {});
-        set({ queuedChange: true, syncError: null });
-        await refreshPendingCount(set);
-        return;
-      }
-      // Cancel every scheduled reminder before wiping rows.
-      for (const s of get().subs) {
-        await cancelRenewalReminder(s.notificationId);
-      }
-      await deleteAllSubscriptions();
-      set({ subs: [], error: null });
-      await refreshPendingCount(set);
-    } catch (e) {
-      if (isSessionExpiredError(e)) {
-        void useAuthStore.getState().expireSession('Your session expired — please sign in again.');
-        return;
-      }
-      set({ error: errorMessage(e) });
-    }
+    const ctx = syncContext();
+    if (!ctx) return;
+    const result = await applyMutation({ type: 'clear_all' }, ctx);
+    applyResult(set, get, result);
   },
 
   getById: (id) => get().subs.find((s) => s.id === id),
@@ -354,7 +242,10 @@ export const useSubscriptionsStore = create<SubscriptionsStore>()((set, get) => 
     const userId = await currentUserId();
     if (!userId) return;
     try {
-      const result = await flushPendingOps(userId);
+      const result = await flushPendingOps(userId, {
+        includeSeeded: seededVisibility(),
+        remindersEnabled: useUIStore.getState().remindersEnabled,
+      });
       if (result.applied > 0) {
         // Authoritative re-read after a clean flush.
         const subs = await getAllSubscriptions(seededVisibility());
@@ -409,9 +300,4 @@ export function usePendingCount(): number {
 /** Last flush failure message, or null. */
 export function useSyncError(): string | null {
   return useSubscriptionsStore((s) => s.syncError);
-}
-
-function errorMessage(e: unknown): string {
-  if (e instanceof Error) return e.message;
-  return typeof e === 'string' ? e : 'Unknown error';
 }

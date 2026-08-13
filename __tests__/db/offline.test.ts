@@ -7,6 +7,7 @@
  */
 
 import {
+  applyMutation,
   clearCacheForUser,
   clearQueuedPrefs,
   enqueueOp,
@@ -16,6 +17,7 @@ import {
   readCache,
   writeCache,
 } from '@/db/offline';
+import type { SubscriptionDraft } from '@/types/subscription';
 
 const cache = new Map<string, { value: string; updated_at: number }>();
 const queue: Array<{
@@ -112,7 +114,12 @@ jest.mock('@/lib/supabase', () => ({
   },
 }));
 
+jest.mock('@/db/network', () => ({
+  getNetworkReachability: jest.fn(async () => true),
+}));
+
 jest.mock('@/db/queries', () => ({
+  getAllSubscriptions: jest.fn(async () => [{ id: 're-read' }]),
   insertSubscription: jest.fn(async (draft: unknown) => ({ ...(draft as object), id: 'real-id' })),
   updateSubscription: jest.fn(async (id: string) => ({ id, name: 'updated' })),
   setArchived: jest.fn(async (id: string, archived: boolean) => ({ id, archived })),
@@ -134,12 +141,28 @@ jest.mock('@/utils/notifications', () => ({
 }));
 
 const queries = jest.requireMock('@/db/queries') as Record<string, jest.Mock>;
+const notifications = jest.requireMock('@/utils/notifications') as Record<string, jest.Mock>;
+const network = jest.requireMock('@/db/network') as { getNetworkReachability: jest.Mock };
 const USER = 'user-1';
+const CTX = { includeSeeded: false, remindersEnabled: true };
+
+/** A complete SubscriptionDraft for the typed `add` op. */
+const draft = (overrides: Partial<SubscriptionDraft> = {}): SubscriptionDraft => ({
+  name: 'Netflix',
+  amount: '15.99',
+  currency: 'USD',
+  cycle: 'monthly',
+  nextRenewal: '2026-09-01',
+  category: 'streaming',
+  icon: 'film-outline',
+  ...overrides,
+});
 
 beforeEach(() => {
   jest.clearAllMocks();
   cache.clear();
   queue.length = 0;
+  network.getNetworkReachability.mockResolvedValue(true);
 });
 
 describe('cache', () => {
@@ -154,9 +177,9 @@ describe('cache', () => {
 
 describe('queue storage', () => {
   it('enqueues and lists ops FIFO per user', async () => {
-    await enqueueOp(USER, 'add', { name: 'Netflix' });
+    await enqueueOp(USER, 'add', { draft: draft({ name: 'Netflix' }) });
     await enqueueOp(USER, 'edit', { id: 'x', patch: { amount: '9.99' } });
-    await enqueueOp('other', 'add', { name: 'Spotify' });
+    await enqueueOp('other', 'add', { draft: draft({ name: 'Spotify' }) });
 
     const ops = await getPendingOps(USER);
     expect(ops.map((o) => o.type)).toEqual(['add', 'edit']);
@@ -165,28 +188,153 @@ describe('queue storage', () => {
   });
 });
 
+describe('applyMutation', () => {
+  it('writes online, schedules notifications, caches, and re-reads', async () => {
+    const result = await applyMutation(
+      { type: 'add', draft: draft() },
+      { userId: USER, ...CTX },
+    );
+
+    expect(result.status).toBe('synced');
+    if (result.status === 'synced') {
+      expect(result.row).toMatchObject({ id: 'real-id' });
+      expect(result.subs).toEqual([{ id: 're-read' }]);
+    }
+    expect(queries.insertSubscription).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Netflix', amount: '15.99' }),
+    );
+    expect(notifications.scheduleRenewalReminder).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'real-id' }),
+      true,
+    );
+    expect(await readCache('subs', USER)).toEqual([{ id: 're-read' }]);
+    expect(await pendingOpCount(USER)).toBe(0);
+  });
+
+  it('queues when offline instead of writing', async () => {
+    network.getNetworkReachability.mockResolvedValue(false);
+
+    const result = await applyMutation(
+      { type: 'archive', id: 'y', archived: true },
+      { userId: USER, ...CTX },
+    );
+
+    expect(result).toEqual({ status: 'queued' });
+    expect(queries.setArchived).not.toHaveBeenCalled();
+    expect(await pendingOpCount(USER)).toBe(1);
+  });
+
+  it('queues on a network failure mid-write', async () => {
+    queries.insertSubscription.mockRejectedValueOnce(new TypeError('Network request failed'));
+
+    const result = await applyMutation(
+      { type: 'add', draft: draft({ name: 'Netflix' }) },
+      { userId: USER, ...CTX },
+    );
+
+    expect(result).toEqual({ status: 'queued' });
+    expect(await pendingOpCount(USER)).toBe(1);
+  });
+
+  it('reports session-death errors separately', async () => {
+    queries.insertSubscription.mockRejectedValueOnce(
+      new Error('new row violates foreign key constraint "subscriptions_user_id_fkey"'),
+    );
+
+    const result = await applyMutation(
+      { type: 'add', draft: draft({ name: 'Netflix' }) },
+      { userId: USER, ...CTX },
+    );
+
+    expect(result).toEqual({ status: 'session-expired' });
+    expect(await pendingOpCount(USER)).toBe(0);
+  });
+
+  it('cancels the reminder on remove (online path)', async () => {
+    jest.requireMock('@/db/notification-sidecar').getAllNotificationIds.mockResolvedValueOnce({
+      y: 'notif-y',
+    });
+
+    const result = await applyMutation(
+      { type: 'remove', id: 'y' },
+      { userId: USER, ...CTX },
+    );
+
+    expect(result.status).toBe('synced');
+    expect(notifications.cancelRenewalReminder).toHaveBeenCalledWith('notif-y');
+    expect(queries.deleteSubscription).toHaveBeenCalledWith('y');
+  });
+
+  it('cancels reminders on clear_all', async () => {
+    const result = await applyMutation({ type: 'clear_all' }, { userId: USER, ...CTX });
+
+    expect(result.status).toBe('synced');
+    expect(queries.deleteAllSubscriptions).toHaveBeenCalled();
+    expect(jest.requireMock('@/db/notification-sidecar').clearAllNotificationIds).toHaveBeenCalled();
+  });
+
+  it('coalesces queued prefs and caches the fresh prefs on a direct write', async () => {
+    await enqueueOp(USER, 'prefs', { prefs: { currency: 'EUR' } });
+    await enqueueOp(USER, 'add', { draft: draft({ name: 'Netflix' }) });
+
+    const result = await applyMutation(
+      {
+        type: 'prefs',
+        prefs: { currency: 'GBP', budget: 200, reminders_enabled: false, updated_at: 2 },
+      },
+      { userId: USER, ...CTX },
+    );
+
+    expect(result).toEqual({ status: 'synced', row: null, subs: null });
+    expect(await readCache('prefs', USER)).toEqual({
+      currency: 'GBP',
+      budget: 200,
+      remindersEnabled: false,
+    });
+    // Only the prefs op was coalesced away; the add op remains queued.
+    const ops = await getPendingOps(USER);
+    expect(ops.map((o) => o.type)).toEqual(['add']);
+  });
+});
+
 describe('flush', () => {
   it('replays ops in order and empties the queue on success', async () => {
-    await enqueueOp(USER, 'add', { name: 'Netflix', amount: '15.99' });
+    await enqueueOp(USER, 'add', { draft: draft() });
     await enqueueOp(USER, 'edit', { id: 'x', patch: { amount: '17.99' } });
     await enqueueOp(USER, 'archive', { id: 'y', archived: true });
-    await enqueueOp(USER, 'prefs', { currency: 'EUR', budget: 100, reminders_enabled: true, updated_at: 1 });
+    await enqueueOp(USER, 'prefs', {
+      prefs: { currency: 'EUR', budget: 100, reminders_enabled: true, updated_at: 1 },
+    });
 
-    const result = await flushPendingOps(USER);
+    const result = await flushPendingOps(USER, CTX);
 
     expect(result).toEqual({ applied: 4, failed: 0, error: null });
-    expect(queries.insertSubscription).toHaveBeenCalledWith({ name: 'Netflix', amount: '15.99' });
+    expect(queries.insertSubscription).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Netflix', amount: '15.99' }),
+    );
     expect(queries.updateSubscription).toHaveBeenCalledWith('x', { amount: '17.99' });
     expect(queries.setArchived).toHaveBeenCalledWith('y', true);
     expect(await pendingOpCount(USER)).toBe(0);
   });
 
+  it('cancels the reminder when replaying a remove (the offline path)', async () => {
+    jest.requireMock('@/db/notification-sidecar').getAllNotificationIds.mockResolvedValueOnce({
+      y: 'notif-y',
+    });
+    await enqueueOp(USER, 'remove', { id: 'y' });
+
+    const result = await flushPendingOps(USER, CTX);
+
+    expect(result).toEqual({ applied: 1, failed: 0, error: null });
+    expect(notifications.cancelRenewalReminder).toHaveBeenCalledWith('notif-y');
+  });
+
   it('halts on the first failure and keeps the op with attempts/error', async () => {
     queries.updateSubscription.mockRejectedValueOnce(new Error('RLS blocked'));
-    await enqueueOp(USER, 'add', { name: 'Netflix' });
+    await enqueueOp(USER, 'add', { draft: draft({ name: 'Netflix' }) });
     await enqueueOp(USER, 'edit', { id: 'x', patch: {} });
 
-    const result = await flushPendingOps(USER);
+    const result = await flushPendingOps(USER, CTX);
 
     expect(result.applied).toBe(1);
     expect(result.failed).toBe(1);
@@ -199,7 +347,7 @@ describe('flush', () => {
 
   it('is a no-op when Supabase is unconfigured', async () => {
     jest.requireMock('@/lib/supabase').isSupabaseConfigured = false;
-    const result = await flushPendingOps(USER);
+    const result = await flushPendingOps(USER, CTX);
     expect(result).toEqual({ applied: 0, failed: 0, error: null });
     jest.requireMock('@/lib/supabase').isSupabaseConfigured = true;
   });
@@ -207,8 +355,8 @@ describe('flush', () => {
 
 describe('prefs coalescing', () => {
   it('removes only queued prefs ops', async () => {
-    await enqueueOp(USER, 'prefs', { currency: 'EUR' });
-    await enqueueOp(USER, 'add', { name: 'Netflix' });
+    await enqueueOp(USER, 'prefs', { prefs: { currency: 'EUR' } });
+    await enqueueOp(USER, 'add', { draft: draft({ name: 'Netflix' }) });
     await clearQueuedPrefs(USER);
 
     const ops = await getPendingOps(USER);
