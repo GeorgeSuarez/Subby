@@ -15,10 +15,11 @@ import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
 export default function AddSubscriptionRoute() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const router = useRouter();
+  // expo-router can hand back string[] for repeated query params; take the
+  // first occurrence or treat the route as "add mode".
+  const idParam = Array.isArray(id) ? id[0] : id;
   const existing = useSubscriptionsStore((s) =>
-    typeof id === 'string' && id.length > 0
-      ? (s.subs.find((x) => x.id === id) ?? null)
-      : null,
+    idParam ? (s.subs.find((x) => x.id === idParam) ?? null) : null,
   );
 
   const onSaved = useCallback(

@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { Button } from '@/design/components/Button';
 import { Text } from '@/design/components/Text';
+import { iconName } from '@/design/icons';
 import { useTheme } from '@/design/theme';
 import { spacing, type Palette } from '@/design/tokens';
 
@@ -69,7 +70,7 @@ export function EmptyState({
           decoration
         ) : (
           <Ionicons
-            name={decorationIcon as never}
+            name={iconName(decorationIcon)}
             size={36}
             color={colors.accent}
           />

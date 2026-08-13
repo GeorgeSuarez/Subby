@@ -57,6 +57,8 @@ function getSqliteStorage(): Promise<StateStorage | null> {
         // module at all (the try/catch falls back to memory).
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { default: AsyncStorage } =
+          // SAFETY: expo-sqlite/kv-store ships an AsyncStorage-compatible
+          // default export; the cast only pins that contract for callers.
           require('expo-sqlite/kv-store') as typeof import('expo-sqlite/kv-store');
         return {
           getItem: (name) => AsyncStorage.getItemAsync(name),
@@ -72,7 +74,7 @@ function getSqliteStorage(): Promise<StateStorage | null> {
 }
 
 /** True in browsers / react-native-web; false on Hermes and in node-Jest. */
-const isWeb = typeof globalThis.localStorage !== 'undefined';
+const isWeb = 'localStorage' in globalThis;
 
 /** Shared storage instance for all persisted Zustand stores. */
 export const persistentStorage: StateStorage = {

@@ -14,7 +14,6 @@
  *  - `react-state-dispatcher`: derive selected from `selectedIndex`, never store.
  */
 
-import { type ReactNode } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -26,26 +25,13 @@ import { Text } from '@/design/components/Text';
 import { useTheme } from '@/design/theme';
 import { radius, spacing } from '@/design/tokens';
 
-export interface SegmentedOption {
-  /** Native label shown in the segment. */
-  label: string;
-  /** Optional leading icon (Ionicons name). */
-  icon?: string;
-}
-
 export interface SegmentedControlProps {
-  /** Either an array of strings, or {@link SegmentedOption} objects for icons. */
-  segments: string[] | SegmentedOption[];
+  /** Labels shown in each segment, in order. */
+  segments: readonly string[];
   selectedIndex: number;
   onSelect: (index: number) => void;
   /** Optional testID forscreen-readers / tests. */
   testID?: string;
-}
-
-function normalizeSegments(
-  segments: string[] | SegmentedOption[],
-): SegmentedOption[] {
-  return segments.map((s) => (typeof s === 'string' ? { label: s } : s));
 }
 
 export function SegmentedControl({
@@ -55,7 +41,6 @@ export function SegmentedControl({
   testID,
 }: SegmentedControlProps) {
   const { colors } = useTheme();
-  const options = normalizeSegments(segments);
 
   return (
     <View
@@ -66,7 +51,7 @@ export function SegmentedControl({
         { backgroundColor: colors.surfaceHigher, borderColor: colors.border },
       ]}
     >
-      {options.map((option, index) => {
+      {segments.map((label, index) => {
         const selected = index === selectedIndex;
         const pressableStyle = ({ pressed }: PressableStateCallbackType) => [
           styles.segment,
@@ -75,7 +60,7 @@ export function SegmentedControl({
         ];
         return (
           <Pressable
-            key={`${option.label}-${index}`}
+            key={`${label}-${index}`}
             accessibilityRole="tab"
             accessibilityState={{ selected }}
             style={pressableStyle}
@@ -86,7 +71,7 @@ export function SegmentedControl({
               weight={selected ? '600' : '500'}
               color={selected ? 'accent' : 'textSecondary'}
             >
-              {option.label}
+              {label}
             </Text>
           </Pressable>
         );
@@ -114,6 +99,3 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
-
-// Keep the `ReactNode` import in scope for parity with sibling components.
-export type { ReactNode };

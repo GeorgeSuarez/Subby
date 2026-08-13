@@ -1,10 +1,13 @@
 /**
  * Offline queue coordinator tests.
  *
- * The real storage is expo-sqlite (native); `@/db/client` is mocked with a
- * tiny in-memory SQLite stand-in that understands the exact statements the
- * module issues, and the Supabase/query/notification layers are mocked.
+ * The coordinator's external dependencies (SQLite handle, network probe,
+ * query layer, notification sidecar, Supabase prefs upsert) are injected via
+ * `setSyncDeps` with faithful doubles: the SQLite stand-in is a tiny
+ * in-memory implementation of the exact statements the module issues.
  */
+
+import type { SQLiteBindValue } from 'expo-sqlite';
 
 import {
   applyMutation,
@@ -15,9 +18,14 @@ import {
   getPendingOps,
   pendingOpCount,
   readCache,
+  setSyncDeps,
   writeCache,
+  type SyncDb,
+  type SyncDeps,
+  type SyncSupabase,
 } from '@/db/offline';
-import type { SubscriptionDraft } from '@/types/subscription';
+import { isSessionExpiredError } from '@/lib/session-errors';
+import type { Subscription, SubscriptionDraft } from '@/types/subscription';
 
 const cache = new Map<string, { value: string; updated_at: number }>();
 const queue: Array<{
@@ -30,137 +38,164 @@ const queue: Array<{
   last_error: string | null;
 }> = [];
 
-jest.mock('@/db/client', () => ({
-  getDatabase: jest.fn(async () => ({
-    getFirstAsync: jest.fn(async (sql: string, ...params: unknown[]) => {
-      const p = params[0];
-      if (sql.includes('sync_cache') && sql.includes('WHERE key = ?')) {
-        const row = cache.get(p as string);
-        return row ? { value: row.value } : null;
-      }
-      if (sql.includes('sync_queue') && sql.includes('COUNT(*)')) {
-        return { n: queue.filter((o) => o.user_id === p).length };
-      }
-      return null;
-    }),
-    getAllAsync: jest.fn(async (sql: string, ...params: unknown[]) => {
-      if (sql.includes('SELECT * FROM sync_queue')) {
-        return queue
-          .filter((o) => o.user_id === params[0])
-          .sort((a, b) => a.created_at - b.created_at)
-          .map((o) => ({ ...o }));
-      }
-      return [];
-    }),
-    runAsync: jest.fn(async (sql: string, ...params: unknown[]) => {
-      // The module passes bound values either as an array or as spread args.
-      const args = Array.isArray(params[0]) ? (params[0] as unknown[]) : params;
-      if (sql.includes('INSERT OR REPLACE INTO sync_cache')) {
-        cache.set(args[0] as string, {
-          value: args[1] as string,
-          updated_at: args[2] as number,
-        });
-      } else if (sql.includes('DELETE FROM sync_cache')) {
-        const pattern = args[0] as string;
-        for (const key of Array.from(cache.keys())) {
-          if (
-            key.endsWith(`:${pattern.slice(2)}`) ||
-            key === pattern.slice(1)
-          ) {
-            cache.delete(key);
-          }
-        }
-        if (pattern === ':%') {
-          cache.clear();
-        }
-      } else if (sql.includes('INSERT INTO sync_queue')) {
-        queue.push({
-          op_id: args[0] as string,
-          user_id: args[1] as string,
-          type: args[2] as string,
-          payload: args[3] as string,
-          created_at: args[4] as number,
-          attempts: 0,
-          last_error: null,
-        });
-      } else if (sql.includes('DELETE FROM sync_queue')) {
-        if (sql.includes("AND type = 'prefs'")) {
-          const uid = args[0] as string;
-          for (let i = queue.length - 1; i >= 0; i--) {
-            if (queue[i]?.user_id === uid && queue[i]?.type === 'prefs')
-              queue.splice(i, 1);
-          }
-        } else if (sql.includes('WHERE user_id = ?')) {
-          const uid = args[0] as string;
-          for (let i = queue.length - 1; i >= 0; i--) {
-            if (queue[i]?.user_id === uid) queue.splice(i, 1);
-          }
-        } else {
-          const opId = args[0] as string;
-          const idx = queue.findIndex((o) => o.op_id === opId);
-          if (idx >= 0) queue.splice(idx, 1);
-        }
-      } else if (sql.includes('UPDATE sync_queue')) {
-        const opId = args[1] as string;
-        const op = queue.find((o) => o.op_id === opId);
-        if (op) {
-          op.attempts += 1;
-          op.last_error = args[0] as string;
-        }
-      }
-    }),
-  })),
-}));
+/** A complete Subscription for the typed query doubles. */
+const sub = (
+  id: string,
+  overrides: Partial<Subscription> = {},
+): Subscription => ({
+  id,
+  name: 'Sub',
+  amount: 1,
+  currency: 'USD',
+  cycle: 'monthly',
+  nextRenewal: '2026-09-01',
+  category: 'other',
+  icon: 'cube-outline',
+  createdAt: 0,
+  updatedAt: 0,
+  archived: false,
+  ...overrides,
+});
 
-jest.mock('@/lib/supabase', () => ({
-  isSupabaseConfigured: true,
-  supabase: {
-    from: jest.fn(() => ({
-      upsert: jest.fn(async () => ({ error: null })),
-    })),
+/**
+ * The module binds values either as a single array or as variadic args; the
+ * stand-in normalizes both forms into one list.
+ */
+const boundValues = (
+  paramsOrFirst: SQLiteBindValue | SQLiteBindValue[],
+  rest: SQLiteBindValue[],
+): SQLiteBindValue[] =>
+  Array.isArray(paramsOrFirst) ? paramsOrFirst : [paramsOrFirst, ...rest];
+
+/** In-memory stand-in for the exact statements the coordinator issues. */
+const db: SyncDb = {
+  getFirstAsync: async function getFirstAsync<T>(
+    sql: string,
+    paramsOrFirst: SQLiteBindValue | SQLiteBindValue[],
+    ...rest: SQLiteBindValue[]
+  ): Promise<T | null> {
+    const p = boundValues(paramsOrFirst, rest)[0];
+    if (sql.includes('sync_cache') && sql.includes('WHERE key = ?')) {
+      const row = cache.get(String(p));
+      // SAFETY: the module queries with the matching row shape; this
+      // stand-in returns exactly what the real DB would for that query.
+      return (row ? { value: row.value } : null) as T | null;
+    }
+    if (sql.includes('sync_queue') && sql.includes('COUNT(*)')) {
+      // SAFETY: the COUNT query always reads `n` — see pendingOpCount.
+      return {
+        n: queue.filter((o) => o.user_id === String(p)).length,
+      } as T | null;
+    }
+    return null;
   },
-}));
+  getAllAsync: async function getAllAsync<T>(
+    sql: string,
+    paramsOrFirst: SQLiteBindValue | SQLiteBindValue[],
+    ...rest: SQLiteBindValue[]
+  ): Promise<T[]> {
+    const params = boundValues(paramsOrFirst, rest);
+    if (sql.includes('SELECT * FROM sync_queue')) {
+      const rows = queue
+        .filter((o) => o.user_id === String(params[0]))
+        .sort((a, b) => a.created_at - b.created_at)
+        .map((o) => ({ ...o }));
+      // SAFETY: getPendingOps maps these exact columns into QueueOp.
+      return rows as T[];
+    }
+    return [];
+  },
+  runAsync: async (
+    sql: string,
+    paramsOrFirst: SQLiteBindValue | SQLiteBindValue[],
+    ...rest: SQLiteBindValue[]
+  ) => {
+    const args = boundValues(paramsOrFirst, rest);
+    if (sql.includes('INSERT OR REPLACE INTO sync_cache')) {
+      cache.set(String(args[0]), {
+        value: String(args[1]),
+        updated_at: Number(args[2]),
+      });
+    } else if (sql.includes('DELETE FROM sync_cache')) {
+      const pattern = String(args[0]);
+      for (const key of Array.from(cache.keys())) {
+        if (key.endsWith(`:${pattern.slice(2)}`) || key === pattern.slice(1)) {
+          cache.delete(key);
+        }
+      }
+      if (pattern === ':%') {
+        cache.clear();
+      }
+    } else if (sql.includes('INSERT INTO sync_queue')) {
+      queue.push({
+        op_id: String(args[0]),
+        user_id: String(args[1]),
+        type: String(args[2]),
+        payload: String(args[3]),
+        created_at: Number(args[4]),
+        attempts: 0,
+        last_error: null,
+      });
+    } else if (sql.includes('DELETE FROM sync_queue')) {
+      if (sql.includes("AND type = 'prefs'")) {
+        const uid = String(args[0]);
+        for (let i = queue.length - 1; i >= 0; i--) {
+          if (queue[i]?.user_id === uid && queue[i]?.type === 'prefs')
+            queue.splice(i, 1);
+        }
+      } else if (sql.includes('WHERE user_id = ?')) {
+        const uid = String(args[0]);
+        for (let i = queue.length - 1; i >= 0; i--) {
+          if (queue[i]?.user_id === uid) queue.splice(i, 1);
+        }
+      } else {
+        const opId = String(args[0]);
+        const idx = queue.findIndex((o) => o.op_id === opId);
+        if (idx >= 0) queue.splice(idx, 1);
+      }
+    } else if (sql.includes('UPDATE sync_queue')) {
+      const opId = String(args[1]);
+      const op = queue.find((o) => o.op_id === opId);
+      if (op) {
+        op.attempts += 1;
+        op.last_error = String(args[0]);
+      }
+    }
+    return { changes: 0, lastInsertRowId: 0 };
+  },
+};
 
-jest.mock('@/db/network', () => ({
+const supabase: SyncSupabase = {
+  from: () => ({
+    upsert: jest.fn(async () => ({ error: null })),
+  }),
+};
+
+const syncDeps: SyncDeps = {
+  getDatabase: async () => db,
   getNetworkReachability: jest.fn(async () => true),
-}));
-
-jest.mock('@/db/queries', () => ({
-  getAllSubscriptions: jest.fn(async () => [{ id: 're-read' }]),
-  insertSubscription: jest.fn(async (draft: unknown) => ({
-    ...(draft as object),
-    id: 'real-id',
-  })),
-  updateSubscription: jest.fn(async (id: string) => ({ id, name: 'updated' })),
-  setArchived: jest.fn(async (id: string, archived: boolean) => ({
-    id,
-    archived,
-  })),
+  isSessionExpiredError,
+  isSupabaseConfigured: true,
+  supabase,
+  getAllSubscriptions: jest.fn(async () => [sub('re-read')]),
+  insertSubscription: jest.fn(async (draft: SubscriptionDraft) =>
+    sub('real-id', { name: draft.name }),
+  ),
+  updateSubscription: jest.fn(async (id: string) => sub(id)),
+  setArchived: jest.fn(async (id: string, archived: boolean) =>
+    sub(id, { archived }),
+  ),
   deleteSubscription: jest.fn(async () => undefined),
   deleteAllSubscriptions: jest.fn(async () => undefined),
-}));
-
-jest.mock('@/db/notification-sidecar', () => ({
+  clearAllNotificationIds: jest.fn(async () => undefined),
+  deleteNotificationId: jest.fn(async () => undefined),
   getAllNotificationIds: jest.fn(async () => ({})),
   setNotificationId: jest.fn(async () => undefined),
-  deleteNotificationId: jest.fn(async () => undefined),
-  clearAllNotificationIds: jest.fn(async () => undefined),
-}));
-
-jest.mock('@/utils/notifications', () => ({
   scheduleRenewalReminder: jest.fn(async () => 'notif-id'),
   rescheduleRenewalReminder: jest.fn(async () => 'notif-id'),
   cancelRenewalReminder: jest.fn(async () => undefined),
-}));
-
-const queries = jest.requireMock('@/db/queries') as Record<string, jest.Mock>;
-const notifications = jest.requireMock('@/utils/notifications') as Record<
-  string,
-  jest.Mock
->;
-const network = jest.requireMock('@/db/network') as {
-  getNetworkReachability: jest.Mock;
 };
+
 const USER = 'user-1';
 const CTX = { includeSeeded: false, remindersEnabled: true };
 
@@ -178,11 +213,44 @@ const draft = (
   ...overrides,
 });
 
+// SAFETY: the network double is a jest.fn; the alias widens it back to Mock.
+const network = syncDeps.getNetworkReachability as jest.Mock;
+// SAFETY: these query doubles are jest.fn instances; the aliases only widen
+// them back to the Mock shape so tests can stub/assert call behavior.
+const queries = {
+  insertSubscription: syncDeps.insertSubscription as jest.Mock,
+  updateSubscription: syncDeps.updateSubscription as jest.Mock,
+  setArchived: syncDeps.setArchived as jest.Mock,
+  deleteSubscription: syncDeps.deleteSubscription as jest.Mock,
+  deleteAllSubscriptions: syncDeps.deleteAllSubscriptions as jest.Mock,
+};
+// SAFETY: same widening for the notification doubles.
+const notifications = {
+  scheduleRenewalReminder: syncDeps.scheduleRenewalReminder as jest.Mock,
+  cancelRenewalReminder: syncDeps.cancelRenewalReminder as jest.Mock,
+};
+// SAFETY: same widening for the notification-sidecar doubles.
+const sidecar = {
+  getAllNotificationIds: syncDeps.getAllNotificationIds as jest.Mock,
+  clearAllNotificationIds: syncDeps.clearAllNotificationIds as jest.Mock,
+};
+
+let previousDeps: SyncDeps | null;
+
+beforeAll(() => {
+  previousDeps = setSyncDeps(syncDeps);
+});
+
+afterAll(() => {
+  setSyncDeps(previousDeps);
+});
+
 beforeEach(() => {
   jest.clearAllMocks();
   cache.clear();
   queue.length = 0;
-  network.getNetworkReachability.mockResolvedValue(true);
+  syncDeps.isSupabaseConfigured = true;
+  network.mockResolvedValue(true);
 });
 
 describe('cache', () => {
@@ -218,7 +286,7 @@ describe('applyMutation', () => {
     expect(result.status).toBe('synced');
     if (result.status === 'synced') {
       expect(result.row).toMatchObject({ id: 'real-id' });
-      expect(result.subs).toEqual([{ id: 're-read' }]);
+      expect(result.subs).toMatchObject([{ id: 're-read' }]);
     }
     expect(queries.insertSubscription).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'Netflix', amount: '15.99' }),
@@ -227,12 +295,12 @@ describe('applyMutation', () => {
       expect.objectContaining({ id: 'real-id' }),
       true,
     );
-    expect(await readCache('subs', USER)).toEqual([{ id: 're-read' }]);
+    expect(await readCache('subs', USER)).toMatchObject([{ id: 're-read' }]);
     expect(await pendingOpCount(USER)).toBe(0);
   });
 
   it('queues when offline instead of writing', async () => {
-    network.getNetworkReachability.mockResolvedValue(false);
+    network.mockResolvedValue(false);
 
     const result = await applyMutation(
       { type: 'archive', id: 'y', archived: true },
@@ -275,11 +343,9 @@ describe('applyMutation', () => {
   });
 
   it('cancels the reminder on remove (online path)', async () => {
-    jest
-      .requireMock('@/db/notification-sidecar')
-      .getAllNotificationIds.mockResolvedValueOnce({
-        y: 'notif-y',
-      });
+    sidecar.getAllNotificationIds.mockResolvedValueOnce({
+      y: 'notif-y',
+    });
 
     const result = await applyMutation(
       { type: 'remove', id: 'y' },
@@ -293,19 +359,24 @@ describe('applyMutation', () => {
 
   it('cancels reminders on clear_all', async () => {
     const result = await applyMutation(
-      { type: 'clear_all' },
+      { type: 'clear_all', cleared: true },
       { userId: USER, ...CTX },
     );
 
     expect(result.status).toBe('synced');
     expect(queries.deleteAllSubscriptions).toHaveBeenCalled();
-    expect(
-      jest.requireMock('@/db/notification-sidecar').clearAllNotificationIds,
-    ).toHaveBeenCalled();
+    expect(sidecar.clearAllNotificationIds).toHaveBeenCalled();
   });
 
   it('coalesces queued prefs and caches the fresh prefs on a direct write', async () => {
-    await enqueueOp(USER, 'prefs', { prefs: { currency: 'EUR' } });
+    await enqueueOp(USER, 'prefs', {
+      prefs: {
+        currency: 'EUR',
+        budget: 0,
+        reminders_enabled: true,
+        updated_at: 1,
+      },
+    });
     await enqueueOp(USER, 'add', { draft: draft({ name: 'Netflix' }) });
 
     const result = await applyMutation(
@@ -361,11 +432,9 @@ describe('flush', () => {
   });
 
   it('cancels the reminder when replaying a remove (the offline path)', async () => {
-    jest
-      .requireMock('@/db/notification-sidecar')
-      .getAllNotificationIds.mockResolvedValueOnce({
-        y: 'notif-y',
-      });
+    sidecar.getAllNotificationIds.mockResolvedValueOnce({
+      y: 'notif-y',
+    });
     await enqueueOp(USER, 'remove', { id: 'y' });
 
     const result = await flushPendingOps(USER, CTX);
@@ -391,16 +460,22 @@ describe('flush', () => {
   });
 
   it('is a no-op when Supabase is unconfigured', async () => {
-    jest.requireMock('@/lib/supabase').isSupabaseConfigured = false;
+    syncDeps.isSupabaseConfigured = false;
     const result = await flushPendingOps(USER, CTX);
     expect(result).toEqual({ applied: 0, failed: 0, error: null });
-    jest.requireMock('@/lib/supabase').isSupabaseConfigured = true;
   });
 });
 
 describe('prefs coalescing', () => {
   it('removes only queued prefs ops', async () => {
-    await enqueueOp(USER, 'prefs', { prefs: { currency: 'EUR' } });
+    await enqueueOp(USER, 'prefs', {
+      prefs: {
+        currency: 'EUR',
+        budget: 0,
+        reminders_enabled: true,
+        updated_at: 1,
+      },
+    });
     await enqueueOp(USER, 'add', { draft: draft({ name: 'Netflix' }) });
     await clearQueuedPrefs(USER);
 

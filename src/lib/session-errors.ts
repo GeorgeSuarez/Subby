@@ -8,11 +8,10 @@
 export const SESSION_EXPIRED_MESSAGE =
   'Your session expired — please sign in again.';
 
-export function isSessionExpiredError(e: unknown): boolean {
-  const message = e instanceof Error ? e.message : String(e);
+export function isSessionExpiredError(e: Error): boolean {
   return (
     /auth session missing|invalid jwt|jwt.*expired|refresh token.*invalid/i.test(
-      message,
-    ) || /violates foreign key constraint/i.test(message)
+      e.message,
+    ) || /violates foreign key constraint/i.test(e.message)
   );
 }

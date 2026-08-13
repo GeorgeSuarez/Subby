@@ -22,9 +22,7 @@ import {
 } from '@/utils/constants';
 import { toISODate, todayUTC, addMonths, parseDate } from '@/utils/billing';
 import type {
-  CategorySlug,
   CurrencyCode,
-  Cycle,
   Subscription,
   SubscriptionDraft,
 } from '@/types/subscription';
@@ -96,13 +94,13 @@ export function validateDraft(draft: Partial<SubscriptionDraft>): FieldError[] {
   }
 
   // currency
-  const currency = draft.currency as CurrencyCode | undefined;
+  const currency = draft.currency;
   if (!currency || !CURRENCIES.find((c) => c.code === currency)) {
     errors.push({ field: 'currency', message: 'Pick a currency' });
   }
 
   // cycle
-  const cycle = draft.cycle as Cycle | undefined;
+  const cycle = draft.cycle;
   if (!cycle || !CYCLE_BY_NAME[cycle]) {
     errors.push({ field: 'cycle', message: 'Pick a cycle' });
   }
@@ -132,19 +130,19 @@ export function validateDraft(draft: Partial<SubscriptionDraft>): FieldError[] {
   }
 
   // category
-  const category = draft.category as CategorySlug | undefined;
+  const category = draft.category;
   if (!category || !CATEGORIES.find((c) => c.slug === category)) {
     errors.push({ field: 'category', message: 'Pick a category' });
   }
 
   // icon (defaults to category icon in the screen, but verify if explicitly given)
-  if (typeof draft.icon === 'string' && draft.icon.length === 0) {
+  if (draft.icon === '') {
     errors.push({ field: 'icon', message: 'Pick an icon' });
   }
 
   // color (optional; only validate format when given)
   const color = draft.color;
-  if (typeof color === 'string' && color.length > 0) {
+  if (color !== undefined && color.length > 0) {
     if (
       !/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(color) &&
       !/^rgba?\([^)]+\)$/.test(color)
@@ -157,7 +155,7 @@ export function validateDraft(draft: Partial<SubscriptionDraft>): FieldError[] {
   }
 
   // notes (length-cap; no required check)
-  if (typeof draft.notes === 'string' && draft.notes.length > 280) {
+  if ((draft.notes ?? '').length > 280) {
     errors.push({
       field: 'notes',
       message: 'Notes are limited to 280 characters',
@@ -168,9 +166,7 @@ export function validateDraft(draft: Partial<SubscriptionDraft>): FieldError[] {
 }
 
 /** Convert a validation error array into a quick lookup map for renderers. */
-export function errorsByField(
-  errors: readonly FieldError[],
-): Partial<Record<FieldKey, string>> {
+export function errorsByField(errors: readonly FieldError[]) {
   const map: Partial<Record<FieldKey, string>> = {};
   for (const e of errors) {
     if (!map[e.field]) map[e.field] = e.message;

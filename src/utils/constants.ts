@@ -31,6 +31,9 @@ export const CATEGORIES: readonly CategoryMeta[] = [
 
 /** Quick lookup by slug. */
 export const CATEGORY_BY_SLUG: Record<CategorySlug, CategoryMeta> =
+  // SAFETY: CATEGORIES above enumerates every CategorySlug (`as const`),
+  // so the fromEntries map is total for the union — unknown slugs hit the
+  // `?? DEFAULT_CATEGORY` fallback instead of this entry.
   Object.fromEntries(CATEGORIES.map((c) => [c.slug, c])) as Record<
     CategorySlug,
     CategoryMeta
@@ -57,9 +60,13 @@ export const CYCLES: readonly CycleMeta[] = [
   { cycle: 'yearly', label: 'Yearly', months: 12 },
 ] as const;
 
-export const CYCLE_BY_NAME: Record<Cycle, CycleMeta> = Object.fromEntries(
-  CYCLES.map((c) => [c.cycle, c]),
-) as Record<Cycle, CycleMeta>;
+export const CYCLE_BY_NAME: Record<Cycle, CycleMeta> =
+  // SAFETY: CYCLES enumerates every Cycle (`as const`), so the fromEntries map
+  // is total for the union; lookups fall back to monthly for unknown keys.
+  Object.fromEntries(CYCLES.map((c) => [c.cycle, c])) as Record<
+    Cycle,
+    CycleMeta
+  >;
 
 export function cycleMeta(cycle: Cycle): CycleMeta {
   return CYCLE_BY_NAME[cycle] ?? CYCLE_BY_NAME.monthly;
@@ -83,6 +90,8 @@ export const CURRENCIES: readonly CurrencyMeta[] = [
 ] as const;
 
 export const CURRENCY_BY_CODE: Record<CurrencyCode, CurrencyMeta> =
+  // SAFETY: CURRENCIES enumerates every CurrencyCode (`as const`), so the
+  // fromEntries map is total for the union; lookups fall back to USD.
   Object.fromEntries(CURRENCIES.map((c) => [c.code, c])) as Record<
     CurrencyCode,
     CurrencyMeta

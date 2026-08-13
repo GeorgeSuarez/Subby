@@ -11,6 +11,11 @@
  * store automatically. Until real credentials exist in `.env`, the actions
  * throw a clear "not configured" error the form surfaces inline.
  *
+ * Dependencies (Supabase client + local cache cleanup) are swappable via
+ * `setAuthDeps` — the Jest tests install faithful doubles, and the offline
+ * cleanup is required lazily so the store never drags native modules
+ * (expo-sqlite) into a plain-node test environment.
+ *
  * Skill rules:
  *  - `react-state-minimize`: only session facts live here; everything else is
  *    derived.
@@ -21,14 +26,18 @@
  */
 
 import { create } from 'zustand';
-import type { Session } from '@supabase/supabase-js';
+import type {
+  AuthError,
+  FunctionsError,
+  Session,
+  User,
+  VerifyOtpParams,
+} from '@supabase/supabase-js';
 
-import { clearCacheForUser, clearQueueForUser } from '@/db/offline';
 import {
   isSessionExpiredError,
   SESSION_EXPIRED_MESSAGE,
 } from '@/lib/session-errors';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 
 export const NOT_CONFIGURED_MESSAGE =
   'Supabase is not configured — add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to .env';
@@ -97,6 +106,102 @@ interface AuthStore {
   signOut: () => Promise<void>;
 }
 
+// --- Dependencies -----------------------------------------------------------
+
+/** The Supabase surface the auth store drives (a subset of SupabaseClient). */
+export interface AuthSupabase {
+  auth: {
+    getSession: () => Promise<{ data: { session: Session | null } }>;
+    onAuthStateChange: (
+      callback: (event: string, session: Session | null) => void,
+    ) => { data: { subscription: { unsubscribe: () => void } } };
+    signInWithPassword: (credentials: {
+      email: string;
+      password: string;
+    }) => Promise<{
+      data: { session: Session | null };
+      error: AuthError | null;
+    }>;
+    signUp: (credentials: { email: string; password: string }) => Promise<{
+      data: { session: Session | null; user: User | null };
+      error: AuthError | null;
+    }>;
+    resend: (options: {
+      type: 'signup';
+      email: string;
+    }) => Promise<{ error: AuthError | null }>;
+    resetPasswordForEmail: (
+      email: string,
+      options: { redirectTo?: string },
+    ) => Promise<{ error: AuthError | null }>;
+    verifyOtp: (params: VerifyOtpParams) => Promise<{
+      data: { session: Session | null };
+      error: AuthError | null;
+    }>;
+    setSession: (params: {
+      access_token: string;
+      refresh_token: string;
+    }) => Promise<{
+      data: { session: Session | null };
+      error: AuthError | null;
+    }>;
+    updateUser: (attributes: {
+      password: string;
+    }) => Promise<{ data: { user: User | null }; error: AuthError | null }>;
+    signOut: () => Promise<{ error: AuthError | null }>;
+  };
+  functions: {
+    invoke: (functionName: string) => Promise<{ error: FunctionsError | null }>;
+  };
+}
+
+/** Everything the auth store needs from the outside world. */
+export interface AuthDeps {
+  isSupabaseConfigured: boolean;
+  supabase: AuthSupabase;
+  clearCacheForUser: (userId: string) => Promise<void>;
+  clearQueueForUser: (userId: string) => Promise<void>;
+}
+
+let deps: AuthDeps | null = null;
+
+/**
+ * Build the production wiring. Lazy `require` keeps the native modules
+ * (expo-secure-store via the Supabase client, expo-sqlite via the sync
+ * coordinator) out of the plain-node Jest env; Metro bundles the literal
+ * requires statically.
+ */
+function buildDefaultDeps(): AuthDeps {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { isSupabaseConfigured, supabase } = require('@/lib/supabase');
+  return {
+    isSupabaseConfigured,
+    supabase,
+    clearCacheForUser: (userId) =>
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/db/offline').clearCacheForUser(userId),
+    clearQueueForUser: (userId) =>
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/db/offline').clearQueueForUser(userId),
+  };
+}
+
+function currentDeps(): AuthDeps {
+  if (deps === null) deps = buildDefaultDeps();
+  return deps;
+}
+
+/**
+ * Swap the auth store's external dependencies (test seam). Returns the
+ * previously installed set (or `null` before the first swap) so callers can
+ * restore it. Passing `null` restores the production wiring.
+ */
+export function setAuthDeps(next: AuthDeps | null): AuthDeps | null {
+  const previous = deps;
+  deps = next;
+  return previous;
+}
+
 let unsubscribeAuth: (() => void) | null = null;
 
 /** Extract the one-time recovery token from a pasted reset link. */
@@ -113,6 +218,8 @@ function decodeJwtSub(token: string): string | null {
     const b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
     // escape/unescape keep UTF-8 JSON parseable from atob's latin1 output.
     const json = decodeURIComponent(escape(atob(b64)));
+    // SAFETY: the payload is base64-encoded JSON; only the optional `sub`
+    // claim is read, and it is null-guarded by the caller.
     return (JSON.parse(json) as { sub?: string }).sub ?? null;
   } catch {
     return null;
@@ -130,15 +237,6 @@ function friendlyAuthError(message: string): string {
   return message;
 }
 
-/** Extract a message from an auth error (Error instance or GoTrue object). */
-function messageOf(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === 'object' && error !== null && 'message' in error) {
-    return String((error as { message: unknown }).message);
-  }
-  return String(error);
-}
-
 /**
  * The single error contract for user-invoked auth actions: record the failure
  * on `store.error` (friendly copy) and return a throwable Error, so callers
@@ -148,9 +246,9 @@ function messageOf(error: unknown): string {
  */
 function failAuthAction(
   set: (partial: Partial<AuthStore>) => void,
-  error: unknown,
+  error: Error,
 ): Error {
-  const message = friendlyAuthError(messageOf(error));
+  const message = friendlyAuthError(error.message);
   set({ isLoading: false, error: message });
   return new Error(message);
 }
@@ -194,37 +292,39 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   initialize: async () => {
     if (get().hasInitialized) return;
 
-    if (!isSupabaseConfigured) {
+    if (!currentDeps().isSupabaseConfigured) {
       set({ isLoading: false, hasInitialized: true });
       return;
     }
 
-    const { data } = await supabase.auth.getSession();
+    const { data } = await currentDeps().supabase.auth.getSession();
     applySession(data.session);
 
     unsubscribeAuth?.();
-    const { data: subscription } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+    const { data: subscription } =
+      currentDeps().supabase.auth.onAuthStateChange((event, session) => {
         applySession(session);
         // A recovery link opens the app with a fresh session — the reset
         // screen keys off this flag to show the password form.
         if (event === 'PASSWORD_RECOVERY') {
           set({ recoveryPending: true });
         }
-      },
-    );
+      });
     unsubscribeAuth = subscription.subscription.unsubscribe;
 
     set({ hasInitialized: true });
   },
 
   signIn: async (email, password) => {
-    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    if (!currentDeps().isSupabaseConfigured) {
+      throw new Error(NOT_CONFIGURED_MESSAGE);
+    }
     set({ isLoading: true, error: null });
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+    const { data, error } =
+      await currentDeps().supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
     if (error) {
       throw failAuthAction(set, error);
     }
@@ -232,9 +332,11 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   signUp: async (email, password) => {
-    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    if (!currentDeps().isSupabaseConfigured) {
+      throw new Error(NOT_CONFIGURED_MESSAGE);
+    }
     set({ isLoading: true, error: null });
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await currentDeps().supabase.auth.signUp({
       email: email.trim(),
       password,
     });
@@ -257,14 +359,19 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   resendVerificationEmail: async () => {
     const email = get().verificationEmail;
     if (!email) throw new Error('No email awaiting verification.');
-    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
-    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    if (!currentDeps().isSupabaseConfigured) {
+      throw new Error(NOT_CONFIGURED_MESSAGE);
+    }
+    const { error } = await currentDeps().supabase.auth.resend({
+      type: 'signup',
+      email,
+    });
     if (error) throw failAuthAction(set, error);
   },
 
   checkVerification: async () => {
-    if (!isSupabaseConfigured) return false;
-    const { data } = await supabase.auth.getSession();
+    if (!currentDeps().isSupabaseConfigured) return false;
+    const { data } = await currentDeps().supabase.auth.getSession();
     if (data.session) {
       applySession(data.session);
       return true;
@@ -273,11 +380,14 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   requestPasswordReset: async (email, redirectTo) => {
-    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    if (!currentDeps().isSupabaseConfigured) {
+      throw new Error(NOT_CONFIGURED_MESSAGE);
+    }
     set({ isLoading: true, error: null });
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo,
-    });
+    const { error } = await currentDeps().supabase.auth.resetPasswordForEmail(
+      email.trim(),
+      { redirectTo },
+    );
     if (error) {
       throw failAuthAction(set, error);
     }
@@ -285,9 +395,11 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   verifyRecoveryCode: async (email, code) => {
-    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    if (!currentDeps().isSupabaseConfigured) {
+      throw new Error(NOT_CONFIGURED_MESSAGE);
+    }
     set({ isLoading: true, error: null });
-    const { data, error } = await supabase.auth.verifyOtp({
+    const { data, error } = await currentDeps().supabase.auth.verifyOtp({
       email: email.trim(),
       token: code.trim(),
       type: 'recovery',
@@ -300,7 +412,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   handleAuthUrl: async (url) => {
-    if (!isSupabaseConfigured) return false;
+    if (!currentDeps().isSupabaseConfigured) return false;
     const params = new URLSearchParams(
       (url.split('#')[1] ?? url.split('?')[1] ?? '').toString(),
     );
@@ -315,7 +427,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     // next updateUser then fails with "Auth session missing!". If the link
     // belongs to the signed-in user, the existing session IS the recovery
     // grant; otherwise ignore it.
-    const { data: current } = await supabase.auth.getSession();
+    const { data: current } = await currentDeps().supabase.auth.getSession();
     if (current.session) {
       if (decodeJwtSub(accessToken) === current.session.user.id) {
         set({ recoveryPending: true });
@@ -324,7 +436,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
       return false;
     }
 
-    const { error } = await supabase.auth.setSession({
+    const { error } = await currentDeps().supabase.auth.setSession({
       access_token: accessToken,
       refresh_token: refreshToken,
     });
@@ -339,14 +451,16 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   verifyRecoveryLink: async (link) => {
-    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    if (!currentDeps().isSupabaseConfigured) {
+      throw new Error(NOT_CONFIGURED_MESSAGE);
+    }
     const token = parseRecoveryToken(link);
     if (!token)
       throw new Error('That link does not look like a password reset link.');
     set({ isLoading: true, error: null });
     // Email links carry the hashed token in `token` — verifyOtp's token_hash
     // variant is the API for it (no email needed for recovery).
-    const { data, error } = await supabase.auth.verifyOtp({
+    const { data, error } = await currentDeps().supabase.auth.verifyOtp({
       token_hash: token,
       type: 'recovery',
     });
@@ -358,9 +472,13 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   updatePassword: async (password) => {
-    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    if (!currentDeps().isSupabaseConfigured) {
+      throw new Error(NOT_CONFIGURED_MESSAGE);
+    }
     set({ isLoading: true, error: null });
-    const { data, error } = await supabase.auth.updateUser({ password });
+    const { data, error } = await currentDeps().supabase.auth.updateUser({
+      password,
+    });
     if (error) {
       if (isSessionExpiredError(error)) {
         await get().expireSession(SESSION_EXPIRED_MESSAGE);
@@ -371,7 +489,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     // updateUser returns the user, not a session — the recovery session stays.
     set({
       isSignedIn: true,
-      email: data.user.email ?? get().email,
+      email: data.user?.email ?? get().email,
       isLoading: false,
       error: null,
       recoveryPending: false,
@@ -379,13 +497,15 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   },
 
   verifyCurrentPassword: async (currentPassword) => {
-    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    if (!currentDeps().isSupabaseConfigured) {
+      throw new Error(NOT_CONFIGURED_MESSAGE);
+    }
     set({ isLoading: true, error: null });
     const email = get().email;
     if (!email) {
-      throw failAuthAction(set, 'No signed-in account.');
+      throw failAuthAction(set, new Error('No signed-in account.'));
     }
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await currentDeps().supabase.auth.signInWithPassword({
       email,
       password: currentPassword,
     });
@@ -402,36 +522,41 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   clearRecovery: () => set({ recoveryPending: false }),
 
   deleteAccount: async () => {
-    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    if (!currentDeps().isSupabaseConfigured) {
+      throw new Error(NOT_CONFIGURED_MESSAGE);
+    }
     const userId = get().userId;
-    if (!userId) throw failAuthAction(set, 'No signed-in account.');
+    if (!userId) throw failAuthAction(set, new Error('No signed-in account.'));
     set({ isLoading: true, error: null });
-    const { error } = await supabase.functions.invoke('delete-account');
+    const { error } =
+      await currentDeps().supabase.functions.invoke('delete-account');
     if (error) {
       throw failAuthAction(set, error);
     }
     // Account is gone server-side — wipe everything local and sign out.
-    await clearCacheForUser(userId);
-    await clearQueueForUser(userId);
-    if (isSupabaseConfigured) {
-      await supabase.auth.signOut();
+    await currentDeps().clearCacheForUser(userId);
+    await currentDeps().clearQueueForUser(userId);
+    if (currentDeps().isSupabaseConfigured) {
+      await currentDeps().supabase.auth.signOut();
     }
     applySession(null);
     set({ recoveryPending: false, recoveryEmail: null, isLoading: false });
   },
 
   expireSession: async (message) => {
-    if (isSupabaseConfigured) {
-      await supabase.auth.signOut().catch(() => {
-        // Local-only sign-out is fine — the server session is already dead.
-      });
+    if (currentDeps().isSupabaseConfigured) {
+      await currentDeps()
+        .supabase.auth.signOut()
+        .catch(() => {
+          // Local-only sign-out is fine — the server session is already dead.
+        });
     }
     clearLocalSession(set, message);
   },
 
   signOut: async () => {
-    if (isSupabaseConfigured) {
-      await supabase.auth.signOut();
+    if (currentDeps().isSupabaseConfigured) {
+      await currentDeps().supabase.auth.signOut();
     }
     clearLocalSession(set);
   },

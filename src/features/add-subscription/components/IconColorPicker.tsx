@@ -14,6 +14,7 @@ import { StyleSheet, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Text } from '@/design/components';
+import { iconName } from '@/design/icons';
 import { useTheme } from '@/design/theme';
 import { radius, spacing } from '@/design/tokens';
 
@@ -95,7 +96,7 @@ export function IconColorPicker({
               ]}
             >
               <Ionicons
-                name={name as never}
+                name={iconName(name)}
                 size={22}
                 color={selected ? colors.accent : colors.textSecondary}
               />

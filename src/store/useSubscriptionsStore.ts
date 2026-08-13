@@ -27,7 +27,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { getAllSubscriptions } from '@/db/queries';
 import {
   applyMutation,
-  errorMessage,
   flushPendingOps,
   isNetworkError,
   pendingOpCount,
@@ -195,12 +194,13 @@ export const useSubscriptionsStore = create<SubscriptionsStore>()(
       } catch (e) {
         // Never leave a stale/previous account's rows visible on failure —
         // empty beats wrong.
-        set({ isLoading: false, error: errorMessage(e), subs: [] });
-        if (e instanceof Error && /session|jwt|foreign key/i.test(e.message)) {
+        const failure = e instanceof Error ? e : new Error(String(e));
+        set({ isLoading: false, error: failure.message, subs: [] });
+        if (/session|jwt|foreign key/i.test(failure.message)) {
           void useAuthStore.getState().expireSession(SESSION_EXPIRED_MESSAGE);
           return;
         }
-        if (isNetworkError(e) && userId) {
+        if (isNetworkError(failure) && userId) {
           const cached = await readCache<Subscription[]>('subs', userId);
           set({ subs: cached ?? [], isOffline: true });
         }
@@ -241,7 +241,10 @@ export const useSubscriptionsStore = create<SubscriptionsStore>()(
     clearAll: async () => {
       const ctx = syncContext();
       if (!ctx) return;
-      const result = await applyMutation({ type: 'clear_all' }, ctx);
+      const result = await applyMutation(
+        { type: 'clear_all', cleared: true },
+        ctx,
+      );
       applyResult(set, get, result);
     },
 
@@ -268,7 +271,7 @@ export const useSubscriptionsStore = create<SubscriptionsStore>()(
         });
         await refreshPendingCount(set);
       } catch (e) {
-        set({ syncError: errorMessage(e) });
+        set({ syncError: e instanceof Error ? e.message : String(e) });
       }
     },
   }),

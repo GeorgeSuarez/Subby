@@ -28,7 +28,7 @@ export interface AuthCopy {
   switchAction: string;
 }
 
-export const copyByMode: Record<AuthMode, AuthCopy> = {
+export const copyByMode = {
   signIn: {
     headline: 'Sign in',
     subline: 'Track every subscription, all in one place.',
@@ -43,7 +43,7 @@ export const copyByMode: Record<AuthMode, AuthCopy> = {
     switchPrompt: 'Already have an account?',
     switchAction: 'Sign in',
   },
-};
+} satisfies Record<AuthMode, AuthCopy>;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -61,7 +61,7 @@ export function defaultDraft(): AuthDraft {
  * Credentials are owned by Supabase; local validation only enforces format
  * (sign-up enforces a password minimum, sign-in requires it non-empty).
  */
-export function validateDraft(draft: AuthDraft, mode: AuthMode): AuthErrors {
+export function validateDraft(draft: AuthDraft, mode: AuthMode) {
   const errors: AuthErrors = {};
 
   const email = draft.email.trim();

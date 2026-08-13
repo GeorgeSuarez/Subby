@@ -27,7 +27,6 @@ export { ListRow, type ListRowProps } from '@/design/components/ListRow';
 export {
   SegmentedControl,
   type SegmentedControlProps,
-  type SegmentedOption,
 } from '@/design/components/SegmentedControl';
 export {
   SearchField,

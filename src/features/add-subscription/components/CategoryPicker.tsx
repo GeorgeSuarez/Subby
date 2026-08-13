@@ -17,6 +17,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Button, Text } from '@/design/components';
+import { iconName } from '@/design/icons';
 import { Sheet } from '@/design/components/Sheet';
 import { useTheme } from '@/design/theme';
 import { radius, spacing } from '@/design/tokens';
@@ -62,7 +63,7 @@ export function CategoryPicker({ value, onSelect }: CategoryPickerProps) {
         ]}
       >
         <Ionicons
-          name={current.icon as never}
+          name={iconName(current.icon)}
           size={20}
           color={colors.accent}
         />
@@ -104,7 +105,7 @@ export function CategoryPicker({ value, onSelect }: CategoryPickerProps) {
                 ]}
               >
                 <Ionicons
-                  name={c.icon as never}
+                  name={iconName(c.icon)}
                   size={22}
                   color={selected ? colors.accent : colors.textSecondary}
                 />

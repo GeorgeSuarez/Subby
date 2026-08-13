@@ -29,15 +29,12 @@ export interface StatProps {
   accessoryRight?: ReactNode;
 }
 
-const toneForDelta: Record<
-  'up-good' | 'up-bad' | 'down-good' | 'down-bad',
-  BadgeTone
-> = {
+const toneForDelta = {
   'up-good': 'positive',
   'up-bad': 'negative',
   'down-good': 'positive',
   'down-bad': 'negative',
-};
+} as const;
 
 export function Stat({
   label,

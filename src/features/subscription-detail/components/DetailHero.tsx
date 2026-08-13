@@ -13,6 +13,7 @@ import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Badge, type BadgeTone, Text } from '@/design/components';
+import { iconName } from '@/design/icons';
 import { useTheme } from '@/design/theme';
 import { layout, radius, spacing } from '@/design/tokens';
 import { cycleMeta, categoryMeta } from '@/utils/constants';
@@ -28,10 +29,7 @@ export function DetailHero({ sub }: DetailHeroProps) {
   const cat = categoryMeta(sub.category);
   const cycle = cycleMeta(sub.cycle);
 
-  const tint =
-    typeof sub.color === 'string' && sub.color.length > 0
-      ? sub.color
-      : colors.accent;
+  const tint = sub.color ? sub.color : colors.accent;
   const badgeTone: BadgeTone = sub.archived ? 'warning' : 'accent';
 
   return (
@@ -47,7 +45,7 @@ export function DetailHero({ sub }: DetailHeroProps) {
           },
         ]}
       >
-        <Ionicons name={sub.icon as never} size={48} color={tint} />
+        <Ionicons name={iconName(sub.icon)} size={48} color={tint} />
       </View>
 
       <View style={styles.body}>

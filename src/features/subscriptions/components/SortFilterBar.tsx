@@ -18,11 +18,11 @@ import type {
   SubscriptionSort,
 } from '@/types/subscription';
 
-const SORT_LABELS: Record<SubscriptionSort, string> = {
-  name: 'Name',
-  amount: 'Cost',
-  nextRenewal: 'Renewal',
-};
+const SORT_OPTIONS: readonly { value: SubscriptionSort; label: string }[] = [
+  { value: 'name', label: 'Name' },
+  { value: 'amount', label: 'Cost' },
+  { value: 'nextRenewal', label: 'Renewal' },
+];
 
 const FILTER_OPTIONS: readonly { value: SubscriptionFilter; label: string }[] =
   [
@@ -44,8 +44,7 @@ export function SortFilterBar({
   onSort,
   onFilter,
 }: SortFilterBarProps) {
-  const sortKeys = Object.keys(SORT_LABELS) as SubscriptionSort[];
-  const selectedIndex = sortKeys.indexOf(sort);
+  const selectedIndex = SORT_OPTIONS.findIndex((o) => o.value === sort);
 
   return (
     <View style={styles.container}>
@@ -53,11 +52,11 @@ export function SortFilterBar({
         Sort by
       </Text>
       <SegmentedControl
-        segments={sortKeys.map((k) => SORT_LABELS[k])}
+        segments={SORT_OPTIONS.map((o) => o.label)}
         selectedIndex={selectedIndex}
         onSelect={(i) => {
           void selection();
-          onSort(sortKeys[i] ?? 'nextRenewal');
+          onSort(SORT_OPTIONS[i]?.value ?? 'nextRenewal');
         }}
       />
 

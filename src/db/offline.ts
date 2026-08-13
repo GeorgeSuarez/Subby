@@ -16,31 +16,17 @@
  * so `edit`/`archive`/`remove` always target real (synced) ids — no temp ids
  * or remapping. Ops are never dropped — a failed op halts the flush, records
  * `attempts`/`last_error`, and is retried on the next flush.
+ *
+ * Dependencies: the module never imports native/remote modules at the top
+ * level. `setSyncDeps` swaps them (tests install faithful doubles); the
+ * production wiring is built lazily on first use so the module stays
+ * loadable in a plain-node Jest environment.
  */
 
-import { getDatabase } from '@/db/client';
-import {
-  clearAllNotificationIds,
-  deleteNotificationId,
-  getAllNotificationIds,
-  setNotificationId,
-} from '@/db/notification-sidecar';
-import {
-  deleteAllSubscriptions,
-  deleteSubscription,
-  getAllSubscriptions,
-  insertSubscription,
-  setArchived,
-  updateSubscription,
-} from '@/db/queries';
-import { getNetworkReachability } from '@/db/network';
+import type { SQLiteBindValue, SQLiteRunResult } from 'expo-sqlite';
+
 import { isSessionExpiredError } from '@/lib/session-errors';
-import {
-  cancelRenewalReminder,
-  rescheduleRenewalReminder,
-  scheduleRenewalReminder,
-} from '@/utils/notifications';
-import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import type { NetworkReachability } from '@/db/network';
 import type {
   Subscription,
   SubscriptionDraft,
@@ -50,17 +36,147 @@ import type {
 // --- Errors -----------------------------------------------------------------
 
 /** True when a network error (rather than a server-side one) occurred. */
-export function isNetworkError(e: unknown): boolean {
+export function isNetworkError(e: Error): boolean {
   if (e instanceof TypeError) return true;
-  const message = e instanceof Error ? e.message : String(e);
   return /network request failed|fetch failed|temporarily unavailable/i.test(
-    message,
+    e.message,
   );
 }
 
-export function errorMessage(e: unknown): string {
-  if (e instanceof Error) return e.message;
-  return typeof e === 'string' ? e : 'Unknown error';
+// --- Dependencies -----------------------------------------------------------
+
+/** The SQLite surface the coordinator touches (mirrors expo-sqlite's
+ * `SQLiteDatabase` bind forms: a single array, or variadic values). */
+export interface SyncDb {
+  getFirstAsync<T>(
+    source: string,
+    params: SQLiteBindValue[],
+  ): Promise<T | null>;
+  getFirstAsync<T>(
+    source: string,
+    ...params: SQLiteBindValue[]
+  ): Promise<T | null>;
+  getAllAsync<T>(source: string, params: SQLiteBindValue[]): Promise<T[]>;
+  getAllAsync<T>(source: string, ...params: SQLiteBindValue[]): Promise<T[]>;
+  runAsync(source: string, params: SQLiteBindValue[]): Promise<SQLiteRunResult>;
+  runAsync(
+    source: string,
+    ...params: SQLiteBindValue[]
+  ): Promise<SQLiteRunResult>;
+}
+
+/** The prefs row the pipeline upserts into `user_prefs`. */
+export interface SyncPrefsPayload {
+  currency: string;
+  budget: number;
+  reminders_enabled: boolean;
+  updated_at: number;
+}
+
+/** The Supabase surface the pipeline touches (user_prefs upserts). */
+export interface SyncSupabase {
+  from: (table: string) => {
+    upsert: (
+      value: SyncPrefsPayload,
+    ) => PromiseLike<{ error: { message: string } | null }>;
+  };
+}
+
+/** Everything the coordinator needs from the outside world. */
+export interface SyncDeps {
+  getDatabase: () => Promise<SyncDb>;
+  getNetworkReachability: () => Promise<NetworkReachability>;
+  isSessionExpiredError: (e: Error) => boolean;
+  isSupabaseConfigured: boolean;
+  supabase: SyncSupabase;
+  getAllSubscriptions: (includeSeeded?: boolean) => Promise<Subscription[]>;
+  insertSubscription: (
+    draft: SubscriptionDraft,
+    options?: { seeded?: boolean },
+  ) => Promise<Subscription>;
+  updateSubscription: (
+    id: string,
+    patch: SubscriptionPatch,
+  ) => Promise<Subscription | null>;
+  setArchived: (id: string, archived: boolean) => Promise<Subscription | null>;
+  deleteSubscription: (id: string) => Promise<void>;
+  deleteAllSubscriptions: () => Promise<void>;
+  clearAllNotificationIds: () => Promise<void>;
+  deleteNotificationId: (id: string) => Promise<void>;
+  getAllNotificationIds: () => Promise<Record<string, string>>;
+  setNotificationId: (id: string, notificationId: string) => Promise<void>;
+  scheduleRenewalReminder: (
+    sub: Subscription,
+    remindersEnabled: boolean,
+  ) => Promise<string | null>;
+  rescheduleRenewalReminder: (
+    sub: Subscription,
+    previousNotificationId: string | null | undefined,
+    remindersEnabled: boolean,
+  ) => Promise<string | null>;
+  cancelRenewalReminder: (
+    notificationId: string | null | undefined,
+  ) => Promise<void>;
+}
+
+let deps: SyncDeps | null = null;
+
+/**
+ * Build the production wiring. Deliberate `require` (not static `import`):
+ * Metro bundles literal requires statically, and Jest's plain-node env can't
+ * load the native modules (expo-sqlite, expo-notifications, expo-secure-store
+ * via the Supabase client) — this runs only on first use, and only in the
+ * real app.
+ */
+function buildDefaultDeps(): SyncDeps {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const client = require('@/db/client');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const network = require('@/db/network');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const queries = require('@/db/queries');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const sidecar = require('@/db/notification-sidecar');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const notifications = require('@/utils/notifications');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { isSupabaseConfigured, supabase } = require('@/lib/supabase');
+  return {
+    getDatabase: client.getDatabase,
+    getNetworkReachability: network.getNetworkReachability,
+    isSessionExpiredError,
+    isSupabaseConfigured,
+    supabase,
+    getAllSubscriptions: queries.getAllSubscriptions,
+    insertSubscription: queries.insertSubscription,
+    updateSubscription: queries.updateSubscription,
+    setArchived: queries.setArchived,
+    deleteSubscription: queries.deleteSubscription,
+    deleteAllSubscriptions: queries.deleteAllSubscriptions,
+    clearAllNotificationIds: sidecar.clearAllNotificationIds,
+    deleteNotificationId: sidecar.deleteNotificationId,
+    getAllNotificationIds: sidecar.getAllNotificationIds,
+    setNotificationId: sidecar.setNotificationId,
+    scheduleRenewalReminder: notifications.scheduleRenewalReminder,
+    rescheduleRenewalReminder: notifications.rescheduleRenewalReminder,
+    cancelRenewalReminder: notifications.cancelRenewalReminder,
+  };
+}
+
+function currentDeps(): SyncDeps {
+  if (deps === null) deps = buildDefaultDeps();
+  return deps;
+}
+
+/**
+ * Swap the coordinator's external dependencies (test seam). Returns the
+ * previously installed set (or `null` before the first swap) so callers can
+ * restore it. Passing `null` restores the production wiring.
+ */
+export function setSyncDeps(next: SyncDeps | null): SyncDeps | null {
+  const previous = deps;
+  deps = next;
+  return previous;
 }
 
 // --- Cache ------------------------------------------------------------------
@@ -73,25 +189,27 @@ export async function readCache<T>(
   scope: string,
   userId: string,
 ): Promise<T | null> {
-  const db = await getDatabase();
+  const db = await currentDeps().getDatabase();
   const row = await db.getFirstAsync<{ value: string }>(
     'SELECT value FROM sync_cache WHERE key = ?;',
     cacheKey(scope, userId),
   );
   if (!row) return null;
   try {
+    // SAFETY: the cache is written only by writeCache below, which stores
+    // JSON.stringify(T); parse restores the exact written shape.
     return JSON.parse(row.value) as T;
   } catch {
     return null;
   }
 }
 
-export async function writeCache(
+export async function writeCache<T>(
   scope: string,
   userId: string,
-  value: unknown,
+  value: T,
 ): Promise<void> {
-  const db = await getDatabase();
+  const db = await currentDeps().getDatabase();
   await db.runAsync(
     'INSERT OR REPLACE INTO sync_cache (key, value, updated_at) VALUES (?, ?, ?);',
     [cacheKey(scope, userId), JSON.stringify(value), Date.now()],
@@ -99,7 +217,7 @@ export async function writeCache(
 }
 
 export async function clearCacheForUser(userId: string): Promise<void> {
-  const db = await getDatabase();
+  const db = await currentDeps().getDatabase();
   await db.runAsync('DELETE FROM sync_cache WHERE key LIKE ?;', `%:${userId}`);
 }
 
@@ -119,16 +237,17 @@ type QueuePayloadMap = {
   edit: { id: string; patch: SubscriptionPatch };
   archive: { id: string; archived: boolean };
   remove: { id: string };
-  clear_all: Record<string, unknown>;
+  /** The only possible payload is "clear everything". */
+  clear_all: { cleared: boolean };
   prefs: {
-    prefs: {
-      currency: string;
-      budget: number;
-      reminders_enabled: boolean;
-      updated_at: number;
-    };
+    prefs: SyncPrefsPayload;
   };
 };
+
+/** The per-op payload union — what actually gets serialized to the queue. */
+export type QueuePayload = {
+  [T in QueueOpType]: QueuePayloadMap[T];
+}[QueueOpType];
 
 /** A mutation ready to apply online or enqueue offline. */
 export type SyncOp = {
@@ -146,7 +265,7 @@ export interface QueueOp {
   opId: string;
   userId: string;
   type: QueueOpType;
-  payload: Record<string, unknown>;
+  payload: QueuePayload;
   createdAt: number;
   attempts: number;
   lastError: string | null;
@@ -159,7 +278,7 @@ export type MutateResult =
   | { status: 'error'; message: string };
 
 function generateOpId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+  if (crypto?.randomUUID) {
     return crypto.randomUUID();
   }
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -173,9 +292,9 @@ function generateOpId(): string {
 export async function enqueueOp(
   userId: string,
   type: QueueOpType,
-  payload: Record<string, unknown>,
+  payload: QueuePayload,
 ): Promise<QueueOp> {
-  const db = await getDatabase();
+  const db = await currentDeps().getDatabase();
   const op: QueueOp = {
     opId: generateOpId(),
     userId,
@@ -195,7 +314,7 @@ export async function enqueueOp(
 
 /** Pending ops for a user, oldest first. */
 export async function getPendingOps(userId: string): Promise<QueueOp[]> {
-  const db = await getDatabase();
+  const db = await currentDeps().getDatabase();
   const rows = await db.getAllAsync<{
     op_id: string;
     user_id: string;
@@ -212,7 +331,9 @@ export async function getPendingOps(userId: string): Promise<QueueOp[]> {
     opId: r.op_id,
     userId: r.user_id,
     type: r.type,
-    payload: JSON.parse(r.payload) as Record<string, unknown>,
+    // SAFETY: enqueueOp serializes a typed QueuePayload; the round-trip
+    // through SQLite preserves the per-type payload shape.
+    payload: JSON.parse(r.payload) as QueuePayload,
     createdAt: r.created_at,
     attempts: r.attempts,
     lastError: r.last_error,
@@ -220,7 +341,7 @@ export async function getPendingOps(userId: string): Promise<QueueOp[]> {
 }
 
 export async function pendingOpCount(userId: string): Promise<number> {
-  const db = await getDatabase();
+  const db = await currentDeps().getDatabase();
   const row = await db.getFirstAsync<{ n: number }>(
     'SELECT COUNT(*) AS n FROM sync_queue WHERE user_id = ?;',
     userId,
@@ -229,12 +350,12 @@ export async function pendingOpCount(userId: string): Promise<number> {
 }
 
 async function markOpSuccess(opId: string): Promise<void> {
-  const db = await getDatabase();
+  const db = await currentDeps().getDatabase();
   await db.runAsync('DELETE FROM sync_queue WHERE op_id = ?;', opId);
 }
 
 async function markOpFailure(opId: string, error: string): Promise<void> {
-  const db = await getDatabase();
+  const db = await currentDeps().getDatabase();
   await db.runAsync(
     'UPDATE sync_queue SET attempts = attempts + 1, last_error = ? WHERE op_id = ?;',
     [error, opId],
@@ -243,7 +364,7 @@ async function markOpFailure(opId: string, error: string): Promise<void> {
 
 /** Drop queued prefs ops (coalescing: a direct write supersedes them). */
 export async function clearQueuedPrefs(userId: string): Promise<void> {
-  const db = await getDatabase();
+  const db = await currentDeps().getDatabase();
   await db.runAsync(
     "DELETE FROM sync_queue WHERE user_id = ? AND type = 'prefs';",
     userId,
@@ -252,18 +373,22 @@ export async function clearQueuedPrefs(userId: string): Promise<void> {
 
 /** Wipe a user's queue (account deletion). */
 export async function clearQueueForUser(userId: string): Promise<void> {
-  const db = await getDatabase();
+  const db = await currentDeps().getDatabase();
   await db.runAsync('DELETE FROM sync_queue WHERE user_id = ?;', userId);
 }
 
 // --- Pipeline ---------------------------------------------------------------
 
-function stripType(op: SyncOp): Record<string, unknown> {
+function stripType(op: SyncOp): QueuePayload {
   const { type: _type, ...payload } = op;
-  return payload as Record<string, unknown>;
+  // SAFETY: QueuePayload is exactly the per-type rest shape of a SyncOp;
+  // stripping the discriminator leaves the op's payload.
+  return payload as QueuePayload;
 }
 
 function syncOpFromQueue(op: QueueOp): SyncOp {
+  // SAFETY: the stored payload was produced by stripType (see enqueueOp), so
+  // reattaching the type key reconstructs the original discriminated op.
   return { type: op.type, ...op.payload } as SyncOp;
 }
 
@@ -278,7 +403,7 @@ export async function applyMutation(
   ctx: SyncContext,
 ): Promise<MutateResult> {
   try {
-    if ((await getNetworkReachability()) === false) {
+    if ((await currentDeps().getNetworkReachability()) === false) {
       await enqueueOp(ctx.userId, op.type, stripType(op));
       return { status: 'queued' };
     }
@@ -293,16 +418,21 @@ export async function applyMutation(
       });
       return { status: 'synced', row: null, subs: null };
     }
-    const subs = await getAllSubscriptions(ctx.includeSeeded);
+    const subs = await currentDeps().getAllSubscriptions(ctx.includeSeeded);
     if (ctx.userId) await writeCache('subs', ctx.userId, subs);
     return { status: 'synced', row, subs };
   } catch (e) {
-    if (isNetworkError(e)) {
+    // Normalize the caught value at this boundary: every thrower in the
+    // pipeline rejects with an Error, so anything else folds into one here.
+    const failure = e instanceof Error ? e : new Error(String(e));
+    if (isNetworkError(failure)) {
       await enqueueOp(ctx.userId, op.type, stripType(op));
       return { status: 'queued' };
     }
-    if (isSessionExpiredError(e)) return { status: 'session-expired' };
-    return { status: 'error', message: errorMessage(e) };
+    if (currentDeps().isSessionExpiredError(failure)) {
+      return { status: 'session-expired' };
+    }
+    return { status: 'error', message: failure.message };
   }
 }
 
@@ -317,7 +447,9 @@ export async function flushPendingOps(
   userId: string,
   ctx: Pick<SyncContext, 'includeSeeded' | 'remindersEnabled'>,
 ): Promise<FlushResult> {
-  if (!isSupabaseConfigured) return { applied: 0, failed: 0, error: null };
+  if (!currentDeps().isSupabaseConfigured) {
+    return { applied: 0, failed: 0, error: null };
+  }
   const ops = await getPendingOps(userId);
   let applied = 0;
   for (const op of ops) {
@@ -326,7 +458,8 @@ export async function flushPendingOps(
       await markOpSuccess(op.opId);
       applied += 1;
     } catch (e) {
-      const message = errorMessage(e);
+      // Same boundary normalization as applyMutation above.
+      const message = e instanceof Error ? e.message : String(e);
       await markOpFailure(op.opId, message);
       return { applied, failed: ops.length - applied, error: message };
     }
@@ -346,47 +479,57 @@ async function executeOp(
 ): Promise<Subscription | null> {
   switch (op.type) {
     case 'add': {
-      const created = await insertSubscription(op.draft);
-      const notificationId = await scheduleRenewalReminder(
+      const created = await currentDeps().insertSubscription(op.draft);
+      const notificationId = await currentDeps().scheduleRenewalReminder(
         created,
         ctx.remindersEnabled,
       );
-      if (notificationId) await setNotificationId(created.id, notificationId);
+      if (notificationId) {
+        await currentDeps().setNotificationId(created.id, notificationId);
+      }
       return created;
     }
     case 'edit': {
       // Cancel the previous reminder, apply the patch, schedule the new one.
-      const sidecar = await getAllNotificationIds();
-      const row = await updateSubscription(op.id, op.patch);
+      const sidecar = await currentDeps().getAllNotificationIds();
+      const row = await currentDeps().updateSubscription(op.id, op.patch);
       if (!row) return null;
-      const notificationId = await rescheduleRenewalReminder(
+      const notificationId = await currentDeps().rescheduleRenewalReminder(
         row,
         sidecar[op.id],
         ctx.remindersEnabled,
       );
-      if (notificationId) await setNotificationId(row.id, notificationId);
+      if (notificationId) {
+        await currentDeps().setNotificationId(row.id, notificationId);
+      }
       return row;
     }
     case 'archive': {
-      const sidecar = await getAllNotificationIds();
-      if (op.archived) await cancelRenewalReminder(sidecar[op.id]);
-      const row = await setArchived(op.id, op.archived);
-      if (row && op.archived) await deleteNotificationId(op.id);
+      const sidecar = await currentDeps().getAllNotificationIds();
+      if (op.archived) {
+        await currentDeps().cancelRenewalReminder(sidecar[op.id]);
+      }
+      const row = await currentDeps().setArchived(op.id, op.archived);
+      if (row && op.archived) {
+        await currentDeps().deleteNotificationId(op.id);
+      }
       return row;
     }
     case 'remove': {
-      const sidecar = await getAllNotificationIds();
-      await cancelRenewalReminder(sidecar[op.id]);
-      await deleteSubscription(op.id);
+      const sidecar = await currentDeps().getAllNotificationIds();
+      await currentDeps().cancelRenewalReminder(sidecar[op.id]);
+      await currentDeps().deleteSubscription(op.id);
       return null;
     }
     case 'clear_all': {
-      await deleteAllSubscriptions();
-      await clearAllNotificationIds();
+      await currentDeps().deleteAllSubscriptions();
+      await currentDeps().clearAllNotificationIds();
       return null;
     }
     case 'prefs': {
-      const { error } = await supabase.from('user_prefs').upsert(op.prefs);
+      const { error } = await currentDeps()
+        .supabase.from('user_prefs')
+        .upsert(op.prefs);
       if (error) throw new Error(error.message);
       return null;
     }

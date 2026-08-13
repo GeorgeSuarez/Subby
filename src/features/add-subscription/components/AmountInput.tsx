@@ -6,7 +6,7 @@
  * holds the local focus state only (a UI affordance, not real data state).
  */
 
-import { forwardRef, type ComponentProps } from 'react';
+import { forwardRef, type ComponentRef } from 'react';
 import { currencyMeta } from '@/utils/constants';
 import type { CurrencyCode } from '@/types/subscription';
 import {
@@ -14,10 +14,7 @@ import {
   type TextFieldProps as TextFieldProps_in,
 } from '@/features/add-subscription/components/TextField';
 
-type TextRef =
-  ComponentProps<typeof TextField>['ref'] extends React.Ref<infer T>
-    ? T
-    : never;
+type TextRef = ComponentRef<typeof TextField>;
 
 const DECIMAL_RE = /^\d*\.?\d{0,2}$/;
 
@@ -35,7 +32,7 @@ export const AmountInput = forwardRef<TextRef, AmountInputProps>(
     const meta = currencyMeta(currency);
     return (
       <TextField
-        ref={ref as never}
+        ref={ref}
         value={value}
         onChangeText={(raw) => {
           // Strip group separators (commas) and spaces; keep single decimal dot.

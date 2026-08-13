@@ -58,7 +58,7 @@ describe('getRenewalStatus', () => {
     const status = getRenewalStatus(
       base({ nextRenewal: iso, cycle: 'yearly' }),
     );
-    expect(typeof status.label).toBe('string');
+    expect(status.label).toEqual(expect.any(String));
     expect(status.label.length).toBeGreaterThan(0);
     expect(status.nextISO).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     // Once walked forward, the date should be in or after today.

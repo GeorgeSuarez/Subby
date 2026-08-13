@@ -13,10 +13,13 @@
  */
 
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import {
+  CATEGORIES,
+  CURRENCIES,
+  CYCLES,
+  DEFAULT_CURRENCY,
+} from '@/utils/constants';
 import type {
-  CategorySlug,
-  CurrencyCode,
-  Cycle,
   Subscription,
   SubscriptionDraft,
   SubscriptionPatch,
@@ -48,17 +51,26 @@ interface SubscriptionRowRemote {
   seeded: boolean;
 }
 
-/** Coerce a PostgREST row into a domain Subscription. Numeric values arrive as
- * strings (numeric/bigint JSON) — coerced with Number(). */
+/**
+ * Coerce a PostgREST row into a domain Subscription. Numeric values arrive as
+ * strings (numeric/bigint JSON) — coerced with Number(). Enum-ish columns are
+ * checked against the known sets at this boundary; unknown values degrade to
+ * the defaults rather than flowing through as lies.
+ */
 function rowToSubscription(row: SubscriptionRowRemote): Subscription {
+  const currency =
+    CURRENCIES.find((c) => c.code === row.currency)?.code ?? DEFAULT_CURRENCY;
+  const cycle = CYCLES.find((c) => c.cycle === row.cycle)?.cycle ?? 'monthly';
+  const category =
+    CATEGORIES.find((c) => c.slug === row.category)?.slug ?? 'other';
   return {
     id: row.id,
     name: row.name,
     amount: Number(row.amount),
-    currency: row.currency as CurrencyCode,
-    cycle: row.cycle as Cycle,
+    currency,
+    cycle,
     nextRenewal: row.next_renewal,
-    category: row.category as CategorySlug,
+    category,
     icon: row.icon,
     color: row.color ?? undefined,
     notes: row.notes ?? undefined,
@@ -271,7 +283,7 @@ export async function deleteAllSubscriptions(): Promise<void> {
 function generateId(): string {
   // Hermes has no WebCrypto, so this is usually undefined on device — the
   // fallback below must produce a valid UUID (the DB column is `uuid`).
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+  if (crypto?.randomUUID) {
     return crypto.randomUUID();
   }
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {

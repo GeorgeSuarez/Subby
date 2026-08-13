@@ -14,12 +14,13 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useTheme } from '@/design/theme';
+import { iconName } from '@/design/icons';
 import { radius, spacing, type Palette } from '@/design/tokens';
 
 type AvatarSize = 'sm' | 'md' | 'lg';
 
-const pixelsBySize: Record<AvatarSize, number> = { sm: 32, md: 44, lg: 64 };
-const iconBySize: Record<AvatarSize, number> = { sm: 18, md: 22, lg: 32 };
+const pixelsBySize = { sm: 32, md: 44, lg: 64 };
+const iconBySize = { sm: 18, md: 22, lg: 32 };
 
 export interface AvatarProps {
   /** Remote image source; omit to use `icon`. */
@@ -70,7 +71,7 @@ export const Avatar = forwardRef<View, AvatarProps>(function Avatar(
         <Image source={source} style={styles.image} contentFit="cover" />
       ) : (
         <Ionicons
-          name={icon as never}
+          name={iconName(icon)}
           size={iconBySize[size]}
           color={resolvedIconColor}
         />

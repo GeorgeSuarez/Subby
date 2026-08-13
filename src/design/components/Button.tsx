@@ -58,11 +58,11 @@ const sizeConfig = {
   },
 } as const;
 
-const textSizeFor: Record<Size, 'caption' | 'body' | 'headline'> = {
+const textSizeFor = {
   sm: 'caption',
   md: 'body',
   lg: 'headline',
-};
+} as const;
 
 export const Button = forwardRef<View, ButtonProps>(function Button(
   {

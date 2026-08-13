@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 
 import { Ionicons } from '@expo/vector-icons';
+import { iconName } from '@/design/icons';
 import { useTheme } from '@/design/theme';
 import { radius, spacing, type Palette } from '@/design/tokens';
 
@@ -73,7 +74,7 @@ export const IconButton = forwardRef<View, IconButtonProps>(function IconButton(
       {...rest}
     >
       <View style={styles.iconContainer}>
-        <Ionicons name={name as never} size={size} color={iconColor} />
+        <Ionicons name={iconName(name)} size={size} color={iconColor} />
       </View>
     </Pressable>
   );

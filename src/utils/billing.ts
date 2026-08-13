@@ -182,8 +182,8 @@ export function renewalsWithin(
 /** Bucket of active subs grouped by category slug. */
 export function groupByCategory(
   subs: readonly Subscription[],
-): Map<string, Subscription[]> {
-  const m = new Map<string, Subscription[]>();
+): Map<CategorySlug, Subscription[]> {
+  const m = new Map<CategorySlug, Subscription[]>();
   for (const s of subs) {
     if (s.archived) continue;
     const list = m.get(s.category) ?? [];
@@ -245,7 +245,7 @@ export function categoryBreakdown(
   const grand = totalMonthlySpend(subs);
   const items: CategoryBreakdownItem[] = [];
   for (const [slug, list] of groupByCategory(subs)) {
-    const category = slug as CategorySlug;
+    const category = slug;
     const monthlyTotal = list.reduce((sum, s) => sum + monthlyEquivalent(s), 0);
     items.push({
       category,

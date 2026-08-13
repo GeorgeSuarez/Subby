@@ -22,7 +22,7 @@ import { persistentStorage } from '@/design/storage';
 import { applyMutation, readCache, writeCache } from '@/db/offline';
 import { getNetworkReachability } from '@/db/network';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
-import { DEFAULT_CURRENCY } from '@/utils/constants';
+import { CURRENCIES, DEFAULT_CURRENCY } from '@/utils/constants';
 import type {
   CurrencyCode,
   SubscriptionFilter,
@@ -124,8 +124,13 @@ export const useUIStore = create<UIStore>()(
           budget: number;
           remindersEnabled: boolean;
         }) => {
+          // The cached/remote value is a string; clamp it to the known codes
+          // at this boundary instead of trusting it wholesale.
+          const currency =
+            CURRENCIES.find((c) => c.code === prefs.currency)?.code ??
+            DEFAULT_CURRENCY;
           set({
-            currency: prefs.currency as CurrencyCode,
+            currency,
             budget: Number(prefs.budget),
             remindersEnabled: prefs.remindersEnabled,
           });
@@ -174,9 +179,7 @@ export const useUIStore = create<UIStore>()(
       storage: createJSONStorage(() => persistentStorage),
       // Only device-level prefs persist locally — account prefs come from
       // Supabase.
-      partialize: (
-        s,
-      ): { sort: SubscriptionSort; filter: SubscriptionFilter } => ({
+      partialize: (s) => ({
         sort: s.sort,
         filter: s.filter,
       }),

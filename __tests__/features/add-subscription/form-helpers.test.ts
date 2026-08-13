@@ -95,7 +95,7 @@ describe('draftFromSubscription', () => {
       archived: false,
     };
     const draft = draftFromSubscription(sub);
-    expect(draft).not.toBe(sub as unknown as SubscriptionDraft);
+    expect(draft).not.toBe(sub);
   });
 });
 
@@ -146,6 +146,8 @@ describe('validateDraft', () => {
   });
 
   it('rejects unknown currency', () => {
+    // SAFETY: deliberately invalid value to exercise the validator's
+    // rejection path for the currency field.
     expect(
       validateDraft({
         ...valid,
@@ -155,6 +157,8 @@ describe('validateDraft', () => {
   });
 
   it('rejects unknown cycle', () => {
+    // SAFETY: deliberately invalid value to exercise the validator's
+    // rejection path for the cycle field.
     expect(
       validateDraft({
         ...valid,
@@ -173,6 +177,8 @@ describe('validateDraft', () => {
   });
 
   it('rejects unknown category', () => {
+    // SAFETY: deliberately invalid value to exercise the validator's
+    // rejection path for the category field.
     expect(
       validateDraft({
         ...valid,

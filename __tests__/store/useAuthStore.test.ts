@@ -1,17 +1,55 @@
-import { useAuthStore } from '@/store/useAuthStore';
+/**
+ * Auth store tests.
+ *
+ * The store's external dependencies (the Supabase surface + local cache
+ * cleanup) are injected through `setAuthDeps` with faithful doubles — no
+ * module mocking. The doubles return real `AuthError`/`FunctionsError`
+ * instances so the store's error contract is exercised end to end.
+ */
 
-// offline.ts pulls in expo-sqlite (native) — mock it for the store test.
-jest.mock('@/db/offline', () => ({
-  clearCacheForUser: jest.fn().mockResolvedValue(undefined),
-  clearQueueForUser: jest.fn().mockResolvedValue(undefined),
-}));
+import { AuthError, FunctionsError } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 
-jest.mock('@/lib/supabase', () => {
-  const authListeners = new Set<(event: string, session: unknown) => void>();
-  const auth = {
-    getSession: jest.fn().mockResolvedValue({ data: { session: null } }),
+import {
+  setAuthDeps,
+  useAuthStore,
+  type AuthDeps,
+  type AuthSupabase,
+} from '@/store/useAuthStore';
+
+const fakeUser = (email = 'ada@lovelace.dev'): User => ({
+  id: 'user-ada',
+  aud: 'authenticated',
+  role: 'authenticated',
+  email,
+  app_metadata: {},
+  user_metadata: {},
+  created_at: '2026-01-01T00:00:00.000Z',
+});
+
+const fakeSession = (email = 'ada@lovelace.dev'): Session => ({
+  user: fakeUser(email),
+  access_token: 'token',
+  refresh_token: 'refresh',
+  expires_in: 3600,
+  token_type: 'bearer',
+});
+
+/** Build a signed-looking JWT with a given `sub` (for deep-link tests). */
+const fakeJwt = (sub: string) => {
+  const b64 = (s: string) => Buffer.from(s).toString('base64url');
+  return `${b64(JSON.stringify({ alg: 'none' }))}.${b64(JSON.stringify({ sub }))}.sig`;
+};
+
+const authListeners = new Set<
+  (event: string, session: Session | null) => void
+>();
+
+const supabase: AuthSupabase = {
+  auth: {
+    getSession: jest.fn(async () => ({ data: { session: null } })),
     onAuthStateChange: jest.fn(
-      (callback: (event: string, session: unknown) => void) => {
+      (callback: (event: string, session: Session | null) => void) => {
         authListeners.add(callback);
         return {
           data: {
@@ -22,64 +60,59 @@ jest.mock('@/lib/supabase', () => {
     ),
     signInWithPassword: jest.fn(),
     signUp: jest.fn(),
-    resend: jest.fn().mockResolvedValue({ error: null }),
-    resetPasswordForEmail: jest.fn().mockResolvedValue({ error: null }),
-    verifyOtp: jest
-      .fn()
-      .mockResolvedValue({ data: { session: null }, error: null }),
-    setSession: jest
-      .fn()
-      .mockResolvedValue({ data: { session: null }, error: null }),
-    updateUser: jest.fn().mockResolvedValue({
-      data: { user: { email: 'ada@lovelace.dev' } },
+    resend: jest.fn(async () => ({ error: null })),
+    resetPasswordForEmail: jest.fn(async () => ({ error: null })),
+    verifyOtp: jest.fn(async () => ({ data: { session: null }, error: null })),
+    setSession: jest.fn(async () => ({ data: { session: null }, error: null })),
+    updateUser: jest.fn(async () => ({
+      data: { user: fakeUser('ada@lovelace.dev') },
       error: null,
-    }),
-    signOut: jest.fn().mockResolvedValue({ error: null }),
-  };
-  return {
-    isSupabaseConfigured: true,
-    supabase: {
-      auth,
-      functions: { invoke: jest.fn().mockResolvedValue({ error: null }) },
-    },
-    __emitAuth: (event: string, session: unknown) => {
-      for (const cb of authListeners) cb(event, session);
-    },
-  };
-});
-
-const fakeSession = (email = 'ada@lovelace.dev') => ({
-  user: { id: 'user-ada', email },
-  access_token: 'token',
-  refresh_token: 'refresh',
-});
-
-/** Build a signed-looking JWT with a given `sub` (for deep-link tests). */
-const fakeJwt = (sub: string) => {
-  const b64 = (s: string) => Buffer.from(s).toString('base64url');
-  return `${b64(JSON.stringify({ alg: 'none' }))}.${b64(JSON.stringify({ sub }))}.sig`;
+    })),
+    signOut: jest.fn(async () => ({ error: null })),
+  },
+  functions: {
+    invoke: jest.fn(async () => ({ error: null })),
+  },
 };
 
-const mockAuth = () =>
-  jest.requireMock('@/lib/supabase').supabase.auth as {
-    getSession: jest.Mock;
-    onAuthStateChange: jest.Mock;
-    signInWithPassword: jest.Mock;
-    signUp: jest.Mock;
-    resend: jest.Mock;
-    resetPasswordForEmail: jest.Mock;
-    verifyOtp: jest.Mock;
-    setSession: jest.Mock;
-    updateUser: jest.Mock;
-    signOut: jest.Mock;
-  };
+const authDeps: AuthDeps = {
+  isSupabaseConfigured: true,
+  supabase,
+  clearCacheForUser: jest.fn(async () => undefined),
+  clearQueueForUser: jest.fn(async () => undefined),
+};
 
-const emitAuth = (event: string, session: unknown) =>
-  (
-    jest.requireMock('@/lib/supabase') as {
-      __emitAuth: (e: string, s: unknown) => void;
-    }
-  ).__emitAuth(event, session);
+/** Mock-shaped view of the auth doubles so tests can stub responses. */
+interface AuthDoubles {
+  getSession: jest.Mock;
+  onAuthStateChange: jest.Mock;
+  signInWithPassword: jest.Mock;
+  signUp: jest.Mock;
+  resend: jest.Mock;
+  resetPasswordForEmail: jest.Mock;
+  verifyOtp: jest.Mock;
+  setSession: jest.Mock;
+  updateUser: jest.Mock;
+  signOut: jest.Mock;
+}
+
+// SAFETY: every auth method on the double is a jest.fn instance; the view
+// only widens them back to the Mock shape so tests can stub responses.
+const mockAuth = (): AuthDoubles => supabase.auth as AuthDoubles;
+
+const emitAuth = (event: string, session: Session | null) => {
+  for (const cb of authListeners) cb(event, session);
+};
+
+let previousDeps: AuthDeps | null;
+
+beforeAll(() => {
+  previousDeps = setAuthDeps(authDeps);
+});
+
+afterAll(() => {
+  setAuthDeps(previousDeps);
+});
 
 describe('useAuthStore', () => {
   beforeEach(() => {
@@ -142,7 +175,7 @@ describe('useAuthStore', () => {
   it('records the error and rethrows on failed sign-in', async () => {
     mockAuth().signInWithPassword.mockResolvedValueOnce({
       data: { session: null },
-      error: { message: 'Invalid login credentials' },
+      error: new AuthError('Invalid login credentials'),
     });
 
     await expect(
@@ -154,7 +187,7 @@ describe('useAuthStore', () => {
 
   it('sends a session-less sign-up to email verification', async () => {
     mockAuth().signUp.mockResolvedValueOnce({
-      data: { session: null, user: { email: 'ada@lovelace.dev' } },
+      data: { session: null, user: fakeUser('ada@lovelace.dev') },
       error: null,
     });
 
@@ -176,7 +209,9 @@ describe('useAuthStore', () => {
 
   it('records the error when resending fails (one contract: set + throw)', async () => {
     useAuthStore.setState({ verificationEmail: 'ada@lovelace.dev' });
-    mockAuth().resend.mockResolvedValueOnce({ error: { message: 'boom' } });
+    mockAuth().resend.mockResolvedValueOnce({
+      error: new AuthError('boom'),
+    });
 
     await expect(
       useAuthStore.getState().resendVerificationEmail(),
@@ -187,7 +222,7 @@ describe('useAuthStore', () => {
   it('maps a rate-limited sign-in to friendly copy', async () => {
     mockAuth().signInWithPassword.mockResolvedValueOnce({
       data: { session: null },
-      error: { message: 'Too many requests' },
+      error: new AuthError('Too many requests'),
     });
 
     await expect(
@@ -206,9 +241,10 @@ describe('useAuthStore', () => {
       email: 'ada@lovelace.dev',
       userId: 'user-ada',
     });
-    (
-      jest.requireMock('@/lib/supabase').supabase.functions.invoke as jest.Mock
-    ).mockResolvedValueOnce({ error: { message: 'invoke failed' } });
+    // SAFETY: `invoke` is a jest.fn on the double; the cast exposes Mock.
+    (supabase.functions.invoke as jest.Mock).mockResolvedValueOnce({
+      error: new FunctionsError('invoke failed'),
+    });
 
     await expect(useAuthStore.getState().deleteAccount()).rejects.toThrow(
       'invoke failed',
@@ -223,6 +259,26 @@ describe('useAuthStore', () => {
       'No signed-in account.',
     );
     expect(useAuthStore.getState().error).toBe('No signed-in account.');
+  });
+
+  it('wipes the local cache/queue after a successful account deletion', async () => {
+    useAuthStore.setState({
+      isSignedIn: true,
+      email: 'ada@lovelace.dev',
+      userId: 'user-ada',
+    });
+
+    await useAuthStore.getState().deleteAccount();
+
+    // SAFETY: clearCacheForUser is a jest.fn double; the cast exposes Mock.
+    expect(authDeps.clearCacheForUser as jest.Mock).toHaveBeenCalledWith(
+      'user-ada',
+    );
+    // SAFETY: clearQueueForUser is a jest.fn double; the cast exposes Mock.
+    expect(authDeps.clearQueueForUser as jest.Mock).toHaveBeenCalledWith(
+      'user-ada',
+    );
+    expect(useAuthStore.getState().isSignedIn).toBe(false);
   });
 
   it('signs out without recording an error', async () => {
@@ -288,7 +344,7 @@ describe('useAuthStore', () => {
 
   it('records and rethrows reset request failures', async () => {
     mockAuth().resetPasswordForEmail.mockResolvedValueOnce({
-      error: { message: 'email_address_invalid' },
+      error: new AuthError('email_address_invalid'),
     });
 
     await expect(
@@ -343,7 +399,7 @@ describe('useAuthStore', () => {
   it('surfaces a bad recovery code error', async () => {
     mockAuth().verifyOtp.mockResolvedValueOnce({
       data: { session: null },
-      error: { message: 'Email link is invalid or has expired' },
+      error: new AuthError('Email link is invalid or has expired'),
     });
 
     await expect(
@@ -490,7 +546,7 @@ describe('useAuthStore', () => {
     useAuthStore.setState({ isSignedIn: true, email: 'ada@lovelace.dev' });
     mockAuth().signInWithPassword.mockResolvedValueOnce({
       data: { session: null },
-      error: { message: 'Invalid login credentials' },
+      error: new AuthError('Invalid login credentials'),
     });
 
     await expect(
