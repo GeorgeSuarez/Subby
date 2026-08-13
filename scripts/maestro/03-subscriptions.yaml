@@ -1,0 +1,38 @@
+# Subscriptions list: search, long-press menu, screenshot.
+appId: host.exp.Exponent
+---
+- openLink: exp://127.0.0.1:8081
+- runFlow:
+    when:
+      visible: "Sign in"
+    commands:
+      - tapOn: "you@example.com"
+      - eraseText
+      - inputText: "test@subby.app"
+      - tapOn: "Your password"
+      - eraseText
+      - inputText: "subby123"
+      - pressKey: Enter
+- extendedWaitUntil:
+    visible: "Monthly spend"
+    timeout: 180000
+- tapOn: "Subscriptions"
+- extendedWaitUntil:
+    visible: ".*Netflix.*"
+    timeout: 60000
+- assertVisible: ".*Spotify.*"
+- assertVisible: ".*iCloud\\+.*"
+- takeScreenshot: subscriptions
+- tapOn: "Search subscriptions"
+- inputText: "net"
+- assertVisible: ".*Netflix.*"
+- assertNotVisible: ".*Spotify.*"
+- eraseText
+- tapOn: "Sort by"
+- longPressOn: ".*Spotify.*"
+- extendedWaitUntil:
+    visible: "Archive"
+    timeout: 30000
+- assertVisible: "Edit"
+- assertVisible: "Delete"
+- tapOn: "Cancel"

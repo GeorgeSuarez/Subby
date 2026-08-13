@@ -1,0 +1,15 @@
+# Back online: retry the queued archive and confirm it syncs.
+appId: host.exp.Exponent
+---
+- openLink: exp://127.0.0.1:8081
+- extendedWaitUntil:
+    visible: ".*Netflix.*|Retry"
+    timeout: 120000
+- tapOn: "Subscriptions"
+- extendedWaitUntil:
+    visible: "Retry|Sync now"
+    timeout: 30000
+- tapOn: "Retry|Sync now"
+- extendedWaitUntil:
+    visible: ".*Spotify.*"
+    timeout: 30000

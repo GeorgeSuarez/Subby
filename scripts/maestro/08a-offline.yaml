@@ -1,0 +1,25 @@
+# Offline: pull-to-refresh shows the offline toast; banner + queued archive.
+# Run AFTER `supabase stop` (stack down) with the app signed in and open.
+appId: host.exp.Exponent
+---
+- openLink: exp://127.0.0.1:8081
+- extendedWaitUntil:
+    visible: "Monthly spend|.*Netflix.*"
+    timeout: 120000
+- swipe:
+    start: "50%,20%"
+    end: "50%,60%"
+    duration: 800
+- tapOn: "Subscriptions"
+- extendedWaitUntil:
+    visible: ".*Netflix.*"
+    timeout: 30000
+- extendedWaitUntil:
+    visible: "Offline.*"
+    timeout: 30000
+- takeScreenshot: offline
+- longPressOn: ".*Spotify.*"
+- extendedWaitUntil:
+    visible: "Archive"
+    timeout: 20000
+- tapOn: "Archive"

@@ -1,0 +1,9 @@
+# Settings screen: navigate to the tab and capture it.
+appId: host.exp.Exponent
+---
+- tapOn:
+    point: "75%,94%"
+- extendedWaitUntil:
+    visible: "Theme"
+    timeout: 30000
+- takeScreenshot: settings

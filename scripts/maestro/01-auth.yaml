@@ -1,0 +1,10 @@
+# Open the project in Expo Go and land on the sign-in screen.
+appId: host.exp.Exponent
+---
+- openLink: exp://127.0.0.1:8081
+- extendedWaitUntil:
+    visible: "Sign in"
+    timeout: 90000
+- assertVisible: "Track every subscription, all in one place."
+- assertVisible: "Show password"
+- takeScreenshot: auth

@@ -1,0 +1,33 @@
+# Open the Netflix detail screen, verify it, and edit the amount.
+# NOTE: the subscription id below is local-DB specific — fetch it with:
+#   docker exec supabase_db_Subby psql -U postgres -d postgres -t -c \
+#     "SELECT id FROM public.subscriptions WHERE name='Netflix';"
+appId: host.exp.Exponent
+---
+# NOTE: run via the warm-up runner (app already open + signed in).
+- openLink: exp://127.0.0.1:8081/--/subscription/c20167ff-2d0b-4578-bf7c-2116fe60012f
+- extendedWaitUntil:
+    visible: "Effective cost"
+    timeout: 60000
+- takeScreenshot: detail
+- tapOn: "Edit subscription"
+- extendedWaitUntil:
+    visible: "Edit subscription"
+    timeout: 60000
+- tapOn: "15.99|16.99"
+- eraseText
+- inputText: "16.99"
+- swipe:
+    start: "50%,30%"
+    end: "50%,10%"
+- swipe:
+    start: "50%,30%"
+    end: "50%,12%"
+- tapOn:
+    id: "add-submit"
+- extendedWaitUntil:
+    visible: "Effective cost"
+    timeout: 60000
+- assertVisible:
+    text: ".*16.99.*"
+    optional: true

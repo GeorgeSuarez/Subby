@@ -65,6 +65,14 @@ Run these from the project root before considering any task complete:
 - Demo/test-account features (auto-seed, demo-data + danger-zone sections) are
   dev-only: gated by `ENABLE_DEMO_DATA` (`src/utils/environment.ts`, `__DEV__`,
   overridable with `EXPO_PUBLIC_ENABLE_DEMO`).
+- UI automation: Maestro flows live in `scripts/maestro/` (run against Expo Go
+  on the iOS simulator, `appId: host.exp.Exponent`). The local stack must be
+  running (`supabase start`) and Metro started with `npx expo start --ios`.
+  Sign-in persists across runs; to force sign-out reset the sim keychain:
+  `xcrun simctl keychain booted reset` then re-open `exp://127.0.0.1:8081`.
+  A warm-up helper polls `maestro hierarchy` for the loaded app before each
+  run — flows are short and single-purpose because long flows hit Expo Go
+  reload stalls. Flow 07 reads the reset code from Mailpit via a runScript.
 - Restart after `config.toml` changes: `supabase stop && supabase start` (there
   is no `supabase restart` command).
 - Auth emails redirect to `site_url` (http://127.0.0.1:3000) after the token is

@@ -1,0 +1,46 @@
+# Forgot-password reset: request a code, fetch it from Mailpit, set a new
+# password, and land back in the app.
+appId: host.exp.Exponent
+---
+- extendedWaitUntil:
+    visible: "Sign in"
+    timeout: 60000
+- tapOn: "Forgot password?"
+- extendedWaitUntil:
+    visible: "Reset your password"
+    timeout: 30000
+- tapOn: "you@example.com"
+- inputText: "test@subby.app"
+- tapOn:
+    id: "forgot-submit"
+- extendedWaitUntil:
+    visible: "Check your inbox"
+    timeout: 30000
+- runScript:
+    file: fetch-reset-code.js
+- tapOn: "Enter the reset code"
+- extendedWaitUntil:
+    visible: "Code from the email"
+    timeout: 30000
+- tapOn: "6-digit code"
+- inputText: ${output.otp}
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: "Choose a new password for your account."
+    timeout: 60000
+- takeScreenshot: reset
+- swipe:
+    start: "50%,30%"
+    end: "50%,10%"
+- tapOn: "At least 8 characters"
+- inputText: "subby1234"
+- tapOn: "Repeat the password"
+- inputText: "subby1234"
+- swipe:
+    start: "50%,30%"
+    end: "50%,10%"
+- tapOn:
+    id: "reset-submit"
+- extendedWaitUntil:
+    visible: "Monthly spend"
+    timeout: 60000
