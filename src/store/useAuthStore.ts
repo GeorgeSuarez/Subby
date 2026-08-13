@@ -26,6 +26,7 @@
  */
 
 import { create } from 'zustand';
+import { AuthApiError } from '@supabase/supabase-js';
 import type {
   AuthError,
   FunctionsError,
@@ -227,7 +228,19 @@ function decodeJwtSub(token: string): string | null {
 }
 
 /** Turn GoTrue rate-limit errors into copy a user can act on. */
-function friendlyAuthError(message: string): string {
+function friendlyAuthError(error: Error): string {
+  // GoTrue's resend/OTP 429s carry a generic `msg` ("For security purposes,
+  // you can only request this after 0 seconds.") that matches no message
+  // regex — classify by the structured error code first.
+  if (error instanceof AuthApiError) {
+    if (error.code === 'over_email_send_rate_limit') {
+      return 'Too many emails sent — please wait about an hour and try again.';
+    }
+    if (error.code === 'over_request_rate_limit') {
+      return 'Too many attempts — please wait a moment and try again.';
+    }
+  }
+  const message = error.message;
   if (/email rate limit|over_email_send_rate_limit/i.test(message)) {
     return 'Too many emails sent — please wait about an hour and try again.';
   }
@@ -248,7 +261,7 @@ function failAuthAction(
   set: (partial: Partial<AuthStore>) => void,
   error: Error,
 ): Error {
-  const message = friendlyAuthError(error.message);
+  const message = friendlyAuthError(error);
   set({ isLoading: false, error: message });
   return new Error(message);
 }
@@ -441,7 +454,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
       refresh_token: refreshToken,
     });
     if (error) {
-      set({ error: friendlyAuthError(error.message) });
+      set({ error: friendlyAuthError(error) });
       return false;
     }
     // setSession emits SIGNED_IN (handled above); the recovery flag drives

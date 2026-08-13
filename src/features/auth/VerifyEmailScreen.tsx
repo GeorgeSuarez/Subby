@@ -80,6 +80,16 @@ export function VerifyEmailScreen() {
   const onResend = useCallback(async () => {
     setInlineError(null);
     try {
+      // A resend can be a silent no-op: GoTrue returns 200 without sending
+      // when the email is already confirmed (e.g. the confirmation link was
+      // tapped outside the app). Detect that first and advance instead of
+      // claiming the link was sent.
+      const confirmed = await checkVerification();
+      if (confirmed) {
+        void notifySuccess();
+        finish();
+        return;
+      }
       await resendVerificationEmail();
       void notifySuccess();
       toast('Confirmation link sent');
@@ -89,7 +99,7 @@ export function VerifyEmailScreen() {
         e instanceof Error ? e.message : 'Could not resend the email.',
       );
     }
-  }, [resendVerificationEmail]);
+  }, [checkVerification, resendVerificationEmail, finish]);
 
   // No email awaiting verification — nothing to verify; go sign in.
   useEffect(() => {

@@ -39,6 +39,22 @@ Run these from the project root before considering any task complete:
   with `supabase stop`. Requires Docker Desktop running.
 - Emails (confirmation links, password resets) land in **Mailpit** at
   http://127.0.0.1:54324 — there is no real SMTP in local dev.
+- Verified GoTrue (v2.195) quirks that bite local dev:
+  - The local gate on confirmation/resend emails is `max_frequency` (per-user,
+    not per-IP) — resending within the window returns 429
+    `over_email_send_rate_limit` with a generic `msg` ("For security
+    purposes…") that has NO code text; classify by `AuthApiError.code`, not
+    the message (`friendlyAuthError` does this).
+  - A resend for an **already-confirmed** email returns **HTTP 200 `{}` with
+    NO email sent** (silent no-op). `VerifyEmailScreen.onResend` runs
+    `checkVerification()` first so it advances instead of toasting
+    "Confirmation link sent" in that case.
+  - Signing up with an email that already has a **confirmed** account returns
+    the existing user, no session, and NO email — the app still shows the
+    verify screen. Not client-detectable; direct the user to sign in.
+  - `[auth.rate_limit] email_sent` is IGNORED under Mailpit: the CLI
+    hardcodes `GOTRUE_RATE_LIMIT_EMAIL_SENT=360000` (gotrue.service.ts) and
+    only honors the value with a real `[auth.email.smtp]` block.
 - Other URLs: Studio http://127.0.0.1:54323, API http://127.0.0.1:54321
   (publishable key `sb_publishable_...` printed by `supabase start`).
 - `.env.local` points the app at the local stack and overrides `.env` (hosted

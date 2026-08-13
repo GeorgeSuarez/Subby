@@ -7,7 +7,7 @@
  * instances so the store's error contract is exercised end to end.
  */
 
-import { AuthError, FunctionsError } from '@supabase/supabase-js';
+import { AuthApiError, AuthError, FunctionsError } from '@supabase/supabase-js';
 import type { Session, User } from '@supabase/supabase-js';
 
 import {
@@ -232,6 +232,29 @@ describe('useAuthStore', () => {
     );
     expect(useAuthStore.getState().error).toBe(
       'Too many attempts — please wait a moment and try again.',
+    );
+  });
+
+  it('maps a resend rate limit to friendly copy via the error code', async () => {
+    // GoTrue's resend 429s carry a generic `msg` and a structured code;
+    // classification must key off the code, not the message text.
+    useAuthStore.setState({ verificationEmail: 'ada@lovelace.dev' });
+    // SAFETY: `resend` is a jest.fn on the double; the cast exposes Mock.
+    (mockAuth().resend as jest.Mock).mockResolvedValueOnce({
+      error: new AuthApiError(
+        'For security purposes, you can only request this after 0 seconds.',
+        429,
+        'over_email_send_rate_limit',
+      ),
+    });
+
+    await expect(
+      useAuthStore.getState().resendVerificationEmail(),
+    ).rejects.toThrow(
+      'Too many emails sent — please wait about an hour and try again.',
+    );
+    expect(useAuthStore.getState().error).toBe(
+      'Too many emails sent — please wait about an hour and try again.',
     );
   });
 
