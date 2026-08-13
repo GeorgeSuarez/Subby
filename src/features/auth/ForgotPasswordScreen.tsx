@@ -150,7 +150,7 @@ export function ForgotPasswordScreen() {
               ) : null}
             </View>
 
-            <Button variant="primary" size="lg" disabled={!canSubmit} onPress={onSubmit}>
+            <Button testID="forgot-submit" variant="primary" size="lg" disabled={!canSubmit} onPress={onSubmit}>
               Send reset link
             </Button>
 

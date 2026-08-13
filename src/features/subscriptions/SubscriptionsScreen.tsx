@@ -141,6 +141,15 @@ export function SubscriptionsScreen() {
             >
               <Text variant="caption" color="accent" weight="600">Retry</Text>
             </Pressable>
+          ) : pendingCount > 0 ? (
+            <Pressable
+              onPress={() => void flushPending()}
+              accessibilityRole="button"
+              accessibilityLabel="Sync now"
+              hitSlop={8}
+            >
+              <Text variant="caption" color="accent" weight="600">Sync now</Text>
+            </Pressable>
           ) : null}
         </View>
       ) : null}

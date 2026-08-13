@@ -211,6 +211,7 @@ export function ResetPasswordScreen() {
           contentContainerStyle={styles.content}
           contentInsetAdjustmentBehavior="automatic"
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
           <BrandLockup />
@@ -259,7 +260,7 @@ export function ResetPasswordScreen() {
                 <Text variant="caption" color="negative">{passwordError}</Text>
               ) : null}
 
-              <Button variant="primary" size="lg" disabled={!canSubmit} onPress={onSubmit}>
+              <Button testID="reset-submit" variant="primary" size="lg" disabled={!canSubmit} onPress={onSubmit}>
                 {isChangeMode ? 'Update password' : 'Set new password'}
               </Button>
 
@@ -313,7 +314,7 @@ export function ResetPasswordScreen() {
                 />
               </View>
 
-              <Button variant="primary" size="lg" disabled={!canEnter} onPress={onEnter}>
+              <Button testID="reset-code-submit" variant="primary" size="lg" disabled={!canEnter} onPress={onEnter}>
                 Continue
               </Button>
 

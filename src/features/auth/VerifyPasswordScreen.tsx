@@ -82,6 +82,7 @@ export function VerifyPasswordScreen() {
           contentContainerStyle={styles.content}
           contentInsetAdjustmentBehavior="automatic"
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
           <BrandLockup />
@@ -111,7 +112,7 @@ export function VerifyPasswordScreen() {
               ) : null}
             </View>
 
-            <Button variant="primary" size="lg" disabled={!canSubmit} onPress={onContinue}>
+            <Button testID="verify-submit" variant="primary" size="lg" disabled={!canSubmit} onPress={onContinue}>
               Continue
             </Button>
 

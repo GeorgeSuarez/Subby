@@ -211,6 +211,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
             </View>
 
             <Button
+              testID="auth-submit"
               variant="primary"
               size="lg"
               disabled={!canSubmit}

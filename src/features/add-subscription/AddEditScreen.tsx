@@ -241,6 +241,7 @@ export function AddEditScreen({
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
       >
         <Card padding={spacing.lg} elevation="flat">
           <View style={styles.header}>
@@ -379,6 +380,7 @@ export function AddEditScreen({
         </Card>
 
         <Button
+          testID="add-submit"
           onPress={onSubmit}
           variant="primary"
           size="lg"
