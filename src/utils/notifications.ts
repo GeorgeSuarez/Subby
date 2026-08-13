@@ -4,8 +4,12 @@
  * A reminder fires the day before each renewal at 09:00 (the pure date math
  * lives in `billing.reminderDateFor`, which is Jest-testable). Android needs a
  * notification channel created once; permissions are requested lazily on the
- * first schedule. The scheduled notification's id is persisted on the
- * subscription row so edits/archives/deletes can cancel it.
+ * first schedule. The scheduled notification's id is persisted in the local
+ * sidecar (`db/notification-sidecar`) so edits/archives/deletes can cancel it.
+ *
+ * The module takes `remindersEnabled` as a parameter — it never reads stores —
+ * so it stays importable without pulling the store graph in (no require
+ * cycles) and its behaviour is explicit at the call site.
  *
  * NOTE: importing this module pulls in expo-notifications (native), so it must
  * not be imported from Jest-tested modules.
@@ -15,7 +19,6 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
 import { reminderDateFor } from '@/utils/billing';
-import { useUIStore } from '@/store/useUIStore';
 import type { Subscription } from '@/types/subscription';
 
 const CHANNEL_ID = 'renewals';
@@ -43,8 +46,10 @@ export async function ensurePermissions(): Promise<boolean> {
 }
 
 /** Schedule the reminder for a subscription's next renewal. Returns the id. */
-export async function scheduleRenewalReminder(sub: Subscription): Promise<string | null> {
-  const remindersEnabled = useUIStore.getState().remindersEnabled;
+export async function scheduleRenewalReminder(
+  sub: Subscription,
+  remindersEnabled: boolean,
+): Promise<string | null> {
   if (!remindersEnabled) return null;
 
   await ensureAndroidChannel();
@@ -82,8 +87,9 @@ export async function cancelRenewalReminder(notificationId: string | null | unde
  */
 export async function rescheduleRenewalReminder(
   sub: Subscription,
-  previousNotificationId?: string | null,
+  previousNotificationId: string | null | undefined,
+  remindersEnabled: boolean,
 ): Promise<string | null> {
   await cancelRenewalReminder(previousNotificationId);
-  return scheduleRenewalReminder(sub);
+  return scheduleRenewalReminder(sub, remindersEnabled);
 }
