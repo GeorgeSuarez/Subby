@@ -58,6 +58,25 @@ Run these from the project root before considering any task complete:
   (scripts/serve-auth-confirm.mjs) so clicks land on a real page instead of a
   dead connection. Tokens are single-use — a second click on the same link
   always shows "invalid or expired".
+- Password reset: `forgot-password` (auth group) → `resetPasswordForEmail` with
+  `redirectTo`. A custom recovery template (`supabase/templates/email/recovery.html`,
+  wired in `config.toml` under `[auth.email.template.recovery]`) renders BOTH
+  `{{ .Token }}` (a 6-digit code) and `{{ .ConfirmationURL }}` (the verify
+  link) — the available mailer vars are `Token`, `TokenHash`, `ConfirmationURL`,
+  `SiteURL`, `RedirectTo`, `Email` (NOT `TokenURL`, which renders empty). The
+  reset screen
+  (`/reset-password`, router root) takes the code via
+  `verifyOtp({ email, token, type: 'recovery' })` (store `verifyRecoveryCode`),
+  with a paste-link fallback (`verifyRecoveryLink` / `handleAuthUrl` → `setSession`;
+  supabase-js's `detectSessionInUrl` is a no-op on RN). `handleAuthUrl` never
+  feeds stale link tokens into `setSession` over a live session — a failed
+  `_getUser` ("Auth session missing") makes supabase-js wipe the stored
+  session, so same-user links just set `recoveryPending` and cross-account
+  links are ignored. The new-password form uses `updateUser({ password })`. Settings → Account → Reset password lands on
+  `/verify-password` first (current-password check via `verifyCurrentPassword`,
+  i.e. `signInWithPassword`), then `/reset-password?from=settings&verified=1`;
+  any other signed-in visit to the reset screen is redirected through the same
+  verify step.
 
 ## Build & Ship Config
 
