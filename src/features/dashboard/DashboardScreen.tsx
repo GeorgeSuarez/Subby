@@ -29,6 +29,8 @@ import {
   useIsLoadingSubscriptions,
   useSubscriptionsStore,
 } from '@/store/useSubscriptionsStore';
+import { toast } from '@/store/useToastStore';
+import { notifyWarning } from '@/utils/haptics';
 import { HeroSpend } from '@/features/dashboard/components/HeroSpend';
 import { QuickStats } from '@/features/dashboard/components/QuickStats';
 import { CategoryBreakdown } from '@/features/dashboard/components/CategoryBreakdown';
@@ -49,6 +51,15 @@ export function DashboardScreen() {
   const onAdd = useCallback(() => {
     router.push('/subscription/add');
   }, [router]);
+
+  const onRefresh = useCallback(() => {
+    if (useSubscriptionsStore.getState().isOffline) {
+      void notifyWarning();
+      toast('No internet connection — showing saved data');
+      return;
+    }
+    void hydrate();
+  }, [hydrate]);
 
   // Skill `rendering-no-falsy-and`: ternary while loading, then conditional render.
   if (!isLoading && subs.length === 0) {
@@ -71,7 +82,7 @@ export function DashboardScreen() {
     refreshControl: (
       <RefreshControl
         refreshing={isLoading}
-        onRefresh={() => void hydrate()}
+        onRefresh={onRefresh}
         tintColor={colors.accent}
         colors={[colors.accent]}
       />

@@ -195,6 +195,10 @@ export function AddEditScreen({
       if (saved) {
         toast("Changes saved");
         onSaved(saved.id);
+      } else if (useSubscriptionsStore.getState().queuedChange) {
+        // Offline — the edit is queued and will sync on reconnect.
+        toast("Saved — will sync when you're online");
+        onDismiss();
       } else {
         // Not found — surface a native alert and stay in the modal.
         Alert.alert(
@@ -208,6 +212,10 @@ export function AddEditScreen({
       if (saved) {
         toast("Subscription added");
         onSaved(saved.id);
+      } else if (useSubscriptionsStore.getState().queuedChange) {
+        // Offline — the add is queued and will sync on reconnect.
+        toast("Saved — will sync when you're online");
+        onDismiss();
       } else {
         // The store swallows the underlying failure — surface its error so
         // real problems aren't hidden behind a generic message.

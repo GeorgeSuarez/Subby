@@ -19,6 +19,8 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
 import { persistentStorage } from '@/design/storage';
+import { clearQueuedPrefs, enqueueOp, readCache, writeCache } from '@/db/offline';
+import { getNetworkReachability } from '@/db/network';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { DEFAULT_CURRENCY } from '@/utils/constants';
 import type { CurrencyCode, SubscriptionFilter, SubscriptionSort } from '@/types/subscription';
@@ -54,15 +56,40 @@ async function syncAccountPrefs(
   prefs: { currency: CurrencyCode; budget: number; remindersEnabled: boolean },
 ): Promise<void> {
   if (!isSupabaseConfigured) return;
-  await supabase.from('user_prefs').upsert(
-    {
+  const { data } = await supabase.auth.getSession();
+  const userId = data.session?.user.id;
+  if (!userId) return;
+  // Offline (or unknown connectivity): queue the write instead — a direct
+  // write supersedes any queued prefs ops.
+  if ((await getNetworkReachability()) === false) {
+    await enqueueOp(userId, 'prefs', {
       currency: prefs.currency,
       budget: prefs.budget,
       reminders_enabled: prefs.remindersEnabled,
       updated_at: Date.now(),
-    },
-    { onConflict: 'user_id' },
-  );
+    });
+    return;
+  }
+  try {
+    await supabase.from('user_prefs').upsert(
+      {
+        currency: prefs.currency,
+        budget: prefs.budget,
+        reminders_enabled: prefs.remindersEnabled,
+        updated_at: Date.now(),
+      },
+      { onConflict: 'user_id' },
+    );
+    await clearQueuedPrefs(userId);
+  } catch {
+    // Network hiccup mid-write — queue so the change isn't lost.
+    await enqueueOp(userId, 'prefs', {
+      currency: prefs.currency,
+      budget: prefs.budget,
+      reminders_enabled: prefs.remindersEnabled,
+      updated_at: Date.now(),
+    });
+  }
 }
 
 export const useUIStore = create<UIStore>()(
@@ -95,22 +122,51 @@ export const useUIStore = create<UIStore>()(
           set({ ...ACCOUNT_PREF_DEFAULTS });
           return;
         }
-        const { data: prefs } = await supabase
-          .from('user_prefs')
-          .select('currency, budget, reminders_enabled')
-          .eq('user_id', data.session.user.id)
-          .maybeSingle();
-        if (!prefs) {
-          // First sign-in (or never touched): defaults; the row is created on
-          // the first write.
-          set({ ...ACCOUNT_PREF_DEFAULTS });
+        const userId = data.session.user.id;
+        interface CachedPrefs {
+          currency: string;
+          budget: number;
+          remindersEnabled: boolean;
+        }
+        const applyPrefs = (prefs: { currency: string; budget: number; remindersEnabled: boolean }) => {
+          set({
+            currency: prefs.currency as CurrencyCode,
+            budget: Number(prefs.budget),
+            remindersEnabled: prefs.remindersEnabled,
+          });
+        };
+        if ((await getNetworkReachability()) === false) {
+          // Offline — serve the cached snapshot (defaults when none yet).
+          const cached = await readCache<CachedPrefs>('prefs', userId);
+          applyPrefs(cached ?? { ...ACCOUNT_PREF_DEFAULTS, currency: ACCOUNT_PREF_DEFAULTS.currency });
           return;
         }
-        set({
-          currency: prefs.currency as CurrencyCode,
-          budget: Number(prefs.budget),
-          remindersEnabled: prefs.reminders_enabled,
-        });
+        try {
+          const { data: prefs } = await supabase
+            .from('user_prefs')
+            .select('currency, budget, reminders_enabled')
+            .eq('user_id', userId)
+            .maybeSingle();
+          if (!prefs) {
+            // First sign-in (or never touched): defaults; the row is created
+            // on the first write.
+            set({ ...ACCOUNT_PREF_DEFAULTS });
+            return;
+          }
+          applyPrefs({
+            currency: prefs.currency,
+            budget: Number(prefs.budget),
+            remindersEnabled: prefs.reminders_enabled,
+          });
+          await writeCache('prefs', userId, {
+            currency: prefs.currency,
+            budget: Number(prefs.budget),
+            remindersEnabled: prefs.reminders_enabled,
+          });
+        } catch {
+          const cached = await readCache<CachedPrefs>('prefs', userId);
+          if (cached) applyPrefs(cached);
+        }
       },
     }),
     {

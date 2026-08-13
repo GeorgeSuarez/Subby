@@ -26,6 +26,7 @@ import { RenewalCountdown } from '@/features/subscription-detail/components/Rene
 import { EffectiveCostCard } from '@/features/subscription-detail/components/EffectiveCostCard';
 import { DetailActionBar, confirmDelete } from '@/features/subscription-detail/components/DetailActionBar';
 import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
+import { toast } from '@/store/useToastStore';
 import type { Subscription } from '@/types/subscription';
 
 export interface DetailScreenProps {
@@ -47,13 +48,19 @@ export function DetailScreen({ sub, id, onEdit, onDismiss }: DetailScreenProps) 
 
   const onArchive = useCallback(async () => {
     if (!sub) return;
-    await archive(sub.id, !sub.archived);
+    const updated = await archive(sub.id, !sub.archived);
+    if (!updated && useSubscriptionsStore.getState().queuedChange) {
+      toast("Saved — will sync when you're online");
+    }
     onDismiss();
   }, [sub, archive, onDismiss]);
 
   const onDelete = useCallback(async () => {
     if (!sub) return;
     await remove(sub.id);
+    if (useSubscriptionsStore.getState().queuedChange) {
+      toast("Saved — will sync when you're online");
+    }
     onDismiss();
   }, [sub, remove, onDismiss]);
 

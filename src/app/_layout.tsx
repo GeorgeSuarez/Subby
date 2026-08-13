@@ -33,6 +33,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import { useColorMode } from '@/design/theme';
 import { Toast } from '@/design/components/Toast';
+import { getNetworkReachability, subscribeToNetwork } from '@/db/network';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
 import { useUIStore } from '@/store/useUIStore';
@@ -51,6 +52,26 @@ export default function RootLayout() {
   // Account identity drives seeded-data visibility; re-hydrate when it
   // changes (cold-start auth rehydration included).
   const email = useAuthStore((s) => s.email);
+  const setNetworkState = useSubscriptionsStore((s) => s.setNetworkState);
+  const flushPending = useSubscriptionsStore((s) => s.flushPending);
+
+  // Connectivity: surface offline state and replay the write queue when the
+  // device comes back online.
+  useEffect(() => {
+    let cancelled = false;
+    void getNetworkReachability().then((reachable) => {
+      if (!cancelled) setNetworkState(reachable);
+    });
+    const unsubscribe = subscribeToNetwork((reachable) => {
+      if (cancelled) return;
+      setNetworkState(reachable);
+      if (reachable !== false) void flushPending();
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [setNetworkState, flushPending]);
 
   // Drop the previous account's cache immediately, then load this account's
   // view and restore the auth session. Runs on mount and whenever the

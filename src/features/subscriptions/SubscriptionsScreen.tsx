@@ -17,20 +17,24 @@
  */
 
 import { useCallback, useMemo, useState, type ComponentProps } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 
 import { EmptyState, ListRow, SearchField, SearchHint, Text } from '@/design/components';
 import { Surface } from '@/design/components/Surface';
-import { spacing } from '@/design/tokens';
+import { radius, spacing } from '@/design/tokens';
+import { useTheme } from '@/design/theme';
 import { SortFilterBar } from '@/features/subscriptions/components/SortFilterBar';
 import { filterAndSortSubs } from '@/features/subscriptions/subscriptions-filter';
 import {
   useActiveSubscriptions,
   useIsLoadingSubscriptions,
+  useIsOffline,
+  usePendingCount,
   useSubscriptionsError,
   useSubscriptionsStore,
+  useSyncError,
 } from '@/store/useSubscriptionsStore';
 import { useFilter, useSort, useUIStore } from '@/store/useUIStore';
 import { daysUntilRenewal, nextRenewalAfter } from '@/utils/billing';
@@ -42,16 +46,21 @@ type FlashListProps = ComponentProps<typeof FlashList<Subscription>>;
 
 export function SubscriptionsScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const subs = useSubscriptionsStore((s) => s.subs);
   const activeSubs = useActiveSubscriptions();
   const isLoading = useIsLoadingSubscriptions();
   const error = useSubscriptionsError();
+  const isOffline = useIsOffline();
+  const pendingCount = usePendingCount();
+  const syncError = useSyncError();
   const sort = useSort();
   const filter = useFilter();
   const setSort = useUIStore((s) => s.setSort);
   const setFilter = useUIStore((s) => s.setFilter);
   const archive = useSubscriptionsStore((s) => s.archive);
   const remove = useSubscriptionsStore((s) => s.remove);
+  const flushPending = useSubscriptionsStore((s) => s.flushPending);
 
   // Local UI state: just the search query (single-line text input).
   const [query, setQuery] = useState('');
@@ -109,6 +118,33 @@ export function SubscriptionsScreen() {
   // stays out of the recycling cell pool (skill `list-performance-item-expensive`).
   const header = (
     <View style={styles.header}>
+      {isOffline || pendingCount > 0 || syncError ? (
+        <View
+          style={[
+            styles.offlineBanner,
+            { backgroundColor: colors.surfaceHigher, borderColor: colors.border },
+          ]}
+        >
+          <Text variant="caption" color="textSecondary">
+            {syncError
+              ? `Sync paused — ${pendingCount} change${pendingCount === 1 ? '' : 's'} waiting`
+              : isOffline
+                ? `Offline — showing saved data${pendingCount > 0 ? ` · ${pendingCount} change${pendingCount === 1 ? '' : 's'} waiting` : ''}`
+                : `${pendingCount} change${pendingCount === 1 ? '' : 's'} waiting to sync`}
+          </Text>
+          {isOffline || syncError ? (
+            <Pressable
+              onPress={() => void flushPending()}
+              accessibilityRole="button"
+              accessibilityLabel="Retry sync"
+              hitSlop={8}
+            >
+              <Text variant="caption" color="accent" weight="600">Retry</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+
       <SearchField value={query} onChangeText={setQuery} placeholder="Search subscriptions" />
 
       <SortFilterBar
@@ -233,6 +269,17 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     // Pad bottom so the last sort-row chip clears the first row beneath it.
     paddingBottom: spacing.sm,
+  },
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderCurve: 'continuous',
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   countRow: {
     flexDirection: 'row',

@@ -116,6 +116,32 @@ export const MIGRATIONS: readonly Migration[] = [
       );
     `,
   },
+  {
+    version: 6,
+    description: 'create offline sync cache and write queue',
+    // Offline support: `sync_cache` holds the last-synced per-user snapshots
+    // (subscriptions + prefs JSON, keyed `subs:<user_id>` / `prefs:<user_id>`)
+    // so reads work without connectivity. `sync_queue` is the FIFO write
+    // queue of operations made while offline; ops carry the owning user id so
+    // the queue survives account switches and only flushes for its owner.
+    sql: `
+      CREATE TABLE IF NOT EXISTS sync_cache (
+        key        TEXT PRIMARY KEY NOT NULL,
+        value      TEXT NOT NULL,
+        updated_at INTEGER NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS sync_queue (
+        op_id      TEXT PRIMARY KEY NOT NULL,
+        user_id    TEXT NOT NULL,
+        type       TEXT NOT NULL,
+        payload    TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        attempts   INTEGER NOT NULL DEFAULT 0,
+        last_error TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_sync_queue_user ON sync_queue (user_id, created_at);
+    `,
+  },
 ] as const;
 
 /** Highest migration version in the list. Bump when you append a migration. */
