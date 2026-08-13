@@ -54,8 +54,10 @@
     },
     "extra": {
       "eas": {
-        "projectId": ""
-      }
-    }
+        "projectId": "4d56890e-9995-475d-a4f8-cae3339618a3"
+      },
+      "router": {}
+    },
+    "owner": "gjsuarezdev"
   }
 }
