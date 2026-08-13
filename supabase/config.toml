@@ -160,7 +160,13 @@ site_url = "http://127.0.0.1:3000"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+# The exp:// entry is the Expo Go deep link (Metro on 8081); subby:// covers
+# dev/production builds with the registered scheme.
+additional_redirect_urls = [
+  "https://127.0.0.1:3000",
+  "exp://127.0.0.1:8081/--/reset-password",
+  "subby://reset-password",
+]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -231,7 +237,8 @@ max_frequency = "1s"
 # Number of characters used in the email OTP.
 otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
-otp_expiry = 3600
+# 900 = 15 minutes.
+otp_expiry = 900
 
 # Use a production-ready SMTP server
 # [auth.email.smtp]
@@ -247,6 +254,12 @@ otp_expiry = 3600
 # [auth.email.template.invite]
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
+
+# Custom recovery template — shows the one-time code ({{ .Token }}) so users
+# can enter it in the app instead of following the link ({{ .TokenURL }}).
+[auth.email.template.recovery]
+subject = "Reset your Subby password"
+content_path = "./supabase/templates/email/recovery.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]

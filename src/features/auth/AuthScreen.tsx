@@ -228,6 +228,17 @@ export function AuthScreen({ mode }: AuthScreenProps) {
             ) : null}
           </View>
 
+          {mode === 'signIn' ? (
+            <Pressable
+              onPress={() => router.push('/auth/forgot-password')}
+              accessibilityRole="link"
+              accessibilityLabel="Forgot password"
+              style={styles.switchLink}
+            >
+              <Text variant="body" color="accent" weight="600">Forgot password?</Text>
+            </Pressable>
+          ) : null}
+
           <Pressable
             onPress={switchMode}
             accessibilityRole="link"

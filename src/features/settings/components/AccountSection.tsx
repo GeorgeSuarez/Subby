@@ -12,6 +12,7 @@
 
 import { useCallback } from 'react';
 import { StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
 import { Button, Card, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
@@ -21,6 +22,7 @@ import { notifySuccess } from '@/utils/haptics';
 
 export function AccountSection() {
   const { colors } = useTheme();
+  const router = useRouter();
   const email = useAuthStore((s) => s.email);
   const signOut = useAuthStore((s) => s.signOut);
 
@@ -34,7 +36,7 @@ export function AccountSection() {
       <Card.Header>
         <Text variant="headline" weight="600">Account</Text>
         <Text variant="caption" color="textSecondary">
-          Signed in with the mock session.
+          Signed in with {email ?? 'your account'}.
         </Text>
       </Card.Header>
 
@@ -44,6 +46,16 @@ export function AccountSection() {
           <Text variant="caption" color="textSecondary">{email ?? 'Unknown user'}</Text>
         </View>
         <Button onPress={onSignOut} variant="ghost" size="sm">Sign out</Button>
+      </View>
+
+      <View style={[styles.row, { borderColor: colors.border }]}>
+        <View style={styles.meta}>
+          <Text variant="body" weight="600" color="textPrimary">Reset password</Text>
+          <Text variant="caption" color="textSecondary">Verify your current password and set a new one</Text>
+        </View>
+        <Button onPress={() => router.push('/verify-password')} variant="ghost" size="sm">
+          Change
+        </Button>
       </View>
     </Card>
   );

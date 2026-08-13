@@ -52,6 +52,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     storage: secureStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false,
+    // Recovery links carry the session in the URL fragment; capture it when
+    // the app is opened from one (deep link into Expo Go / dev builds).
+    detectSessionInUrl: true,
   },
 });

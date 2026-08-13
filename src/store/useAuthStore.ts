@@ -38,6 +38,13 @@ interface AuthStore {
   error: string | null;
   /** Email awaiting email confirmation — drives the verify-email screen. */
   verificationEmail: string | null;
+  /**
+   * True while a password-recovery session is active (PASSWORD_RECOVERY
+   * event or a recovery code/link verified). Drives the reset screen.
+   */
+  recoveryPending: boolean;
+  /** Email the recovery code was sent to — prefills the reset screen. */
+  recoveryEmail: string | null;
   /** Internal: initialize() ran (idempotency guard). */
   hasInitialized: boolean;
   /** Restore the persisted session + subscribe to auth changes. Idempotent. */
@@ -48,10 +55,52 @@ interface AuthStore {
   resendVerificationEmail: () => Promise<void>;
   /** True once the email is confirmed (a session exists); mirrors it. */
   checkVerification: () => Promise<boolean>;
+  /** Send the password-reset email. `redirectTo` must be allow-listed. */
+  requestPasswordReset: (email: string, redirectTo: string) => Promise<void>;
+  /**
+   * Consume a recovery deep link (`#access_token=…&type=recovery`) by setting
+   * the session it carries. supabase-js's detectSessionInUrl only works in
+   * browsers, so RN apps must parse the URL themselves. Returns true when the
+   * URL carried a usable recovery session.
+   */
+  handleAuthUrl: (url: string) => Promise<boolean>;
+  /** Verify a recovery link (paste fallback for dev) and open a session. */
+  verifyRecoveryLink: (link: string) => Promise<void>;
+  /** Verify the 6-digit recovery code from the email and open a session. */
+  verifyRecoveryCode: (email: string, code: string) => Promise<void>;
+  /** Set a new password with the active (recovery) session. */
+  updatePassword: (password: string) => Promise<void>;
+  /**
+   * Verify the signed-in user's current password (identity check before the
+   * change flow). Throws 'Current password is incorrect.' on failure.
+   */
+  verifyCurrentPassword: (currentPassword: string) => Promise<void>;
+  /** Drop the recovery state (e.g. leaving the reset screen). */
+  clearRecovery: () => void;
   signOut: () => Promise<void>;
 }
 
 let unsubscribeAuth: (() => void) | null = null;
+
+/** Extract the one-time recovery token from a pasted reset link. */
+export function parseRecoveryToken(link: string): string | null {
+  const m = /[?&]token=([^&#]+)/.exec(link);
+  return m?.[1] ? decodeURIComponent(m[1]) : null;
+}
+
+/** Decode the `sub` claim from a JWT (e.g. the recovery link's session). */
+function decodeJwtSub(token: string): string | null {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    const b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    // escape/unescape keep UTF-8 JSON parseable from atob's latin1 output.
+    const json = decodeURIComponent(escape(atob(b64)));
+    return (JSON.parse(json) as { sub?: string }).sub ?? null;
+  } catch {
+    return null;
+  }
+}
 
 /** Mirror a session into the store. */
 function applySession(session: Session | null): void {
@@ -70,6 +119,8 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   isLoading: true,
   error: null,
   verificationEmail: null,
+  recoveryPending: false,
+  recoveryEmail: null,
   hasInitialized: false,
 
   initialize: async () => {
@@ -84,8 +135,13 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     applySession(data.session);
 
     unsubscribeAuth?.();
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
       applySession(session);
+      // A recovery link opens the app with a fresh session — the reset
+      // screen keys off this flag to show the password form.
+      if (event === 'PASSWORD_RECOVERY') {
+        set({ recoveryPending: true });
+      }
     });
     unsubscribeAuth = subscription.subscription.unsubscribe;
 
@@ -148,10 +204,129 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     return false;
   },
 
+  requestPasswordReset: async (email, redirectTo) => {
+    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    set({ isLoading: true, error: null });
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+    if (error) {
+      set({ isLoading: false, error: error.message });
+      throw new Error(error.message);
+    }
+    set({ isLoading: false, recoveryEmail: email.trim() });
+  },
+
+  verifyRecoveryCode: async (email, code) => {
+    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    set({ isLoading: true, error: null });
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: code.trim(),
+      type: 'recovery',
+    });
+    if (error) {
+      set({ isLoading: false, error: error.message });
+      throw new Error(error.message);
+    }
+    applySession(data.session);
+    set({ recoveryPending: true, recoveryEmail: email.trim() });
+  },
+
+  handleAuthUrl: async (url) => {
+    if (!isSupabaseConfigured) return false;
+    const params = new URLSearchParams((url.split('#')[1] ?? url.split('?')[1] ?? '').toString());
+    if (params.get('type') !== 'recovery') return false;
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+    if (!accessToken || !refreshToken) return false;
+
+    // Never feed stale link tokens into setSession over a live session:
+    // supabase-js removes the stored session when _getUser fails with
+    // "Auth session missing" (revoked/rotated/expired link session) — the
+    // next updateUser then fails with "Auth session missing!". If the link
+    // belongs to the signed-in user, the existing session IS the recovery
+    // grant; otherwise ignore it.
+    const { data: current } = await supabase.auth.getSession();
+    if (current.session) {
+      if (decodeJwtSub(accessToken) === current.session.user.id) {
+        set({ recoveryPending: true });
+        return true;
+      }
+      return false;
+    }
+
+    const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+    if (error) {
+      set({ error: error.message });
+      return false;
+    }
+    // setSession emits SIGNED_IN (handled above); the recovery flag drives
+    // the reset screen's password form.
+    set({ recoveryPending: true });
+    return true;
+  },
+
+  verifyRecoveryLink: async (link) => {
+    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    const token = parseRecoveryToken(link);
+    if (!token) throw new Error('That link does not look like a password reset link.');
+    set({ isLoading: true, error: null });
+    // Email links carry the hashed token in `token` — verifyOtp's token_hash
+    // variant is the API for it (no email needed for recovery).
+    const { data, error } = await supabase.auth.verifyOtp({ token_hash: token, type: 'recovery' });
+    if (error) {
+      set({ isLoading: false, error: error.message });
+      throw new Error(error.message);
+    }
+    applySession(data.session);
+    set({ recoveryPending: true });
+  },
+
+  updatePassword: async (password) => {
+    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    set({ isLoading: true, error: null });
+    const { data, error } = await supabase.auth.updateUser({ password });
+    if (error) {
+      set({ isLoading: false, error: error.message });
+      throw new Error(error.message);
+    }
+    // updateUser returns the user, not a session — the recovery session stays.
+    set({
+      isSignedIn: true,
+      email: data.user.email ?? get().email,
+      isLoading: false,
+      error: null,
+      recoveryPending: false,
+    });
+  },
+
+  verifyCurrentPassword: async (currentPassword) => {
+    if (!isSupabaseConfigured) throw new Error(NOT_CONFIGURED_MESSAGE);
+    set({ isLoading: true, error: null });
+    const email = get().email;
+    if (!email) {
+      set({ isLoading: false, error: 'No signed-in account.' });
+      throw new Error('No signed-in account.');
+    }
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password: currentPassword,
+    });
+    if (error) {
+      set({ isLoading: false, error: 'Current password is incorrect.' });
+      throw new Error('Current password is incorrect.');
+    }
+    // signInWithPassword refreshed the session — the change screen can now
+    // call updateUser directly.
+    set({ isLoading: false, error: null });
+  },
+
+  clearRecovery: () => set({ recoveryPending: false }),
+
   signOut: async () => {
     if (isSupabaseConfigured) {
       await supabase.auth.signOut();
     }
     applySession(null);
+    set({ recoveryPending: false, recoveryEmail: null });
   },
 }));
