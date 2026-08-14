@@ -47,3 +47,6 @@ example
 /build
 /*.ipa
 /*.apk
+
+# Demo videos (source recordings) — GIFs/web assets are committed
+/docs/demo/*.mp4

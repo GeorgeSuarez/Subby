@@ -12,6 +12,14 @@ Subby is a personal subscription tracker. Add recurring expenses (Netflix, Spoti
 
 The project was built as a portfolio piece to demonstrate modern React Native engineering: native stack + native tab navigation (not JS-based), Zustand selectors over React Context, FlashList virtualization with memoized primitive-only rows, Reanimated 4 worklet-driven animations, and a custom design token system with dark-first theming.
 
+## Demo
+
+| Dashboard | Adding a subscription | All subscriptions |
+| --------- | --------------------- | ----------------- |
+| ![Dashboard](docs/demo/dashboard.gif) | ![Adding a subscription](docs/demo/add-subscription.gif) | ![All subscriptions](docs/demo/subscriptions.gif) |
+
+Prefer video? The same demos are available as lightweight WebM/MP4 in [`docs/demo/`](docs/demo/index.html) (a lazy-loading showcase page).
+
 ## Features
 
 - **Dashboard** — animated monthly spend headline with count-up, upcoming renewals list (next 30 days), quick stats strip (yearly total, active count, biggest subscription)
