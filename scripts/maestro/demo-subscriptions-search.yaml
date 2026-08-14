@@ -1,7 +1,6 @@
-# Demo recording: switch to the Subscriptions tab (its motion keeps the
-# screen recording from going idle), show the list, then search for a
-# specific subscription (typed one character at a time so the live
-# filtering is visible). No list scrolling. Run under
+# Demo recording: subscriptions list — sort by Cost (the rows reorder by
+# price), then search for a specific subscription (typed one character at a
+# time so the live filtering is visible). No list scrolling. Run under
 # `xcrun simctl io booted recordVideo`. Precondition: the app sits on the
 # Dashboard tab.
 appId: host.exp.Exponent
@@ -13,9 +12,27 @@ appId: host.exp.Exponent
 - extendedWaitUntil:
     visible: 'Search subscriptions'
     timeout: 30000
+# Sort by Cost — the rows reorder by monthly price (descending). The a11y
+# tree lags after the tab switch and the sort's reorder, so an
+# extendedWaitUntil re-reads it before each text tap.
+- extendedWaitUntil:
+    visible: 'Search subscriptions'
+    timeout: 10000
+- tapOn: 'Cost'
 - waitForAnimationToEnd:
-    timeout: 2500
-- tapOn: 'Search subscriptions'
+    timeout: 1500
+# The sort's reorder leaves the header (search field) scrolled up out of
+# reach; a small downward drag brings it back to the top. The drag may
+# overshoot into a pull-to-refresh, which locks the scroll view for a few
+# seconds; wait it out.
+- swipe:
+    start: 50%, 30%
+    end: 50%, 60%
+    duration: 500
+- waitForAnimationToEnd:
+    timeout: 8000
+- tapOn:
+    point: 50%, 11%
 - inputText: 'n'
 - waitForAnimationToEnd:
     timeout: 500
