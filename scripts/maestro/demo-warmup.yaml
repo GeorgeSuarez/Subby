@@ -7,20 +7,24 @@ appId: host.exp.Exponent
 - openLink: exp://127.0.0.1:8081
 - runFlow:
     when:
+      visible: 'Source code explorer'
+    commands:
+      - tapOn: 'Close'
+- runFlow:
+    when:
       visible: 'Sign in'
     commands:
       - tapOn: 'you@example.com'
-      - eraseText
       - inputText: 'test@subby.app'
       - tapOn: 'Your password'
-      - eraseText
+      - eraseText: 100
       - inputText: 'subby123'
       - pressKey: Enter
 - runFlow:
     when:
-      visible: 'Source code explorer'
+      visible: 'Not Now'
     commands:
-      - tapOn: 'Close'
+      - tapOn: 'Not Now'
 - extendedWaitUntil:
     visible: 'Monthly spend'
     timeout: 120000

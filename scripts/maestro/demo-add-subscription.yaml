@@ -1,8 +1,8 @@
-# Demo recording: add a subscription — type the name, type the amount, then
-# pick a category from the picker sheet. The form auto-scrolls the focused
-# field above the keyboard, so no manual scrolling is needed. Run under
-# `xcrun simctl io booted recordVideo`. Precondition: the app sits on the
-# Dashboard tab.
+# Demo recording: add a subscription end-to-end — type the name "HBO Max",
+# type the amount, pick the renewal date Sep 11 2026 with the date spinner,
+# pick the category with the picker sheet, submit, and land on the dashboard
+# with the success toast. Run under `xcrun simctl io booted recordVideo`.
+# Precondition: the app sits on the Dashboard tab.
 appId: host.exp.Exponent
 ---
 - extendedWaitUntil:
@@ -14,21 +14,21 @@ appId: host.exp.Exponent
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 1500
-# Type the name (one character at a time so the typing is visible on film).
+# Type the name "HBO Max" (one character at a time so the typing is visible).
 - tapOn: 'e.g. Netflix'
-- inputText: 'h'
+- inputText: 'H'
 - waitForAnimationToEnd:
     timeout: 400
-- inputText: 'b'
+- inputText: 'B'
 - waitForAnimationToEnd:
     timeout: 400
-- inputText: 'o'
+- inputText: 'O'
 - waitForAnimationToEnd:
     timeout: 400
 - inputText: ' '
 - waitForAnimationToEnd:
     timeout: 400
-- inputText: 'm'
+- inputText: 'M'
 - waitForAnimationToEnd:
     timeout: 400
 - inputText: 'a'
@@ -54,18 +54,37 @@ appId: host.exp.Exponent
 - inputText: '9'
 - waitForAnimationToEnd:
     timeout: 800
-# The keyboard covers the category field. The form's ScrollView has
-# keyboardDismissMode="on-drag", so a drag on the form dismisses the
-# keyboard; then the category field sits at its natural ~86% position.
+# Dismiss the keyboard (on-drag) so the form returns to its natural layout.
 - swipe:
     start: 50%, 40%
     end: 50%, 68%
     duration: 800
 - waitForAnimationToEnd:
     timeout: 1500
-# Pick a category from the picker sheet. The sheet rows are unreliable to
-# select by text (native-modal a11y lag), so both the field and the first
-# row (Streaming, at 22% of the screen height) are tapped by point.
+# Pick the renewal date with the spinner. Default is Sep 14 (today + 1
+# month); each calibrated drag moves the day wheel one row, so three drags
+# land on Sep 11. The sheet's controls are invisible to the a11y tree, so
+# the wheel, Done (sheet header, right) are tapped/dragged by point.
+- tapOn:
+    point: 50%, 53%
+- waitForAnimationToEnd:
+    timeout: 2500
+- repeat:
+    times: 3
+    commands:
+      - swipe:
+          start: 50%, 81%
+          end: 50%, 85%
+          duration: 800
+      - waitForAnimationToEnd:
+          timeout: 1500
+- waitForAnimationToEnd:
+    timeout: 2000
+- tapOn:
+    point: 87%, 70%
+- waitForAnimationToEnd:
+    timeout: 2000
+# Pick the category: Streaming is the sheet's first row.
 - tapOn:
     point: 50%, 86%
 - waitForAnimationToEnd:
@@ -84,8 +103,8 @@ appId: host.exp.Exponent
           duration: 500
       - waitForAnimationToEnd:
           timeout: 400
-# Submit: the success toast ("Subscription added") appears, the modal closes,
-# and the dashboard shows the new subscription.
+# Submit: the success toast appears, the modal closes, and the dashboard
+# shows the new subscription.
 - tapOn: 'Add subscription'
 - extendedWaitUntil:
     visible: 'Monthly spend'
