@@ -73,4 +73,22 @@ appId: host.exp.Exponent
 - tapOn:
     point: 50%, 22%
 - waitForAnimationToEnd:
-    timeout: 2500
+    timeout: 1500
+# Scroll the form down to the submit button.
+- repeat:
+    times: 3
+    commands:
+      - swipe:
+          start: 50%, 60%
+          end: 50%, 30%
+          duration: 500
+      - waitForAnimationToEnd:
+          timeout: 400
+# Submit: the success toast ("Subscription added") appears, the modal closes,
+# and the dashboard shows the new subscription.
+- tapOn: 'Add subscription'
+- extendedWaitUntil:
+    visible: 'Monthly spend'
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 3500
