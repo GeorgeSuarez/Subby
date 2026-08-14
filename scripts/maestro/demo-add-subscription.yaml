@@ -62,24 +62,28 @@ appId: host.exp.Exponent
 - waitForAnimationToEnd:
     timeout: 1500
 # Pick the renewal date with the spinner. Default is Sep 14 (today + 1
-# month); each calibrated drag moves the day wheel one row, so three drags
-# land on Sep 11. The sheet's controls are invisible to the a11y tree, so
-# the wheel, Done (sheet header, right) are tapped/dragged by point.
+# month); each calibrated drag moves the day wheel one row, so seven drags
+# up land on Sep 21. The sheet's controls are invisible to the a11y tree,
+# so the wheel, Done (sheet header, right) are tapped/dragged by point.
 - tapOn:
     point: 50%, 53%
 - waitForAnimationToEnd:
     timeout: 2500
+# A short beat on the open picker, then drag the day wheel up one row at a
+# time — a natural pick, with the chosen date settling before Done commits.
+- waitForAnimationToEnd:
+    timeout: 600
 - repeat:
-    times: 3
+    times: 7
     commands:
       - swipe:
-          start: 50%, 81%
-          end: 50%, 85%
+          start: 50%, 85%
+          end: 50%, 81%
           duration: 800
       - waitForAnimationToEnd:
           timeout: 1500
 - waitForAnimationToEnd:
-    timeout: 2000
+    timeout: 2500
 - tapOn:
     point: 87%, 70%
 - waitForAnimationToEnd:
