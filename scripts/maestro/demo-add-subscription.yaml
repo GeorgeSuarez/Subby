@@ -1,5 +1,5 @@
 # Demo recording: add a subscription end-to-end — type the name "HBO Max",
-# type the amount, pick the renewal date Sep 11 2026 with the date spinner,
+# type the amount, pick the renewal date Sep 21 2026 with the date spinner,
 # pick the category with the picker sheet, submit, and land on the dashboard
 # with the success toast. Run under `xcrun simctl io booted recordVideo`.
 # Precondition: the app sits on the Dashboard tab.
@@ -36,7 +36,7 @@ appId: host.exp.Exponent
     timeout: 150
 - inputText: 'x'
 - waitForAnimationToEnd:
-    timeout: 300
+    timeout: 1000
 # Type the amount.
 - tapOn: '0.00'
 - inputText: '1'
@@ -53,14 +53,14 @@ appId: host.exp.Exponent
     timeout: 150
 - inputText: '9'
 - waitForAnimationToEnd:
-    timeout: 300
+    timeout: 1000
 # Dismiss the keyboard (on-drag) so the form returns to its natural layout.
 - swipe:
     start: 50%, 40%
     end: 50%, 68%
     duration: 800
 - waitForAnimationToEnd:
-    timeout: 1500
+    timeout: 1000
 # Pick the renewal date with the spinner. Default is Sep 14 (today + 1
 # month); each calibrated drag moves the day wheel one row, so seven drags
 # up land on Sep 21. The sheet's controls are invisible to the a11y tree,
@@ -68,11 +68,11 @@ appId: host.exp.Exponent
 - tapOn:
     point: 50%, 53%
 - waitForAnimationToEnd:
-    timeout: 2500
+    timeout: 1000
 # A short beat on the open picker, then drag the day wheel up one row at a
 # time — a natural pick, with the chosen date settling before Done commits.
 - waitForAnimationToEnd:
-    timeout: 600
+    timeout: 1000
 - repeat:
     times: 7
     commands:
@@ -81,22 +81,22 @@ appId: host.exp.Exponent
           end: 50%, 81%
           duration: 800
       - waitForAnimationToEnd:
-          timeout: 1500
+          timeout: 1000
 - waitForAnimationToEnd:
-    timeout: 2500
+    timeout: 1000
 - tapOn:
     point: 87%, 70%
 - waitForAnimationToEnd:
-    timeout: 2000
+    timeout: 1000
 # Pick the category: Streaming is the sheet's first row.
 - tapOn:
     point: 50%, 86%
 - waitForAnimationToEnd:
-    timeout: 1500
+    timeout: 1000
 - tapOn:
     point: 50%, 22%
 - waitForAnimationToEnd:
-    timeout: 1500
+    timeout: 1000
 # Scroll the form down to the submit button.
 - repeat:
     times: 3
