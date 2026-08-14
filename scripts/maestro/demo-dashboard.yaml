@@ -1,0 +1,49 @@
+# Demo recording: smooth scroll down the whole dashboard (renewals,
+# categories, 12-month forecast, quick stats), flick back to the top, then
+# showcase pull-to-refresh. Run under `xcrun simctl io booted recordVideo`.
+# Precondition: app cold-launched and sitting at the top of the dashboard.
+appId: host.exp.Exponent
+---
+- extendedWaitUntil:
+    visible: 'Monthly spend'
+    timeout: 60000
+- waitForAnimationToEnd:
+    timeout: 2000
+# Smooth scroll down to the bottom.
+- repeat:
+    times: 10
+    commands:
+      - swipe:
+          start: 50%, 65%
+          end: 50%, 20%
+          duration: 1100
+      - waitForAnimationToEnd:
+          timeout: 300
+- waitForAnimationToEnd:
+    timeout: 2000
+# Flick back up to the top.
+- repeat:
+    times: 7
+    commands:
+      - swipe:
+          start: 50%, 30%
+          end: 50%, 75%
+          duration: 300
+      - waitForAnimationToEnd:
+          timeout: 250
+- extendedWaitUntil:
+    visible: 'Monthly spend'
+    timeout: 30000
+# The scroll-up may overshoot into a pull-to-refresh, which locks the scroll
+# view while it runs; wait it out so the showcased refresh is clean.
+- waitForAnimationToEnd:
+    timeout: 8000
+# Pull-to-refresh showcase.
+- swipe:
+    start: 50%, 18%
+    end: 50%, 60%
+    duration: 1400
+- waitForAnimationToEnd:
+    timeout: 8000
+- waitForAnimationToEnd:
+    timeout: 3000
