@@ -1,0 +1,42 @@
+# Demo recording: switch to the Subscriptions tab (its motion keeps the
+# screen recording from going idle), show the list, then search for a
+# specific subscription (typed one character at a time so the live
+# filtering is visible). No list scrolling. Run under
+# `xcrun simctl io booted recordVideo`. Precondition: the app sits on the
+# Dashboard tab.
+appId: host.exp.Exponent
+---
+- extendedWaitUntil:
+    visible: 'Monthly spend'
+    timeout: 30000
+- tapOn: 'Subscriptions'
+- extendedWaitUntil:
+    visible: 'Search subscriptions'
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 2500
+- tapOn: 'Search subscriptions'
+- inputText: 'n'
+- waitForAnimationToEnd:
+    timeout: 500
+- inputText: 'e'
+- waitForAnimationToEnd:
+    timeout: 400
+- inputText: 't'
+- waitForAnimationToEnd:
+    timeout: 400
+- inputText: 'f'
+- waitForAnimationToEnd:
+    timeout: 400
+- inputText: 'l'
+- waitForAnimationToEnd:
+    timeout: 400
+- inputText: 'i'
+- waitForAnimationToEnd:
+    timeout: 400
+- inputText: 'x'
+- extendedWaitUntil:
+    visible: '1 shown'
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 3000
