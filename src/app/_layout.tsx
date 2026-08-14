@@ -23,8 +23,8 @@
  *    the surface, which Reanimated cross-fades.
  */
 
-import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { useEffect, useMemo } from 'react';
+
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
@@ -42,7 +42,6 @@ import { useUIStore } from '@/store/useUIStore';
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const scheme = useColorScheme();
   const colorMode = useColorMode();
   const hydrate = useSubscriptionsStore((s) => s.hydrate);
   const resetCache = useSubscriptionsStore((s) => s.resetCache);
@@ -95,9 +94,25 @@ export default function RootLayout() {
 
   const isDark = colorMode === 'dark';
 
+  // Navigation theme tuned to the app's palette: the native stack's root
+  // background is what shows behind the iOS status bar, so it must be the
+  // app's surface — making the status bar area part of the app (a safe area
+  // the app's background fills) instead of a system-colored strip.
+  const navigationTheme = useMemo(() => {
+    const base = isDark ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: {
+        ...base.colors,
+        background: isDark ? '#0B0F14' : '#F7F9FC',
+        card: isDark ? '#131920' : '#FFFFFF',
+      },
+    };
+  }, [isDark]);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={navigationTheme}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
         {/* key change forces a remount when the resolved scheme flips;
             Reanimated's FadeIn entrance drives the cross-fade. */}
