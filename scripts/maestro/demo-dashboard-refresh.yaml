@@ -1,0 +1,17 @@
+# Demo recording, take 1: pull-to-refresh at the top of the dashboard.
+# A fresh hydrate takes a few seconds, so hold still until the count-up
+# animation settles. Ends showing the same top-of-dashboard frame that
+# take 2 begins with, so the two takes splice seamlessly.
+appId: host.exp.Exponent
+---
+- extendedWaitUntil:
+    visible: 'Monthly spend'
+    timeout: 60000
+- swipe:
+    start: 50%, 18%
+    end: 50%, 60%
+    duration: 1400
+- waitForAnimationToEnd:
+    timeout: 8000
+- waitForAnimationToEnd:
+    timeout: 3000
