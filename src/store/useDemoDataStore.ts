@@ -25,6 +25,12 @@ interface DemoDataStore {
 export const useDemoDataStore = create<DemoDataStore>()((set) => ({
   info: null,
   refresh: async (email) => {
-    set({ info: await getDemoDataInfo(email) });
+    try {
+      set({ info: await getDemoDataInfo(email) });
+    } catch {
+      // The status query can race the boot-time session restore (a failed
+      // count read throws); degrade to "unknown" instead of crashing the UI.
+      set({ info: null });
+    }
   },
 }));

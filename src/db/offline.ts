@@ -278,8 +278,11 @@ export type MutateResult =
   | { status: 'error'; message: string };
 
 function generateOpId(): string {
-  if (crypto?.randomUUID) {
-    return crypto.randomUUID();
+  // globalThis (not a bare `crypto` reference): Hermes has no WebCrypto, and
+  // reading an undeclared global identifier throws even with `?.` — reading a
+  // missing globalThis property just yields undefined.
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
   }
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
