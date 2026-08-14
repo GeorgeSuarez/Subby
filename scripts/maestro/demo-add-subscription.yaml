@@ -18,42 +18,42 @@ appId: host.exp.Exponent
 - tapOn: 'e.g. Netflix'
 - inputText: 'H'
 - waitForAnimationToEnd:
-    timeout: 400
+    timeout: 150
 - inputText: 'B'
 - waitForAnimationToEnd:
-    timeout: 400
+    timeout: 150
 - inputText: 'O'
 - waitForAnimationToEnd:
-    timeout: 400
+    timeout: 150
 - inputText: ' '
 - waitForAnimationToEnd:
-    timeout: 400
+    timeout: 150
 - inputText: 'M'
 - waitForAnimationToEnd:
-    timeout: 400
+    timeout: 150
 - inputText: 'a'
 - waitForAnimationToEnd:
-    timeout: 400
+    timeout: 150
 - inputText: 'x'
 - waitForAnimationToEnd:
-    timeout: 600
+    timeout: 300
 # Type the amount.
 - tapOn: '0.00'
 - inputText: '1'
 - waitForAnimationToEnd:
-    timeout: 400
+    timeout: 150
 - inputText: '6'
 - waitForAnimationToEnd:
-    timeout: 400
+    timeout: 150
 - inputText: '.'
 - waitForAnimationToEnd:
-    timeout: 400
+    timeout: 150
 - inputText: '9'
 - waitForAnimationToEnd:
-    timeout: 400
+    timeout: 150
 - inputText: '9'
 - waitForAnimationToEnd:
-    timeout: 800
+    timeout: 300
 # Dismiss the keyboard (on-drag) so the form returns to its natural layout.
 - swipe:
     start: 50%, 40%

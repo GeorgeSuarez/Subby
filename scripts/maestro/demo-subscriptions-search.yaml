@@ -35,22 +35,22 @@ appId: host.exp.Exponent
     point: 50%, 11%
 - inputText: 'n'
 - waitForAnimationToEnd:
-    timeout: 500
+    timeout: 200
 - inputText: 'e'
 - waitForAnimationToEnd:
-    timeout: 400
+    timeout: 200
 - inputText: 't'
 - waitForAnimationToEnd:
-    timeout: 400
+    timeout: 200
 - inputText: 'f'
 - waitForAnimationToEnd:
-    timeout: 400
+    timeout: 200
 - inputText: 'l'
 - waitForAnimationToEnd:
-    timeout: 400
+    timeout: 200
 - inputText: 'i'
 - waitForAnimationToEnd:
-    timeout: 400
+    timeout: 200
 - inputText: 'x'
 - extendedWaitUntil:
     visible: '1 shown'
