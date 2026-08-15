@@ -15,8 +15,15 @@ describe('seedDrafts', () => {
         'Figma',
         'Disney+',
         'New York Times',
+        'Peacock',
       ]),
     );
+  });
+
+  it('seeds a trial sub so the dashboard trial chip has data', () => {
+    const peacock = seedDrafts(today).find((d) => d.name === 'Peacock');
+    expect(peacock?.trialEnds).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(peacock?.notes).toBeTruthy();
   });
 
   it('produces upcoming renewal dates (within ~31 days for monthly seeds)', () => {

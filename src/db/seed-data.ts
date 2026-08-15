@@ -35,6 +35,7 @@ export function seedDrafts(today: Date = todayUTC()): SubscriptionDraft[] {
       category: 'music',
       icon: 'musical-notes-outline',
       color: '#1DB954',
+      notes: 'Family plan, six accounts.',
     },
     {
       name: 'iCloud+',
@@ -56,6 +57,7 @@ export function seedDrafts(today: Date = todayUTC()): SubscriptionDraft[] {
       category: 'developer',
       icon: 'logo-github',
       color: '#8B949E',
+      notes: 'Pro plan, paid monthly.',
     },
     {
       name: 'Figma',
@@ -66,6 +68,7 @@ export function seedDrafts(today: Date = todayUTC()): SubscriptionDraft[] {
       category: 'productivity',
       icon: 'brush-outline',
       color: '#A259FF',
+      notes: 'Professional seat.',
     },
     {
       name: 'Disney+',
@@ -76,6 +79,7 @@ export function seedDrafts(today: Date = todayUTC()): SubscriptionDraft[] {
       category: 'streaming',
       icon: 'film-outline',
       color: '#113CCF',
+      notes: 'Annual pass — billed once a year.',
     },
     {
       name: 'New York Times',
@@ -86,6 +90,19 @@ export function seedDrafts(today: Date = todayUTC()): SubscriptionDraft[] {
       category: 'news',
       icon: 'newspaper-outline',
       color: '#000000',
+      notes: 'All-access digital subscription.',
+    },
+    {
+      name: 'Peacock',
+      amount: '5.99',
+      currency: 'USD',
+      cycle: 'monthly',
+      nextRenewal: inDays(16),
+      trialEnds: inDays(6),
+      category: 'streaming',
+      icon: 'tv-outline',
+      color: '#FBC934',
+      notes: '7-day free trial — cancel before it renews.',
     },
   ];
 }

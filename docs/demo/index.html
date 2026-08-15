@@ -1,154 +1,205 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Subby — Demo</title>
-  <style>
-    :root {
-      --surface: #0b0f14;
-      --elevated: #131920;
-      --border: #1f2a36;
-      --text: #f4f7fb;
-      --text-secondary: #93a1b5;
-      --accent: #22d3ee;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: var(--surface);
-      color: var(--text);
-      font-family: system-ui, -apple-system, sans-serif;
-    }
-    header {
-      padding: 48px 24px 8px;
-      text-align: center;
-    }
-    header h1 { margin: 0; font-size: 28px; }
-    header h1 span { color: var(--accent); }
-    header p { color: var(--text-secondary); margin: 8px 0 0; }
-    main {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 32px;
-      padding: 40px 24px 64px;
-      max-width: 1320px;
-      margin: 0 auto;
-    }
-    .demo { width: 400px; }
-    .demo h2 { font-size: 16px; margin: 0 0 12px; color: var(--text-secondary); font-weight: 600; }
-    .demo video {
-      width: 100%;
-      height: auto;
-      display: block;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      background: #000;
-    }
-    .demo p { font-size: 13px; color: var(--text-secondary); margin: 10px 0 0; }
-    /* Poster shown until the first frame loads; video covers it once ready. */
-    .demo video[poster] { object-fit: cover; }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>Subby — <span>subscription tracker</span></h1>
-    <p>Silent looping demos · click to pause · loaded only when scrolled into view</p>
-  </header>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Subby — Demo</title>
+    <style>
+      :root {
+        --surface: #0b0f14;
+        --elevated: #131920;
+        --border: #1f2a36;
+        --text: #f4f7fb;
+        --text-secondary: #93a1b5;
+        --accent: #22d3ee;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--surface);
+        color: var(--text);
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+      }
+      header {
+        padding: 48px 24px 8px;
+        text-align: center;
+      }
+      header h1 {
+        margin: 0;
+        font-size: 28px;
+      }
+      header h1 span {
+        color: var(--accent);
+      }
+      header p {
+        color: var(--text-secondary);
+        margin: 8px 0 0;
+      }
+      main {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 32px;
+        padding: 40px 24px 64px;
+        max-width: 1320px;
+        margin: 0 auto;
+      }
+      .demo {
+        width: 400px;
+      }
+      .demo h2 {
+        font-size: 16px;
+        margin: 0 0 12px;
+        color: var(--text-secondary);
+        font-weight: 600;
+      }
+      .demo video {
+        width: 100%;
+        height: auto;
+        display: block;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: #000;
+      }
+      .demo p {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin: 10px 0 0;
+      }
+      /* Poster shown until the first frame loads; video covers it once ready. */
+      .demo video[poster] {
+        object-fit: cover;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Subby — <span>subscription tracker</span></h1>
+      <p>
+        Silent looping demos · click to pause · loaded only when scrolled into
+        view
+      </p>
+    </header>
 
-  <main>
-    <section class="demo">
-      <h2>Dashboard</h2>
-      <video
-        data-src="web/dashboard.mp4"
-        data-src-fallback="web/dashboard.webm"
-        poster="web/dashboard-poster.jpg"
-        width="720" height="1394"
-        muted playsinline loop preload="none"
-        tabindex="0"
-      ></video>
-      <p>Spend overview, upcoming renewals, and category breakdown — with pull-to-refresh.</p>
-    </section>
+    <main>
+      <section class="demo">
+        <h2>Dashboard</h2>
+        <video
+          data-src="web/dashboard.mp4"
+          data-src-fallback="web/dashboard.webm"
+          poster="web/dashboard-poster.jpg"
+          width="720"
+          height="1394"
+          muted
+          playsinline
+          loop
+          preload="none"
+          tabindex="0"
+        ></video>
+        <p>
+          Monthly spend with a budget projection and free-trial countdown, a
+          savings insight, renewals, category breakdown, and 12-month forecast —
+          with pull-to-refresh.
+        </p>
+      </section>
 
-    <section class="demo">
-      <h2>Adding a subscription</h2>
-      <video
-        data-src="web/add-subscription.mp4"
-        data-src-fallback="web/add-subscription.webm"
-        poster="web/add-subscription-poster.jpg"
-        width="720" height="1394"
-        muted playsinline loop preload="none"
-        tabindex="0"
-      ></video>
-      <p>The full add flow: name, amount, notes, and save.</p>
-    </section>
+      <section class="demo">
+        <h2>Adding a subscription</h2>
+        <video
+          data-src="web/add-subscription.mp4"
+          data-src-fallback="web/add-subscription.webm"
+          poster="web/add-subscription-poster.jpg"
+          width="720"
+          height="1394"
+          muted
+          playsinline
+          loop
+          preload="none"
+          tabindex="0"
+        ></video>
+        <p>
+          The full add flow with live typing: name, amount, renewal-date
+          spinner, category, a note, and the new subscription's detail screen.
+        </p>
+      </section>
 
-    <section class="demo">
-      <h2>All subscriptions</h2>
-      <video
-        data-src="web/subscriptions.mp4"
-        data-src-fallback="web/subscriptions.webm"
-        poster="web/subscriptions-poster.jpg"
-        width="720" height="1394"
-        muted playsinline loop preload="none"
-        tabindex="0"
-      ></video>
-      <p>Every subscription at a glance, scrolled top to bottom.</p>
-    </section>
-  </main>
+      <section class="demo">
+        <h2>All subscriptions</h2>
+        <video
+          data-src="web/subscriptions.mp4"
+          data-src-fallback="web/subscriptions.webm"
+          poster="web/subscriptions-poster.jpg"
+          width="720"
+          height="1394"
+          muted
+          playsinline
+          loop
+          preload="none"
+          tabindex="0"
+        ></video>
+        <p>
+          Sort by cost, live search as you type, and a subscription's detail
+          screen with its saved description.
+        </p>
+      </section>
+    </main>
 
-  <script>
-    // Load each video only when it scrolls into view, then autoplay it.
-    // WebM first (smaller); MP4 as the fallback for browsers without VP9.
-    const videos = Array.from(document.querySelectorAll('video[data-src]'));
+    <script>
+      // Load each video only when it scrolls into view, then autoplay it.
+      // WebM first (smaller); MP4 as the fallback for browsers without VP9.
+      const videos = Array.from(document.querySelectorAll('video[data-src]'));
 
-    function play(video) {
-      const src = video.dataset.srcFallback;
-      const source = document.createElement('source');
-      source.src = video.dataset.src;
-      source.type = 'video/mp4';
-      video.appendChild(source);
+      function play(video) {
+        const src = video.dataset.srcFallback;
+        const source = document.createElement('source');
+        source.src = video.dataset.src;
+        source.type = 'video/mp4';
+        video.appendChild(source);
 
-      const fallback = document.createElement('source');
-      fallback.src = src;
-      fallback.type = 'video/webm';
-      video.appendChild(fallback);
+        const fallback = document.createElement('source');
+        fallback.src = src;
+        fallback.type = 'video/webm';
+        video.appendChild(fallback);
 
-      video.load();
-      video.play().catch(() => {});
-    }
+        video.load();
+        video.play().catch(() => {});
+      }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            play(entry.target);
-            observer.unobserve(entry.target);
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              play(entry.target);
+              observer.unobserve(entry.target);
+            }
           }
-        }
-      },
-      { rootMargin: '200px' },
-    );
+        },
+        { rootMargin: '200px' },
+      );
 
-    for (const video of videos) observer.observe(video);
+      for (const video of videos) observer.observe(video);
 
-    // Pause on click (or Enter/Space for keyboard users).
-    for (const video of videos) {
-      video.addEventListener('click', () => {
-        if (video.paused) {
-          video.play().catch(() => {});
-        } else {
-          video.pause();
-        }
-      });
-      video.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          video.click();
-        }
-      });
-    }
-  </script>
-</body>
+      // Pause on click (or Enter/Space for keyboard users).
+      for (const video of videos) {
+        video.addEventListener('click', () => {
+          if (video.paused) {
+            video.play().catch(() => {});
+          } else {
+            video.pause();
+          }
+        });
+        video.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            video.click();
+          }
+        });
+      }
+    </script>
+  </body>
 </html>

@@ -1,8 +1,11 @@
-# Demo recording: add a subscription end-to-end — type the name "HBO Max",
-# type the amount, pick the renewal date Sep 21 2026 with the date spinner,
-# pick the category with the picker sheet, submit, and land on the dashboard
-# with the success toast. Run under `xcrun simctl io booted recordVideo`.
-# Precondition: the app sits on the Dashboard tab.
+# Demo recording: add a subscription end-to-end — type the name "HBO Max"
+# (one character at a time so typing is visible), type the amount, pick the
+# renewal date Sep 21 2026 with the date spinner, pick the category with the
+# picker sheet, type a note, submit, and open the new subscription's detail
+# screen to show its description. Every text input types a character at a
+# time with a beat between keys; every picker gets a settling pause.
+# Run under `xcrun simctl io booted recordVideo`. Precondition: the app sits
+# on the Dashboard tab (run demo-warmup first).
 appId: host.exp.Exponent
 ---
 - extendedWaitUntil:
@@ -14,46 +17,46 @@ appId: host.exp.Exponent
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 1500
-# Type the name "HBO Max" (one character at a time so the typing is visible).
+# Type the name "HBO Max" — one character at a time, small delay per key.
 - tapOn: 'e.g. Netflix'
 - inputText: 'H'
 - waitForAnimationToEnd:
-    timeout: 150
+    timeout: 250
 - inputText: 'B'
 - waitForAnimationToEnd:
-    timeout: 150
+    timeout: 250
 - inputText: 'O'
 - waitForAnimationToEnd:
-    timeout: 150
+    timeout: 250
 - inputText: ' '
 - waitForAnimationToEnd:
-    timeout: 150
+    timeout: 250
 - inputText: 'M'
 - waitForAnimationToEnd:
-    timeout: 150
+    timeout: 250
 - inputText: 'a'
 - waitForAnimationToEnd:
-    timeout: 150
+    timeout: 250
 - inputText: 'x'
 - waitForAnimationToEnd:
-    timeout: 1000
+    timeout: 700
 # Type the amount.
 - tapOn: '0.00'
 - inputText: '1'
 - waitForAnimationToEnd:
-    timeout: 150
+    timeout: 250
 - inputText: '6'
 - waitForAnimationToEnd:
-    timeout: 150
+    timeout: 250
 - inputText: '.'
 - waitForAnimationToEnd:
-    timeout: 150
+    timeout: 250
 - inputText: '9'
 - waitForAnimationToEnd:
-    timeout: 150
+    timeout: 250
 - inputText: '9'
 - waitForAnimationToEnd:
-    timeout: 1000
+    timeout: 700
 # Dismiss the keyboard (on-drag) so the form returns to its natural layout.
 - swipe:
     start: 50%, 40%
@@ -61,18 +64,16 @@ appId: host.exp.Exponent
     duration: 800
 - waitForAnimationToEnd:
     timeout: 1000
-# Pick the renewal date with the spinner. Default is Sep 14 (today + 1
-# month); each calibrated drag moves the day wheel one row, so seven drags
-# up land on Sep 21. The sheet's controls are invisible to the a11y tree,
-# so the wheel, Done (sheet header, right) are tapped/dragged by point.
+# Pick the renewal date with the spinner. Default is today + 1 month; each
+# calibrated drag moves the day wheel one row, so seven drags up land on
+# Sep 21. The sheet's controls are invisible to the a11y tree, so the wheel
+# and Done (sheet header, right) are tapped/dragged by point.
 - tapOn:
     point: 50%, 53%
 - waitForAnimationToEnd:
-    timeout: 1000
-# A short beat on the open picker, then drag the day wheel up one row at a
-# time — a natural pick, with the chosen date settling before Done commits.
-- waitForAnimationToEnd:
-    timeout: 1000
+    timeout: 700
+# A beat on the open picker, then drag the day wheel up one row at a time —
+# a natural pick, with the chosen date settling before Done commits.
 - repeat:
     times: 7
     commands:
@@ -81,23 +82,81 @@ appId: host.exp.Exponent
           end: 50%, 81%
           duration: 800
       - waitForAnimationToEnd:
-          timeout: 1000
+          timeout: 700
 - waitForAnimationToEnd:
-    timeout: 1000
+    timeout: 700
 - tapOn:
     point: 87%, 70%
 - waitForAnimationToEnd:
-    timeout: 1000
+    timeout: 700
 # Pick the category: Streaming is the sheet's first row.
 - tapOn:
     point: 50%, 86%
 - waitForAnimationToEnd:
-    timeout: 1000
+    timeout: 700
 - tapOn:
     point: 50%, 22%
 - waitForAnimationToEnd:
+    timeout: 700
+# Scroll the form down to the notes field.
+- repeat:
+    times: 4
+    commands:
+      - swipe:
+          start: 50%, 60%
+          end: 50%, 35%
+          duration: 600
+      - waitForAnimationToEnd:
+          timeout: 500
+# Type a note — the description shown on the subscription's detail screen.
+- tapOn: 'Renewal reminder, plan details…'
+- inputText: 'A'
+- waitForAnimationToEnd:
+    timeout: 250
+- inputText: 'd'
+- waitForAnimationToEnd:
+    timeout: 250
+- inputText: '-'
+- waitForAnimationToEnd:
+    timeout: 250
+- inputText: 'f'
+- waitForAnimationToEnd:
+    timeout: 250
+- inputText: 'r'
+- waitForAnimationToEnd:
+    timeout: 250
+- inputText: 'e'
+- waitForAnimationToEnd:
+    timeout: 250
+- inputText: 'e'
+- waitForAnimationToEnd:
+    timeout: 250
+- inputText: ' '
+- waitForAnimationToEnd:
+    timeout: 250
+- inputText: 't'
+- waitForAnimationToEnd:
+    timeout: 250
+- inputText: 'r'
+- waitForAnimationToEnd:
+    timeout: 250
+- inputText: 'i'
+- waitForAnimationToEnd:
+    timeout: 250
+- inputText: 'a'
+- waitForAnimationToEnd:
+    timeout: 250
+- inputText: 'l'
+- waitForAnimationToEnd:
+    timeout: 700
+# Dismiss the keyboard and settle on the notes field.
+- swipe:
+    start: 50%, 40%
+    end: 50%, 68%
+    duration: 800
+- waitForAnimationToEnd:
     timeout: 1000
-# Scroll the form down to the submit button.
+# Scroll the form down to the submit button (bottom of the form).
 - repeat:
     times: 3
     commands:
@@ -115,3 +174,20 @@ appId: host.exp.Exponent
     timeout: 15000
 - waitForAnimationToEnd:
     timeout: 3500
+# Open the new subscription to show its description (the note we typed).
+# Its renewal is 38 days out, so it sits in the full list, not the
+# dashboard's 30-day renewal preview.
+- tapOn: 'Subscriptions'
+- extendedWaitUntil:
+    visible: 'Search subscriptions'
+    timeout: 30000
+- extendedWaitUntil:
+    visible: '.*HBO Max.*'
+    timeout: 15000
+- tapOn:
+    text: '.*HBO Max.*'
+- extendedWaitUntil:
+    visible: 'Effective cost'
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 2500

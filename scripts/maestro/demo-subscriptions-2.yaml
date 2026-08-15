@@ -1,0 +1,26 @@
+# Demo recording, part 2: from the filtered list (part 1), open Netflix —
+# its detail screen shows the saved description. Run as a separate maestro
+# invocation so the driver starts fresh, under the same continuous
+# `xcrun simctl io booted recordVideo`. Precondition: part 1 finished and
+# the app shows "1 shown" for the Netflix search.
+appId: host.exp.Exponent
+---
+- extendedWaitUntil:
+    visible: '1 shown'
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 2000
+# The keyboard is up from the search; dismiss it so the row tap lands clean.
+- hideKeyboard
+- waitForAnimationToEnd:
+    timeout: 1500
+# The row sits above the keyboard; tap its center by point. The row's text
+# element is not always hittable via text matching while the keyboard is up.
+- tapOn:
+    point: 50%, 34%
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible: 'Effective cost'
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 2500

@@ -1,8 +1,8 @@
-# Demo recording: subscriptions list — sort by Cost (the rows reorder by
-# price), then search for a specific subscription (typed one character at a
-# time so the live filtering is visible). No list scrolling. Run under
-# `xcrun simctl io booted recordVideo`. Precondition: the app sits on the
-# Dashboard tab.
+# Demo recording, part 1: subscriptions list — sort by Cost (the rows
+# reorder by price), then search for Netflix (typed one character at a time
+# so the live filtering is visible). Ends on the single filtered row, ready
+# for part 2 to open it. Run under `xcrun simctl io booted recordVideo`.
+# Precondition: the app sits on the Dashboard tab (run demo-warmup first).
 appId: host.exp.Exponent
 ---
 - extendedWaitUntil:
@@ -31,26 +31,28 @@ appId: host.exp.Exponent
     duration: 500
 - waitForAnimationToEnd:
     timeout: 8000
+# Search "netflix" — one character at a time, small delay per key.
 - tapOn:
     point: 50%, 11%
+- eraseText: 50
 - inputText: 'n'
 - waitForAnimationToEnd:
-    timeout: 200
+    timeout: 250
 - inputText: 'e'
 - waitForAnimationToEnd:
-    timeout: 200
+    timeout: 250
 - inputText: 't'
 - waitForAnimationToEnd:
-    timeout: 200
+    timeout: 250
 - inputText: 'f'
 - waitForAnimationToEnd:
-    timeout: 200
+    timeout: 250
 - inputText: 'l'
 - waitForAnimationToEnd:
-    timeout: 200
+    timeout: 250
 - inputText: 'i'
 - waitForAnimationToEnd:
-    timeout: 200
+    timeout: 250
 - inputText: 'x'
 - extendedWaitUntil:
     visible: '1 shown'

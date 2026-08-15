@@ -14,11 +14,11 @@ The project was built as a portfolio piece to demonstrate modern React Native en
 
 ## Demo
 
-| Dashboard | Adding a subscription | All subscriptions |
-| --------- | --------------------- | ----------------- |
-| ![Dashboard](docs/demo/dashboard.gif) | ![Adding a subscription](docs/demo/add-subscription.gif) | ![All subscriptions](docs/demo/subscriptions.gif) |
-
-Prefer video? The same demos are available as lightweight WebM/MP4 in [`docs/demo/`](docs/demo/index.html) (a lazy-loading showcase page).
+Silent looping videos of the app — Dashboard (spend, budget projection,
+free-trial countdown, savings insight, forecast), the full add-subscription
+flow, and the subscriptions list with search and detail views. Served from a
+lazy-loading showcase page: [**watch the demos**](docs/demo/index.html)
+(WebM/MP4, works offline, click any video to pause).
 
 ## Features
 

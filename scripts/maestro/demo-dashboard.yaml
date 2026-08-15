@@ -1,7 +1,9 @@
-# Demo recording: smooth scroll down the whole dashboard (renewals,
-# categories, 12-month forecast, quick stats), flick back to the top, then
-# showcase pull-to-refresh. Run under `xcrun simctl io booted recordVideo`.
-# Precondition: app cold-launched and sitting at the top of the dashboard.
+# Demo recording: dashboard showcase. Holds on the hero — free-trial chip,
+# budget progress and end-of-month projection, then the insight strip — and
+# smoothly scrolls through renewals, categories, forecast and quick stats,
+# flicks back up, and ends with pull-to-refresh. Run under
+# `xcrun simctl io booted recordVideo`. Precondition: app cold-launched and
+# sitting at the top of the dashboard (run demo-warmup first).
 appId: host.exp.Exponent
 ---
 - extendedWaitUntil:
@@ -9,6 +11,9 @@ appId: host.exp.Exponent
     timeout: 60000
 - waitForAnimationToEnd:
     timeout: 2000
+# Hold on the hero so the free-trial chip and budget projection read clearly.
+- waitForAnimationToEnd:
+    timeout: 2500
 # Smooth scroll down to the bottom.
 - repeat:
     times: 10
@@ -20,7 +25,7 @@ appId: host.exp.Exponent
       - waitForAnimationToEnd:
           timeout: 300
 - waitForAnimationToEnd:
-    timeout: 2000
+    timeout: 2500
 # Flick back up to the top.
 - repeat:
     times: 7

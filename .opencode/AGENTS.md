@@ -102,6 +102,23 @@ Run these from the project root before considering any task complete:
   A warm-up helper polls `maestro hierarchy` for the loaded app before each
   run — flows are short and single-purpose because long flows hit Expo Go
   reload stalls. Flow 07 reads the reset code from Mailpit via a runScript.
+- Demo recordings: `scripts/maestro/demo-*.yaml` are recorded under
+  `xcrun simctl io booted recordVideo --codec h264 /tmp/demo-<name>.mov`
+  (stop with SIGINT, not pkill — the buffer flushes on SIGINT). Precondition
+  for every take: run `demo-warmup.yaml` so the app cold-launches at the top
+  of the dashboard. Takes are encoded to `docs/demo/web/*.mp4` (h264) and
+  `*.webm` (vp9) at 540×1046 @ 30fps — `crop=1206:2336:0:286` then
+  `scale=540:1046` on the 1206×2622 device capture, `-crf 23` for mp4 and
+  `-crf 32` for webm — plus a poster jpg per take; `docs/demo/index.html`
+  references them (mp4 with webm fallback). The driver sometimes flakes mid-
+  flow (ConnectException in `~/.maestro/tests/*/maestro.log`); wait a few
+  seconds between runs, split long takes into separate short flows, and
+  reboot the sim if the recorder reports "Host recording is already in
+  progress". Demo data lives in `src/db/seed-data.ts` (trial sub + notes
+  included); `demo-reseed.yaml` signs out and back in as the test account to
+  regenerate the seed, and the demo budget is set in `user_prefs` via
+  `supabase db query`. Text inputs type one character at a time (≈250 ms
+  beats) and pickers get settling pauses so the recordings show the pacing.
 - Restart after `config.toml` changes: `supabase stop && supabase start` (there
   is no `supabase restart` command).
 - Auth emails redirect to `site_url` (http://127.0.0.1:3000) after the token is
