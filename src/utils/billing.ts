@@ -461,6 +461,10 @@ function trialLabel(days: number): string {
 /** Upcoming trial (ends today or later) among active subs, soonest first. */
 export interface ActiveTrial extends TrialStatus {
   name: string;
+  /** Subscription id, for row navigation to the detail screen. */
+  id: string;
+  /** Subscription icon glyph, for row avatars. */
+  icon: string;
 }
 
 export function activeTrials(subs: readonly Subscription[]): ActiveTrial[] {
@@ -469,8 +473,21 @@ export function activeTrials(subs: readonly Subscription[]): ActiveTrial[] {
     if (s.archived) continue;
     const status = getTrialStatus(s);
     if (status && status.days >= 0) {
-      trials.push({ ...status, name: s.name });
+      trials.push({ ...status, name: s.name, id: s.id, icon: s.icon });
     }
   }
   return trials.sort((a, b) => a.days - b.days);
+}
+
+/** Ended trials among active subs (non-archived), most recently ended first. */
+export function expiredTrials(subs: readonly Subscription[]): ActiveTrial[] {
+  const trials: ActiveTrial[] = [];
+  for (const s of subs) {
+    if (s.archived) continue;
+    const status = getTrialStatus(s);
+    if (status && status.days < 0) {
+      trials.push({ ...status, name: s.name, id: s.id, icon: s.icon });
+    }
+  }
+  return trials.sort((a, b) => b.days - a.days);
 }

@@ -35,6 +35,7 @@ import { HeroSpend } from '@/features/dashboard/components/HeroSpend';
 import { QuickStats } from '@/features/dashboard/components/QuickStats';
 import { CategoryBreakdown } from '@/features/dashboard/components/CategoryBreakdown';
 import { RenewalsList } from '@/features/dashboard/components/RenewalsList';
+import { TrialsCard } from '@/features/dashboard/components/TrialsCard';
 import { ForecastCard } from '@/features/dashboard/components/ForecastCard';
 import { InsightStrip } from '@/features/dashboard/components/InsightStrip';
 import { AddFab } from '@/features/dashboard/components/AddFab';
@@ -101,6 +102,7 @@ export function DashboardScreen() {
       <ScrollView {...scrollProps}>
         <HeroSpend />
         <RenewalsList />
+        <TrialsCard />
         <CategoryBreakdown />
         {insight ? <InsightStrip insight={insight} /> : null}
         <ForecastCard />

@@ -5,6 +5,7 @@ import {
   categoryBreakdown,
   daysBetween,
   daysUntilRenewal,
+  expiredTrials,
   getTrialStatus,
   groupByCategory,
   largestMonthly,
@@ -550,6 +551,8 @@ describe('activeTrials', () => {
     ]);
     expect(trials.map((t) => t.name)).toEqual(['Sooner', 'Later']);
     expect(trials[0]?.label).toBe('Ends in 2 days');
+    expect(trials.map((t) => t.id)).toEqual(['b', 'a']);
+    expect(trials[0]?.icon).toBe('film-outline');
   });
 
   it('includes a trial ending today', () => {
@@ -565,6 +568,34 @@ describe('activeTrials', () => {
       activeTrials([
         sub({ id: 'a', trialEnds: inDays(-1) }),
         sub({ id: 'b', trialEnds: inDays(5), archived: true }),
+        sub({ id: 'c' }),
+      ]),
+    ).toEqual([]);
+  });
+});
+
+describe('expiredTrials', () => {
+  const inDays = (n: number): string => {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+
+  it('lists ended trials most-recently-ended first', () => {
+    const trials = expiredTrials([
+      sub({ id: 'a', name: 'Old', trialEnds: inDays(-9) }),
+      sub({ id: 'b', name: 'Recent', trialEnds: inDays(-2) }),
+    ]);
+    expect(trials.map((t) => t.name)).toEqual(['Recent', 'Old']);
+    expect(trials[0]?.tone).toBe('negative');
+    expect(trials[0]?.label).toBe('Trial ended');
+  });
+
+  it('excludes upcoming trials and archived subs', () => {
+    expect(
+      expiredTrials([
+        sub({ id: 'a', trialEnds: inDays(5) }),
+        sub({ id: 'b', trialEnds: inDays(-1), archived: true }),
         sub({ id: 'c' }),
       ]),
     ).toEqual([]);

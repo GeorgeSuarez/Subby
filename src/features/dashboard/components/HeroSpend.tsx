@@ -14,7 +14,6 @@
  */
 
 import { StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 
 import { Card, Text } from '@/design/components';
@@ -25,13 +24,11 @@ import {
   useIsLoadingSubscriptions,
 } from '@/store/useSubscriptionsStore';
 import {
-  activeTrials,
   budgetProgress,
   projectedMonthEndSpend,
   renewalsThisMonth,
   totalMonthlySpend,
   totalYearlySpend,
-  type RenewalTone,
 } from '@/utils/billing';
 import { formatCurrency, formatCurrencyCompact } from '@/utils/format';
 import { useBudget, useCurrency } from '@/store/useUIStore';
@@ -51,7 +48,6 @@ export function HeroSpend() {
   const yearly = totalYearlySpend(subs);
   const monthCharges = renewalsThisMonth(subs);
   const progress = budgetProgress(monthly, budget);
-  const soonestTrial = activeTrials(subs)[0];
   const projection = projectedMonthEndSpend(subs);
 
   const content = (
@@ -91,25 +87,6 @@ export function HeroSpend() {
           charging this month
         </Text>
       </View>
-
-      {/* Soonest upcoming free trial — one chip, tone-tinted like the badge. */}
-      {soonestTrial ? (
-        <View style={styles.trialRow}>
-          <Ionicons
-            name="gift-outline"
-            size={14}
-            color={trialToneColor(soonestTrial.tone, colors)}
-          />
-          <Text
-            variant="caption"
-            weight="600"
-            color={trialTextColor(soonestTrial.tone)}
-            numberOfLines={1}
-          >
-            {soonestTrial.name} trial {soonestTrial.label.toLowerCase()}
-          </Text>
-        </View>
-      ) : null}
 
       {/* Budget progress — only when a budget is set. */}
       {budget > 0 ? (
@@ -182,35 +159,6 @@ export function HeroSpend() {
 
 // --- Helpers ----------------------------------------------------------------
 
-function trialToneColor(
-  tone: RenewalTone,
-  c: ReturnType<typeof useTheme>['colors'],
-): string {
-  switch (tone) {
-    case 'warning':
-      return c.warning;
-    case 'negative':
-      return c.negative;
-    case 'positive':
-    case 'neutral':
-    default:
-      return c.accent;
-  }
-}
-
-function trialTextColor(tone: RenewalTone): 'warning' | 'negative' | 'accent' {
-  switch (tone) {
-    case 'warning':
-      return 'warning';
-    case 'negative':
-      return 'negative';
-    case 'positive':
-    case 'neutral':
-    default:
-      return 'accent';
-  }
-}
-
 function projectionCopy(
   projected: number,
   budget: number,
@@ -246,12 +194,6 @@ const styles = StyleSheet.create({
   },
   subRow: {
     marginTop: spacing.xs,
-  },
-  trialRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
   },
   budget: {
     marginTop: spacing.md,

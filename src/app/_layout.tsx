@@ -127,6 +127,16 @@ export default function RootLayout() {
               {/* The add/edit modal group sits behind the same gate so a
                   signed-out user can't deep link into it. */}
               <Stack.Screen name="subscription" />
+              {/* Active-trials list — pushed from the dashboard's trial card.
+                  'minimal' hides the "(tabs)" label behind the back chevron. */}
+              <Stack.Screen
+                name="trials"
+                options={{
+                  headerShown: true,
+                  title: 'Active trials',
+                  headerBackButtonDisplayMode: 'minimal',
+                }}
+              />
             </Stack.Protected>
             <Stack.Protected guard={!isSignedIn}>
               <Stack.Screen name="auth" />
