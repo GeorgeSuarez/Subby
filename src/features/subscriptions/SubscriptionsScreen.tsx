@@ -17,7 +17,7 @@
  */
 
 import { useCallback, useMemo, useState, type ComponentProps } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 
@@ -33,6 +33,10 @@ import { radius, spacing } from '@/design/tokens';
 import { useTheme } from '@/design/theme';
 import { SortFilterBar } from '@/features/subscriptions/components/SortFilterBar';
 import { filterAndSortSubs } from '@/features/subscriptions/subscriptions-filter';
+import {
+  confirmDelete,
+  openRowActions,
+} from '@/features/subscriptions/row-actions';
 import {
   useActiveSubscriptions,
   useIsLoadingSubscriptions,
@@ -256,45 +260,6 @@ function rowTrailingSubtitle(
   // from `nextRenewal`, but archived subs don't need that visual urgency.
   void activeIdSet; // reserved for future selection-state accessories (Step 8).
   return formatRenewalIn(daysUntilRenewal(sub));
-}
-
-/**
- * Open a NATIVE action sheet via `Alert.alert` — iOS renders a UIAlertController,
- * Android renders a material dialog. Both are platform-native, not JS modals.
- * Skill `ui-menus`: native context menus for destructive/non-destructive row actions.
- */
-function openRowActions(args: {
-  name: string;
-  archived: boolean;
-  onEdit: () => void;
-  onArchive: () => void;
-  onDelete: () => void;
-}): void {
-  const archiveLabel = args.archived ? 'Unarchive' : 'Archive';
-  Alert.alert(
-    args.name,
-    undefined,
-    [
-      { text: 'Edit', onPress: args.onEdit },
-      { text: archiveLabel, onPress: args.onArchive },
-      { text: 'Delete', style: 'destructive', onPress: args.onDelete },
-      { text: 'Cancel', style: 'cancel' },
-    ],
-    { cancelable: true },
-  );
-}
-
-/** Two-step delete: confirm via a second native dialog before removing. */
-function confirmDelete(name: string, onConfirm: () => void): void {
-  Alert.alert(
-    `Delete ${name}?`,
-    'This cannot be undone.',
-    [
-      { text: 'Delete', style: 'destructive', onPress: onConfirm },
-      { text: 'Cancel', style: 'cancel' },
-    ],
-    { cancelable: true },
-  );
 }
 
 const styles = StyleSheet.create({
