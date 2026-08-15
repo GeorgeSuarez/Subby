@@ -15,10 +15,11 @@ The project was built as a portfolio piece to demonstrate modern React Native en
 ## Demo
 
 Silent looping videos of the app — Dashboard (spend, budget projection,
-free-trial countdown, savings insight, forecast), the full add-subscription
-flow, and the subscriptions list with search and detail views. Served from a
-lazy-loading showcase page: [**watch the demos**](docs/demo/index.html)
-(WebM/MP4, works offline, click any video to pause).
+billing-cycle progress, active trials, renewals timeline, category pie,
+forecast), the full add-subscription flow, and the subscriptions list with
+search and detail views. Served from a lazy-loading showcase page:
+[**watch the demos**](docs/demo/index.html) (WebM/MP4, works offline, click
+any video to pause).
 
 ## Features
 
