@@ -21,17 +21,12 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 
-import {
-  EmptyState,
-  ListRow,
-  SearchField,
-  SearchHint,
-  Text,
-} from '@/design/components';
+import { EmptyState, SearchField, SearchHint, Text } from '@/design/components';
 import { Surface } from '@/design/components/Surface';
 import { radius, spacing } from '@/design/tokens';
 import { useTheme } from '@/design/theme';
 import { SortFilterBar } from '@/features/subscriptions/components/SortFilterBar';
+import { SwipeableRow } from '@/features/subscriptions/components/SwipeableRow';
 import { filterAndSortSubs } from '@/features/subscriptions/subscriptions-filter';
 import {
   confirmDelete,
@@ -115,6 +110,17 @@ export function SubscriptionsScreen() {
       });
     },
     [subs, router, archive, remove],
+  );
+
+  // Swipe action — archive/unarchive the revealed row.
+  const onSwipeAction = useCallback(
+    (id: string) => {
+      const target = subs.find((s) => s.id === id);
+      if (!target) return;
+      void impactMedium();
+      archive(id, !target.archived);
+    },
+    [subs, archive],
   );
 
   const hasAnySubs = subs.length > 0;
@@ -223,16 +229,18 @@ export function SubscriptionsScreen() {
         ListHeaderComponent={header}
         ListFooterComponent={footer}
         renderItem={({ item }) => (
-          <ListRow
+          <SwipeableRow
             id={item.id}
+            archived={item.archived}
+            onAction={onSwipeAction}
+            onPressWithId={onRowPress}
+            onLongPressWithId={onRowLongPress}
             title={item.name}
             subtitle={rowSubtitle(item)}
             trailingTitle={formatCurrency(item.amount, item.currency)}
             trailingSubtitle={rowTrailingSubtitle(item, activeIdSet)}
             icon={item.icon}
             avatarBackground="surfaceHigher"
-            onPressWithId={onRowPress}
-            onLongPressWithId={onRowLongPress}
             disabled={item.archived}
             style={item.archived ? styles.archivedRow : undefined}
           />
