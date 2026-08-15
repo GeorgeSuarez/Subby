@@ -24,9 +24,18 @@ import { Card, ListRow, Text } from '@/design/components';
 import type { TextColor } from '@/design/components/Text';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
-import { useActiveSubscriptions } from '@/store/useSubscriptionsStore';
+import {
+  useActiveSubscriptions,
+  useSubscriptionsStore,
+} from '@/store/useSubscriptionsStore';
+import { toast } from '@/store/useToastStore';
 import { activeTrials, expiredTrials, type RenewalTone } from '@/utils/billing';
 import { formatMonthDay } from '@/utils/format';
+import { impactMedium } from '@/utils/haptics';
+import {
+  confirmDelete,
+  openRowActions,
+} from '@/features/subscriptions/row-actions';
 
 /** Maximum rows shown per section before "View all" takes the user to /trials. */
 const MAX_ROWS = 5;
@@ -35,6 +44,8 @@ export function TrialsCard() {
   const subs = useActiveSubscriptions();
   const router = useRouter();
   const { colors } = useTheme();
+  const archive = useSubscriptionsStore((s) => s.archive);
+  const remove = useSubscriptionsStore((s) => s.remove);
 
   // Derived during render (skill `react-state-minimize`) — nothing cached.
   const allActive = activeTrials(subs);
@@ -45,12 +56,49 @@ export function TrialsCard() {
   const endedCount = allEnded.length;
   const hasAny = activeCount + endedCount > 0;
 
-  // Single stable callback instance — each row just calls it with its id.
+  // Single stable callback instances — each row just calls them with its id.
   const onRowPress = useCallback(
     (id: string) => {
       router.push(`/subscription/${id}`);
     },
     [router],
+  );
+
+  // Archive/delete with the offline-queue toast, mirroring the detail screen.
+  const runArchive = useCallback(
+    async (id: string, archived: boolean) => {
+      await archive(id, archived);
+      if (useSubscriptionsStore.getState().queuedChange) {
+        toast("Saved — will sync when you're online");
+      }
+    },
+    [archive],
+  );
+
+  const runDelete = useCallback(
+    async (id: string) => {
+      await remove(id);
+      if (useSubscriptionsStore.getState().queuedChange) {
+        toast("Saved — will sync when you're online");
+      }
+    },
+    [remove],
+  );
+
+  const onRowLongPress = useCallback(
+    (id: string) => {
+      const target = subs.find((s) => s.id === id);
+      if (!target) return;
+      void impactMedium();
+      openRowActions({
+        name: target.name,
+        archived: target.archived,
+        onEdit: () => router.push(`/subscription/${id}`),
+        onArchive: () => void runArchive(id, !target.archived),
+        onDelete: () => confirmDelete(target.name, () => void runDelete(id)),
+      });
+    },
+    [subs, router, runArchive, runDelete],
   );
 
   const onViewAll = useCallback(() => {
@@ -97,6 +145,7 @@ export function TrialsCard() {
             icon={t.icon}
             avatarBackground="surfaceHigher"
             onPressWithId={onRowPress}
+            onLongPressWithId={onRowLongPress}
           />
         ))}
 
@@ -116,6 +165,7 @@ export function TrialsCard() {
                 icon={t.icon}
                 avatarBackground="surfaceHigher"
                 onPressWithId={onRowPress}
+                onLongPressWithId={onRowLongPress}
               />
             ))}
           </View>
