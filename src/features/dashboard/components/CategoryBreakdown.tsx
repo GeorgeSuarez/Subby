@@ -1,12 +1,12 @@
 /**
- * CategoryBreakdown — monthly spend per category as horizontal bars.
+ * CategoryBreakdown — monthly spend per category as one stacked bar.
  *
- * Bars are plain Views sized by each category's share of the monthly total —
- * no chart library. Rows are memo-friendly: every value is derived during
- * render from the active-subscriptions selector via `categoryBreakdown`.
+ * A single horizontal bar segmented by each category's share of the monthly
+ * total (cyan-family tones), with the rows below acting as the legend. Reads
+ * in one glance — no chart library, plain Views sized by flex share.
  *
  * Skill rules:
- *  - `ui-styling`: tokens only; bar track/fill use palette colors + radius.
+ *  - `ui-styling`: tokens + radius; segment tones stay in the accent family.
  *  - `react-state-minimize`: derived in render, never stored.
  */
 
@@ -19,6 +19,15 @@ import { useActiveSubscriptions } from '@/store/useSubscriptionsStore';
 import { useCurrency } from '@/store/useUIStore';
 import { categoryBreakdown } from '@/utils/billing';
 import { formatCurrency } from '@/utils/format';
+
+/** Cyan-family segment tones, cycled by category order. */
+const SEGMENT_TONES = [
+  '#22D3EE',
+  '#67E8F9',
+  '#0E7490',
+  '#155E75',
+  '#38BDF8',
+] as const;
 
 export function CategoryBreakdown() {
   const subs = useActiveSubscriptions();
@@ -34,10 +43,34 @@ export function CategoryBreakdown() {
       <Text variant="caption" color="textSecondary" weight="600">
         By category
       </Text>
+
+      <View
+        style={[styles.segmentBar, { backgroundColor: colors.surfaceHigher }]}
+      >
+        {items.map((item, i) => (
+          <View
+            key={item.category}
+            style={[
+              styles.segment,
+              {
+                flex: item.share,
+                backgroundColor: SEGMENT_TONES[i % SEGMENT_TONES.length],
+              },
+            ]}
+          />
+        ))}
+      </View>
+
       <View style={styles.stack}>
-        {items.map((item) => (
+        {items.map((item, i) => (
           <View key={item.category} style={styles.item}>
             <View style={styles.itemHeader}>
+              <View
+                style={[
+                  styles.dot,
+                  { backgroundColor: SEGMENT_TONES[i % SEGMENT_TONES.length] },
+                ]}
+              />
               <Text
                 variant="body"
                 weight="600"
@@ -55,19 +88,6 @@ export function CategoryBreakdown() {
                 {formatCurrency(item.monthlyTotal, currency)}
               </Text>
             </View>
-            <View
-              style={[styles.track, { backgroundColor: colors.accentSoft }]}
-            >
-              <View
-                style={[
-                  styles.fill,
-                  {
-                    width: `${Math.max(2, item.share * 100)}%`,
-                    backgroundColor: colors.accent,
-                  },
-                ]}
-              />
-            </View>
           </View>
         ))}
       </View>
@@ -76,6 +96,16 @@ export function CategoryBreakdown() {
 }
 
 const styles = StyleSheet.create({
+  segmentBar: {
+    flexDirection: 'row',
+    height: 8,
+    borderRadius: radius.pill,
+    gap: 2,
+    marginTop: spacing.md,
+  },
+  segment: {
+    borderRadius: radius.pill,
+  },
   stack: {
     gap: spacing.md,
     marginTop: spacing.md,
@@ -89,16 +119,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.sm,
   },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
   label: {
     flex: 1,
-  },
-  track: {
-    height: 6,
-    borderRadius: radius.pill,
-    overflow: 'hidden',
-  },
-  fill: {
-    height: '100%',
-    borderRadius: radius.pill,
   },
 });
