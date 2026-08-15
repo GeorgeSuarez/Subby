@@ -424,6 +424,26 @@ export function reminderDateFor(nextRenewalISO: string, daysBefore = 1): Date {
   return reminder;
 }
 
+// --- Billing cycle ----------------------------------------------------------
+
+export interface CyclePosition {
+  /** Day of the current month (1-based). */
+  day: number;
+  /** Days in the current month. */
+  daysInMonth: number;
+  /** Fraction of the month elapsed: day / daysInMonth. */
+  fraction: number;
+}
+
+/** Where today sits in the current billing month (0 < fraction <= 1). */
+export function billingCyclePosition(now = todayUTC()): CyclePosition {
+  const daysInMonth = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  const day = now.getUTCDate();
+  return { day, daysInMonth, fraction: day / daysInMonth };
+}
+
 // --- Trial status ------------------------------------------------------------
 
 /** Tone that maps to semantic palette tokens (mirrors Badge's tone union). */

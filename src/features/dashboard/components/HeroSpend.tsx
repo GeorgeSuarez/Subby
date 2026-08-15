@@ -13,8 +13,18 @@
  *  - `js-hoist-intl`: formatCurrency is cached per currency inside utils/format.
  */
 
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSequence,
+  withSpring,
+  withTiming,
+  withRepeat,
+  interpolate,
+} from 'react-native-reanimated';
 
 import { Card, Text } from '@/design/components';
 import { useColorMode, useTheme } from '@/design/theme';
@@ -24,6 +34,7 @@ import {
   useIsLoadingSubscriptions,
 } from '@/store/useSubscriptionsStore';
 import {
+  billingCyclePosition,
   budgetProgress,
   projectedMonthEndSpend,
   renewalsThisMonth,
@@ -49,6 +60,43 @@ export function HeroSpend() {
   const monthCharges = renewalsThisMonth(subs);
   const progress = budgetProgress(monthly, budget);
   const projection = projectedMonthEndSpend(subs);
+  const cycle = billingCyclePosition();
+
+  // Headline "pop" — a quick settle whenever the monthly total changes.
+  // Skill §3.1: transform scale only, GPU-accelerated.
+  const popScale = useSharedValue(1);
+  useEffect(() => {
+    popScale.set(
+      withSequence(
+        withTiming(1.035, { duration: 140 }),
+        withSpring(1, { damping: 14, stiffness: 220 }),
+      ),
+    );
+  }, [monthly, popScale]);
+
+  const popStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: popScale.get() }],
+  }));
+
+  // Billing-cycle dot — a soft, perpetual pulse (opacity + scale only).
+  const dotPulse = useSharedValue(0);
+  useEffect(() => {
+    dotPulse.set(
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 1400 }),
+          withTiming(0, { duration: 1400 }),
+        ),
+        -1,
+        false,
+      ),
+    );
+  }, [dotPulse]);
+
+  const dotPulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: interpolate(dotPulse.get(), [0, 1], [1, 1.4]) }],
+    opacity: interpolate(dotPulse.get(), [0, 1], [0.55, 1]),
+  }));
 
   const content = (
     <>
@@ -63,20 +111,22 @@ export function HeroSpend() {
 
       {/* Stat variant gives the oversized runner-up look */}
       <View style={styles.headlineRow}>
-        {isLoading ? (
-          <Text variant="stat" color="textTertiary">
-            —
-          </Text>
-        ) : (
-          <Text variant="stat" color="accent">
-            <AnimatedNumber
-              value={monthly}
-              format={(n) => formatCurrency(n, currency)}
-              delayMs={140}
-              duration={820}
-            />
-          </Text>
-        )}
+        <Animated.View style={popStyle}>
+          {isLoading ? (
+            <Text variant="stat" color="textTertiary">
+              —
+            </Text>
+          ) : (
+            <Text variant="stat" color="accent">
+              <AnimatedNumber
+                value={monthly}
+                format={(n) => formatCurrency(n, currency)}
+                delayMs={140}
+                duration={820}
+              />
+            </Text>
+          )}
+        </Animated.View>
       </View>
 
       {/* Sub row: yearly equivalent + renewals charging this month. */}
@@ -85,6 +135,28 @@ export function HeroSpend() {
           {formatCurrencyCompact(yearly, currency)} per year ·{' '}
           {monthCharges.count} renewal{monthCharges.count === 1 ? '' : 's'}{' '}
           charging this month
+        </Text>
+      </View>
+
+      {/* Billing-cycle progress — where the month stands at a glance. */}
+      <View style={styles.cycleRow}>
+        <View
+          style={[styles.cycleTrack, { backgroundColor: colors.surfaceHigher }]}
+        >
+          <Animated.View
+            style={[
+              styles.cycleDot,
+              {
+                backgroundColor: colors.accent,
+                boxShadow: shadow('glowAccent'),
+                left: `${Math.min(0.98, Math.max(0.02, cycle.fraction)) * 100}%`,
+              },
+              dotPulseStyle,
+            ]}
+          />
+        </View>
+        <Text variant="caption" color="textTertiary">
+          {`Day ${cycle.day} / ${cycle.daysInMonth}`}
         </Text>
       </View>
 
@@ -194,6 +266,25 @@ const styles = StyleSheet.create({
   },
   subRow: {
     marginTop: spacing.xs,
+  },
+  cycleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  cycleTrack: {
+    flex: 1,
+    height: 3,
+    borderRadius: radius.pill,
+  },
+  cycleDot: {
+    position: 'absolute',
+    top: -2.5,
+    marginLeft: -4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   budget: {
     marginTop: spacing.md,

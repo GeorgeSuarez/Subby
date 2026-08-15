@@ -1,6 +1,7 @@
 import {
   activeTrials,
   addMonths,
+  billingCyclePosition,
   budgetProgress,
   categoryBreakdown,
   daysBetween,
@@ -599,5 +600,23 @@ describe('expiredTrials', () => {
         sub({ id: 'c' }),
       ]),
     ).toEqual([]);
+  });
+});
+
+describe('billingCyclePosition', () => {
+  it('reports the day, days-in-month, and fraction elapsed', () => {
+    const mid = billingCyclePosition(new Date(Date.UTC(2026, 6, 15)));
+    expect(mid.day).toBe(15);
+    expect(mid.daysInMonth).toBe(31);
+    expect(mid.fraction).toBeCloseTo(15 / 31, 5);
+  });
+
+  it('is the first day at fraction 1/31 and the last day at 1', () => {
+    const first = billingCyclePosition(new Date(Date.UTC(2026, 6, 1)));
+    expect(first.fraction).toBeCloseTo(1 / 31, 5);
+    // Feb 2026 has 28 days.
+    const last = billingCyclePosition(new Date(Date.UTC(2026, 1, 28)));
+    expect(last.fraction).toBe(1);
+    expect(last.daysInMonth).toBe(28);
   });
 });
