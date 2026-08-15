@@ -34,11 +34,11 @@ export function InsightStrip({ insight }: { insight: Insight }) {
   return (
     <Card padding={spacing.lg} elevation="low">
       <View style={styles.row}>
-        <Ionicons name={ICONS[insight.kind]} size={16} color={accent} />
+        <Ionicons name={ICONS[insight.kind]} size={18} color={accent} />
         <Text
-          variant="caption"
-          weight="500"
-          color="textSecondary"
+          variant="body"
+          weight="600"
+          color="textPrimary"
           style={styles.text}
         >
           {insight.text}

@@ -36,7 +36,6 @@ import { QuickStats } from '@/features/dashboard/components/QuickStats';
 import { CategoryBreakdown } from '@/features/dashboard/components/CategoryBreakdown';
 import { RenewalsList } from '@/features/dashboard/components/RenewalsList';
 import { TrialsCard } from '@/features/dashboard/components/TrialsCard';
-import { ForecastCard } from '@/features/dashboard/components/ForecastCard';
 import { InsightStrip } from '@/features/dashboard/components/InsightStrip';
 import { AddFab } from '@/features/dashboard/components/AddFab';
 import { pickInsight } from '@/features/dashboard/insights';
@@ -100,13 +99,12 @@ export function DashboardScreen() {
   return (
     <Surface background="surface" style={styles.root}>
       <ScrollView {...scrollProps}>
+        {insight ? <InsightStrip insight={insight} /> : null}
         <HeroSpend />
+        <QuickStats />
         <RenewalsList />
         <TrialsCard />
         <CategoryBreakdown />
-        {insight ? <InsightStrip insight={insight} /> : null}
-        <ForecastCard />
-        <QuickStats />
       </ScrollView>
       {/* Primary add affordance — floats above the tab bar. The empty state
           has its own centered CTA, so the FAB only shows with content. */}
