@@ -7,3 +7,4 @@ export { CategoryBreakdown } from '@/features/dashboard/components/CategoryBreak
 export { TrialsCard } from '@/features/dashboard/components/TrialsCard';
 export { ForecastCard } from '@/features/dashboard/components/ForecastCard';
 export { AddFab } from '@/features/dashboard/components/AddFab';
+export { PieChart } from '@/features/dashboard/components/PieChart';

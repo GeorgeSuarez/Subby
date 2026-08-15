@@ -3,19 +3,30 @@
  *
  * Meaningful-at-a-glance: every month gets a labeled bar (month name beneath,
  * amount above when it's a peak), the current month is highlighted in accent,
- * quiet months stay visibly empty, and the footer states the average and the
- * peak so the shape of the year reads without squinting. When a budget is set,
+ * quiet months stay visibly empty. Bars grow in with a stagger on mount
+ * (scaleY from the track bottom — transform only, GPU). When a budget is set,
  * a hairline crosses the bars at the budget height and over-budget months tint
- * negative.
+ * negative. The footer states the average, the biggest month-over-month swing,
+ * and the yearly total.
  *
  * Skill rules:
  *  - `ui-styling`: tokens only; bar track/fill from palette + radius.
  *  - `react-state-minimize`: derived in render via `monthlyForecast` — no state.
+ *  - `animation-gpu-properties`: bar growth animates `transform: scaleY` with
+ *    `transformOrigin: 'bottom'` — never height.
  */
 
+import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withDelay,
+  withSpring,
+} from 'react-native-reanimated';
 
 import { Card, Text } from '@/design/components';
+import type { TextColor } from '@/design/components/Text';
 import { useTheme } from '@/design/theme';
 import { radius, spacing } from '@/design/tokens';
 import { useActiveSubscriptions } from '@/store/useSubscriptionsStore';
@@ -44,6 +55,14 @@ export function ForecastCard() {
     (budget > 0 && peakTotal > 0 ? Math.min(1, budget / peakTotal) : 0) *
     TRACK_HEIGHT;
 
+  // Biggest month-over-month swing, for the footer ("Aug +$40 vs Jul").
+  const swing = biggestSwing(forecast);
+  const swingCopy = swing
+    ? ` · ${formatMonthShort(swing.currentMonth)} ${
+        swing.diff >= 0 ? '+' : '−'
+      }${formatCurrency(Math.abs(swing.diff), currency)} vs ${formatMonthShort(swing.previousMonth)}`
+    : '';
+
   return (
     <Card padding={spacing.lg} elevation="low">
       <Text variant="caption" color="textSecondary" weight="600">
@@ -57,54 +76,19 @@ export function ForecastCard() {
             const isPeak = peakTotal > 0 && m.total === peakTotal;
             const isOver = hasBudget && m.total > budget;
             return (
-              <View key={m.month} style={styles.column}>
-                {/* Value chip — only on peak months, so the eye lands on the spike. */}
-                <View style={styles.chipSlot}>
-                  {isPeak ? (
-                    <View
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: colors.surfaceHigher,
-                          borderColor: colors.border,
-                        },
-                      ]}
-                    >
-                      <Text
-                        variant="caption"
-                        weight="700"
-                        color={isOver ? 'negative' : 'accent'}
-                        numberOfLines={1}
-                      >
-                        {formatCurrency(m.total, currency)}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
-
-                <View
-                  style={[styles.track, { backgroundColor: colors.accentSoft }]}
-                >
-                  <View
-                    style={[
-                      styles.fill,
-                      {
-                        height:
-                          m.total === 0
-                            ? 0
-                            : `${Math.max(8, (m.total / (peakTotal || 1)) * 100)}%`,
-                        backgroundColor: isOver
-                          ? colors.negative
-                          : isCurrent
-                            ? colors.accent
-                            : isPeak
-                              ? colors.accentMuted
-                              : colors.accentSoftStrong,
-                      },
-                    ]}
-                  />
-                </View>
-              </View>
+              <ForecastBar
+                key={m.month}
+                total={m.total}
+                peakTotal={peakTotal}
+                isCurrent={isCurrent}
+                isPeak={isPeak}
+                isOver={isOver}
+                chipText={
+                  isPeak ? formatCurrency(m.total, currency) : undefined
+                }
+                chipColor={isPeak && isOver ? 'negative' : 'accent'}
+                delayMs={i * 45}
+              />
             );
           })}
 
@@ -135,9 +119,10 @@ export function ForecastCard() {
       </View>
 
       <View style={[styles.footer, { borderTopColor: colors.hairline }]}>
-        <Text variant="caption" color="textSecondary">
+        <Text variant="caption" color="textSecondary" numberOfLines={1}>
           Avg {formatCurrency(average, currency)}/mo
           {peak ? ` · Peak ${formatMonthShort(peak.month)}` : ''}
+          {swingCopy}
           {hasBudget ? ` · Budget ${formatCurrency(budget, currency)}` : ''}
         </Text>
         <Text variant="caption" color="textSecondary" weight="600">
@@ -146,6 +131,123 @@ export function ForecastCard() {
       </View>
     </Card>
   );
+}
+
+// --- Sub-components ---------------------------------------------------------
+
+/** One forecast bar — owns its grow-in animation (transform-only). */
+function ForecastBar({
+  total,
+  peakTotal,
+  isCurrent,
+  isPeak,
+  isOver,
+  chipText,
+  chipColor,
+  delayMs,
+}: {
+  total: number;
+  peakTotal: number;
+  isCurrent: boolean;
+  isPeak: boolean;
+  isOver: boolean;
+  chipText?: string;
+  chipColor: TextColor;
+  delayMs: number;
+}) {
+  const { colors } = useTheme();
+  // Ground truth: 0 = collapsed, 1 = full height. Skill §7.1.
+  const grow = useSharedValue(0);
+
+  useEffect(() => {
+    grow.set(
+      withDelay(
+        delayMs,
+        withSpring(1, { damping: 15, stiffness: 90, mass: 1 }),
+      ),
+    );
+  }, [grow, delayMs]);
+
+  const fillStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleY: grow.get() }],
+  }));
+
+  const fillColor = isOver
+    ? colors.negative
+    : isCurrent
+      ? colors.accent
+      : isPeak
+        ? colors.accentMuted
+        : colors.accentSoftStrong;
+
+  return (
+    <View style={styles.column}>
+      {/* Value chip — only on peak months, so the eye lands on the spike. */}
+      <View style={styles.chipSlot}>
+        {chipText ? (
+          <View
+            style={[
+              styles.chip,
+              {
+                backgroundColor: colors.surfaceHigher,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            <Text
+              variant="caption"
+              weight="700"
+              color={chipColor}
+              numberOfLines={1}
+            >
+              {chipText}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
+      <View style={[styles.track, { backgroundColor: colors.accentSoft }]}>
+        <Animated.View
+          style={[
+            styles.fill,
+            {
+              height:
+                total === 0
+                  ? 0
+                  : `${Math.max(8, (total / (peakTotal || 1)) * 100)}%`,
+              backgroundColor: fillColor,
+            },
+            fillStyle,
+          ]}
+        />
+      </View>
+    </View>
+  );
+}
+
+// --- Helpers ----------------------------------------------------------------
+
+/** Biggest month-over-month swing (null when the series is flat). */
+function biggestSwing(
+  forecast: { month: string; total: number }[],
+): { currentMonth: string; previousMonth: string; diff: number } | null {
+  let best: {
+    currentMonth: string;
+    previousMonth: string;
+    diff: number;
+  } | null = null;
+  let bestAbs = 0;
+  for (let i = 1; i < forecast.length; i++) {
+    const prev = forecast[i - 1];
+    const cur = forecast[i];
+    if (!prev || !cur) continue;
+    const diff = cur.total - prev.total;
+    if (Math.abs(diff) > bestAbs) {
+      bestAbs = Math.abs(diff);
+      best = { currentMonth: cur.month, previousMonth: prev.month, diff };
+    }
+  }
+  return best;
 }
 
 const styles = StyleSheet.create({
@@ -185,6 +287,7 @@ const styles = StyleSheet.create({
   fill: {
     width: '100%',
     borderRadius: radius.sm,
+    transformOrigin: 'bottom',
   },
   budgetLine: {
     position: 'absolute',
@@ -205,6 +308,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: spacing.sm,
     marginTop: spacing.sm,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
