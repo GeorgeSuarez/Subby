@@ -1,15 +1,18 @@
 import {
+  activeTrials,
   addMonths,
   budgetProgress,
   categoryBreakdown,
   daysBetween,
   daysUntilRenewal,
+  getTrialStatus,
   groupByCategory,
   largestMonthly,
   monthlyEquivalent,
   monthlyForecast,
   nextRenewalAfter,
   parseDate,
+  projectedMonthEndSpend,
   reminderDateFor,
   renewalsThisMonth,
   renewalsWithin,
@@ -437,5 +440,133 @@ describe('reminderDateFor', () => {
 
   it('supports a custom lead time', () => {
     expect(toISODate(reminderDateFor('2026-08-01', 3))).toBe('2026-07-29');
+  });
+});
+
+describe('projectedMonthEndSpend', () => {
+  const from = parseDate('2026-07-16'); // mid-July
+
+  it('splits charges already spent from those still to come', () => {
+    const subs = [
+      sub({ id: 'a', amount: 10, nextRenewal: '2026-07-10' }), // charged on the 10th
+      sub({ id: 'b', amount: 20, nextRenewal: '2026-07-20' }), // still to come
+      sub({ id: 'c', amount: 30, nextRenewal: '2026-09-01' }), // previous charge in Aug — out
+    ];
+    expect(projectedMonthEndSpend(subs, from)).toEqual({
+      spent: 10,
+      remaining: 20,
+      projected: 30,
+    });
+  });
+
+  it('counts a renewal dated today as already spent', () => {
+    // Matches `renewalsThisMonth`: a same-day renewal is "already charged".
+    const result = projectedMonthEndSpend(
+      [sub({ id: 'a', amount: 5, nextRenewal: '2026-07-16' })],
+      from,
+    );
+    expect(result).toEqual({ spent: 5, remaining: 0, projected: 5 });
+  });
+
+  it('counts a past monthly renewal spent in this month, not remaining', () => {
+    // 2026-06-01 -> next renewal 2026-08-01; the 07-01 charge happened mid-month.
+    const result = projectedMonthEndSpend(
+      [sub({ id: 'a', amount: 12, nextRenewal: '2026-06-01' })],
+      parseDate('2026-07-16'),
+    );
+    expect(result).toEqual({ spent: 12, remaining: 0, projected: 12 });
+  });
+
+  it('charges yearly subs at their full amount in the remaining window', () => {
+    const result = projectedMonthEndSpend(
+      [
+        sub({
+          id: 'a',
+          amount: 120,
+          cycle: 'yearly',
+          nextRenewal: '2026-07-25',
+        }),
+      ],
+      from,
+    );
+    expect(result).toEqual({ spent: 0, remaining: 120, projected: 120 });
+  });
+
+  it('excludes archived subs and returns zeroes for an empty list', () => {
+    const result = projectedMonthEndSpend(
+      [sub({ id: 'a', amount: 10, nextRenewal: '2026-07-20', archived: true })],
+      from,
+    );
+    expect(result).toEqual({ spent: 0, remaining: 0, projected: 0 });
+    expect(projectedMonthEndSpend([], from)).toEqual({
+      spent: 0,
+      remaining: 0,
+      projected: 0,
+    });
+  });
+});
+
+describe('getTrialStatus', () => {
+  const inDays = (n: number): string => {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+
+  it('returns null without a trial end', () => {
+    expect(getTrialStatus(sub({}))).toBeNull();
+  });
+
+  it('reports days remaining and a future date', () => {
+    const status = getTrialStatus(sub({ trialEnds: inDays(5) }));
+    expect(status).not.toBeNull();
+    expect(status?.days).toBe(5);
+    expect(status?.label).toBe('Ends in 5 days');
+    expect(status?.tone).toBe('positive');
+  });
+
+  it('warns within 3 days and flags ended trials', () => {
+    expect(getTrialStatus(sub({ trialEnds: inDays(1) }))?.tone).toBe('warning');
+    expect(getTrialStatus(sub({ trialEnds: inDays(0) }))?.label).toBe(
+      'Ends today',
+    );
+    const ended = getTrialStatus(sub({ trialEnds: inDays(-2) }));
+    expect(ended?.tone).toBe('negative');
+    expect(ended?.label).toBe('Trial ended');
+  });
+});
+
+describe('activeTrials', () => {
+  const inDays = (n: number): string => {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() + n);
+    return d.toISOString().slice(0, 10);
+  };
+
+  it('lists upcoming trials soonest-first with names', () => {
+    const trials = activeTrials([
+      sub({ id: 'a', name: 'Later', trialEnds: inDays(9) }),
+      sub({ id: 'b', name: 'Sooner', trialEnds: inDays(2) }),
+    ]);
+    expect(trials.map((t) => t.name)).toEqual(['Sooner', 'Later']);
+    expect(trials[0]?.label).toBe('Ends in 2 days');
+  });
+
+  it('includes a trial ending today', () => {
+    const trials = activeTrials([
+      sub({ id: 'a', name: 'Today', trialEnds: inDays(0) }),
+    ]);
+    expect(trials).toHaveLength(1);
+    expect(trials[0]?.label).toBe('Ends today');
+  });
+
+  it('excludes ended trials and archived subs', () => {
+    expect(
+      activeTrials([
+        sub({ id: 'a', trialEnds: inDays(-1) }),
+        sub({ id: 'b', trialEnds: inDays(5), archived: true }),
+        sub({ id: 'c' }),
+      ]),
+    ).toEqual([]);
   });
 });

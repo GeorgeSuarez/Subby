@@ -14,6 +14,7 @@
  */
 
 import { StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 
 import { Card, Text } from '@/design/components';
@@ -24,10 +25,13 @@ import {
   useIsLoadingSubscriptions,
 } from '@/store/useSubscriptionsStore';
 import {
+  activeTrials,
   budgetProgress,
+  projectedMonthEndSpend,
   renewalsThisMonth,
   totalMonthlySpend,
   totalYearlySpend,
+  type RenewalTone,
 } from '@/utils/billing';
 import { formatCurrency, formatCurrencyCompact } from '@/utils/format';
 import { useBudget, useCurrency } from '@/store/useUIStore';
@@ -47,6 +51,8 @@ export function HeroSpend() {
   const yearly = totalYearlySpend(subs);
   const monthCharges = renewalsThisMonth(subs);
   const progress = budgetProgress(monthly, budget);
+  const soonestTrial = activeTrials(subs)[0];
+  const projection = projectedMonthEndSpend(subs);
 
   const content = (
     <>
@@ -86,6 +92,25 @@ export function HeroSpend() {
         </Text>
       </View>
 
+      {/* Soonest upcoming free trial — one chip, tone-tinted like the badge. */}
+      {soonestTrial ? (
+        <View style={styles.trialRow}>
+          <Ionicons
+            name="gift-outline"
+            size={14}
+            color={trialToneColor(soonestTrial.tone, colors)}
+          />
+          <Text
+            variant="caption"
+            weight="600"
+            color={trialTextColor(soonestTrial.tone)}
+            numberOfLines={1}
+          >
+            {soonestTrial.name} trial {soonestTrial.label.toLowerCase()}
+          </Text>
+        </View>
+      ) : null}
+
       {/* Budget progress — only when a budget is set. */}
       {budget > 0 ? (
         <View style={styles.budget}>
@@ -112,6 +137,14 @@ export function HeroSpend() {
               ? `Over budget by ${formatCurrency(progress.overAmount, currency)}`
               : `${Math.round(progress.pct * 100)}% of ${formatCurrency(budget, currency)} budget`}
           </Text>
+          {projection.remaining > 0 ? (
+            <Text
+              variant="caption"
+              color={projection.projected > budget ? 'negative' : 'accent'}
+            >
+              {projectionCopy(projection.projected, budget, currency)}
+            </Text>
+          ) : null}
         </View>
       ) : null}
     </>
@@ -147,6 +180,52 @@ export function HeroSpend() {
   );
 }
 
+// --- Helpers ----------------------------------------------------------------
+
+function trialToneColor(
+  tone: RenewalTone,
+  c: ReturnType<typeof useTheme>['colors'],
+): string {
+  switch (tone) {
+    case 'warning':
+      return c.warning;
+    case 'negative':
+      return c.negative;
+    case 'positive':
+    case 'neutral':
+    default:
+      return c.accent;
+  }
+}
+
+function trialTextColor(tone: RenewalTone): 'warning' | 'negative' | 'accent' {
+  switch (tone) {
+    case 'warning':
+      return 'warning';
+    case 'negative':
+      return 'negative';
+    case 'positive':
+    case 'neutral':
+    default:
+      return 'accent';
+  }
+}
+
+function projectionCopy(
+  projected: number,
+  budget: number,
+  currency: ReturnType<typeof useCurrency>,
+): string {
+  const overBy = projected - budget;
+  if (overBy > 0) {
+    return `On track to end the month ${formatCurrency(overBy, currency)} over budget`;
+  }
+  if (overBy === 0) {
+    return 'On track to hit your budget exactly';
+  }
+  return `On track to end the month ${formatCurrency(-overBy, currency)} under budget`;
+}
+
 const styles = StyleSheet.create({
   hero: {
     borderColor: 'transparent',
@@ -167,6 +246,12 @@ const styles = StyleSheet.create({
   },
   subRow: {
     marginTop: spacing.xs,
+  },
+  trialRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
   },
   budget: {
     marginTop: spacing.md,

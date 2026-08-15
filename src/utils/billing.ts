@@ -224,6 +224,48 @@ export function renewalsThisMonth(
   };
 }
 
+/** Charges already due this month vs still to come. */
+export interface MonthEndProjection {
+  /** Actual amounts charged between the 1st of the month and today. */
+  spent: number;
+  /** Actual amounts still due from today through end of month. */
+  remaining: number;
+  /** spent + remaining. */
+  projected: number;
+}
+
+/**
+ * Project the month's total actual charges. A subscription counts as already
+ * spent when its previous charge date (one cycle back from its next renewal)
+ * falls between the 1st of the month and today — matching
+ * `renewalsThisMonth`'s "same-day renewal is already charged" semantics.
+ */
+export function projectedMonthEndSpend(
+  subs: readonly Subscription[],
+  from: Date = todayUTC(),
+): MonthEndProjection {
+  const monthStart = new Date(
+    Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), 1, 12, 0, 0, 0),
+  );
+  let spent = 0;
+  for (const s of subs) {
+    if (s.archived) continue;
+    const spanMonths = cycleMeta(s.cycle).months;
+    const previous = addMonths(
+      parseDate(nextRenewalAfter(s, from)),
+      -spanMonths,
+    );
+    if (
+      previous.getTime() >= monthStart.getTime() &&
+      previous.getTime() <= from.getTime()
+    ) {
+      spent += s.amount;
+    }
+  }
+  const remaining = renewalsThisMonth(subs, from).total;
+  return { spent, remaining, projected: spent + remaining };
+}
+
 /** One row of the category breakdown card. */
 export interface CategoryBreakdownItem {
   category: CategorySlug;
@@ -380,4 +422,55 @@ export function reminderDateFor(nextRenewalISO: string, daysBefore = 1): Date {
   const reminder = new Date(renewal.getTime() - daysBefore * 86_400_000);
   reminder.setUTCHours(9, 0, 0, 0);
   return reminder;
+}
+
+// --- Trial status ------------------------------------------------------------
+
+/** Tone that maps to semantic palette tokens (mirrors Badge's tone union). */
+export type RenewalTone = 'positive' | 'negative' | 'warning' | 'neutral';
+
+export interface TrialStatus {
+  /** Days until the trial ends; negative if it already ended. */
+  days: number;
+  /** ISO date of the trial end. */
+  endISO: string;
+  tone: RenewalTone;
+  label: string;
+}
+
+/** Trial countdown — null when the subscription has no trial end date. */
+export function getTrialStatus(sub: Subscription): TrialStatus | null {
+  if (!sub.trialEnds) return null;
+  const end = parseDate(sub.trialEnds);
+  const days = daysBetween(todayUTC(), end);
+  return {
+    days,
+    endISO: sub.trialEnds,
+    tone: days < 0 ? 'negative' : days <= 3 ? 'warning' : 'positive',
+    label: trialLabel(days),
+  };
+}
+
+function trialLabel(days: number): string {
+  if (days < 0) return 'Trial ended';
+  if (days === 0) return 'Ends today';
+  if (days === 1) return 'Ends tomorrow';
+  return `Ends in ${days} days`;
+}
+
+/** Upcoming trial (ends today or later) among active subs, soonest first. */
+export interface ActiveTrial extends TrialStatus {
+  name: string;
+}
+
+export function activeTrials(subs: readonly Subscription[]): ActiveTrial[] {
+  const trials: ActiveTrial[] = [];
+  for (const s of subs) {
+    if (s.archived) continue;
+    const status = getTrialStatus(s);
+    if (status && status.days >= 0) {
+      trials.push({ ...status, name: s.name });
+    }
+  }
+  return trials.sort((a, b) => a.days - b.days);
 }

@@ -13,5 +13,5 @@ export {
   getYearlyCost,
   renewalToneFor,
   type RenewalStatus,
-  type RenewalTone,
 } from '@/features/subscription-detail/detail-helpers';
+export type { RenewalTone } from '@/utils/billing';

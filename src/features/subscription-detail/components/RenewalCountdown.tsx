@@ -15,11 +15,8 @@ import { StyleSheet, View } from 'react-native';
 import { Badge, Card, Text, type BadgeTone } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
-import {
-  getRenewalStatus,
-  getTrialStatus,
-  type RenewalTone,
-} from '@/features/subscription-detail/detail-helpers';
+import { getRenewalStatus } from '@/features/subscription-detail/detail-helpers';
+import { getTrialStatus, type RenewalTone } from '@/utils/billing';
 import { formatDate } from '@/utils/format';
 import type { Subscription } from '@/types/subscription';
 

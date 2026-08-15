@@ -36,7 +36,10 @@ import { QuickStats } from '@/features/dashboard/components/QuickStats';
 import { CategoryBreakdown } from '@/features/dashboard/components/CategoryBreakdown';
 import { RenewalsList } from '@/features/dashboard/components/RenewalsList';
 import { ForecastCard } from '@/features/dashboard/components/ForecastCard';
+import { InsightStrip } from '@/features/dashboard/components/InsightStrip';
 import { AddFab } from '@/features/dashboard/components/AddFab';
+import { pickInsight } from '@/features/dashboard/insights';
+import { useCurrency } from '@/store/useUIStore';
 
 type ScrollViewProps = ComponentProps<typeof ScrollView>;
 
@@ -46,6 +49,10 @@ export function DashboardScreen() {
   const subs = useActiveSubscriptions();
   const isLoading = useIsLoadingSubscriptions();
   const hydrate = useSubscriptionsStore((s) => s.hydrate);
+  const currency = useCurrency();
+
+  // First-applicable dashboard insight — null hides the strip entirely.
+  const insight = pickInsight(subs, currency);
 
   // Empty-state CTA — single stable callback (skill `list-performance-callbacks`).
   const onAdd = useCallback(() => {
@@ -95,6 +102,7 @@ export function DashboardScreen() {
         <HeroSpend />
         <RenewalsList />
         <CategoryBreakdown />
+        {insight ? <InsightStrip insight={insight} /> : null}
         <ForecastCard />
         <QuickStats />
       </ScrollView>
