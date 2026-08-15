@@ -54,7 +54,15 @@ export function CategoryBreakdown() {
   const head = items.slice(0, MAX_SLICES);
   const tail = items.slice(MAX_SLICES);
 
-  const legend = head.map((item, i) => ({
+  type LegendItem = {
+    key: string;
+    label: string;
+    count: number;
+    amount: number;
+    color: string;
+  };
+
+  const legend: LegendItem[] = head.map((item, i) => ({
     key: item.category,
     label: item.label,
     count: item.count,
@@ -63,7 +71,8 @@ export function CategoryBreakdown() {
   }));
   if (tail.length > 0) {
     legend.push({
-      key: 'other',
+      // Prefix so the key can't collide with a real 'other' category.
+      key: 'merged-other',
       label: 'Other',
       count: tail.reduce((sum, item) => sum + item.count, 0),
       amount: tail.reduce((sum, item) => sum + item.monthlyTotal, 0),
