@@ -93,8 +93,8 @@
           data-src="web/dashboard.mp4"
           data-src-fallback="web/dashboard.webm"
           poster="web/dashboard-poster.jpg"
-          width="720"
-          height="1394"
+          width="540"
+          height="1046"
           muted
           playsinline
           loop
@@ -114,8 +114,8 @@
           data-src="web/add-subscription.mp4"
           data-src-fallback="web/add-subscription.webm"
           poster="web/add-subscription-poster.jpg"
-          width="720"
-          height="1394"
+          width="540"
+          height="1046"
           muted
           playsinline
           loop
@@ -134,8 +134,8 @@
           data-src="web/subscriptions.mp4"
           data-src-fallback="web/subscriptions.webm"
           poster="web/subscriptions-poster.jpg"
-          width="720"
-          height="1394"
+          width="540"
+          height="1046"
           muted
           playsinline
           loop
@@ -155,15 +155,14 @@
       const videos = Array.from(document.querySelectorAll('video[data-src]'));
 
       function play(video) {
-        const src = video.dataset.srcFallback;
         const source = document.createElement('source');
-        source.src = video.dataset.src;
-        source.type = 'video/mp4';
+        source.src = video.dataset.srcFallback;
+        source.type = 'video/webm';
         video.appendChild(source);
 
         const fallback = document.createElement('source');
-        fallback.src = src;
-        fallback.type = 'video/webm';
+        fallback.src = video.dataset.src;
+        fallback.type = 'video/mp4';
         video.appendChild(fallback);
 
         video.load();

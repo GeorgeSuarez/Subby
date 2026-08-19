@@ -1,6 +1,10 @@
 # Open the project in Expo Go and land on the sign-in screen.
 appId: host.exp.Exponent
 ---
+# Auth-screen flow must not depend on a previous run's SecureStore session.
+- launchApp:
+    appId: host.exp.Exponent
+    clearKeychain: true
 - openLink: exp://127.0.0.1:8081
 - extendedWaitUntil:
     visible: 'Sign in'

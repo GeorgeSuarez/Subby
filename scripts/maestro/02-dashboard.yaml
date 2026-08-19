@@ -1,7 +1,12 @@
 # Open the app; sign in as the demo account if needed; verify the dashboard.
 appId: host.exp.Exponent
 ---
+- launchApp: host.exp.Exponent
 - openLink: exp://127.0.0.1:8081
+# Normalize a retained ScrollView offset from a previous dashboard flow.
+- swipe:
+    start: '50%,20%'
+    end: '50%,80%'
 - runFlow:
     when:
       visible: 'Sign in'
@@ -13,9 +18,38 @@ appId: host.exp.Exponent
       - eraseText
       - inputText: 'subby123'
       - pressKey: Enter
+- runFlow:
+    when:
+      visible: 'Save Password?'
+    commands:
+      - tapOn: 'Not Now'
+# The system password prompt can obscure the auth screen on a cold Expo Go
+# launch, so retry the sign-in guard after dismissing it.
+- runFlow:
+    when:
+      visible: 'Sign in'
+    commands:
+      - tapOn: 'you@example.com'
+      - eraseText
+      - inputText: 'test@subby.app'
+      - tapOn: 'Your password'
+      - eraseText
+      - inputText: 'subby123'
+      - pressKey: Enter
+- runFlow:
+    when:
+      visible: 'Save Password?'
+    commands:
+      - tapOn: 'Not Now'
 - extendedWaitUntil:
     visible: 'Monthly spend'
     timeout: 180000
 - assertVisible: 'Upcoming renewals · next 30 days'
-- assertVisible: 'By category'
+# The category breakdown follows the renewals section on the scrollable dashboard.
+- swipe:
+    start: '50%,70%'
+    end: '50%,35%'
+- extendedWaitUntil:
+    visible: 'By category'
+    timeout: 30000
 - takeScreenshot: dashboard

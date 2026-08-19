@@ -1,11 +1,8 @@
-# Demo recording: add a subscription end-to-end — type the name "HBO Max"
-# (one character at a time so typing is visible), type the amount, pick the
-# renewal date Sep 21 2026 with the date spinner, pick the category with the
-# picker sheet, type a note, submit, and open the new subscription's detail
-# screen to show its description. Every text input types a character at a
-# time with a beat between keys; every picker gets a settling pause.
-# Run under `xcrun simctl io booted recordVideo`. Precondition: the app sits
-# on the Dashboard tab (run demo-warmup first).
+# Demo recording: add a subscription end-to-end — name, amount, renewal
+# date, category, notes, then the saved detail screen. The form uses normal
+# field entry for a shorter recording; pauses are reserved for native pickers
+# and screen transitions.
+# Precondition: the app sits on the Dashboard tab (run demo-warmup first).
 appId: host.exp.Exponent
 ---
 - extendedWaitUntil:
@@ -16,167 +13,71 @@ appId: host.exp.Exponent
     visible: 'Amount'
     timeout: 30000
 - waitForAnimationToEnd:
-    timeout: 1500
-# Type the name "HBO Max" — one character at a time, small delay per key.
+    timeout: 800
 - tapOn: 'e.g. Netflix'
-- inputText: 'H'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: 'B'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: 'O'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: ' '
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: 'M'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: 'a'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: 'x'
-- waitForAnimationToEnd:
-    timeout: 700
-# Type the amount.
+- inputText: 'HBO Max'
 - tapOn: '0.00'
-- inputText: '1'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: '6'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: '.'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: '9'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: '9'
-- waitForAnimationToEnd:
-    timeout: 700
-# Dismiss the keyboard (on-drag) so the form returns to its natural layout.
+- inputText: '16.99'
+# Dismiss the keyboard so the native pickers use their stable screen positions.
 - swipe:
     start: 50%, 40%
     end: 50%, 68%
-    duration: 800
+    duration: 600
 - waitForAnimationToEnd:
-    timeout: 1000
-# Pick the renewal date with the spinner. Default is today + 1 month; each
-# calibrated drag moves the day wheel one row, so seven drags up land on
-# Sep 21. The sheet's controls are invisible to the a11y tree, so the wheel
-# and Done (sheet header, right) are tapped/dragged by point.
+    timeout: 600
+# Pick a nearby renewal date with the spinner.
 - tapOn:
     point: 50%, 53%
 - waitForAnimationToEnd:
-    timeout: 700
-# A beat on the open picker, then drag the day wheel up one row at a time —
-# a natural pick, with the chosen date settling before Done commits.
-- repeat:
-    times: 7
-    commands:
-      - swipe:
-          start: 50%, 85%
-          end: 50%, 81%
-          duration: 800
-      - waitForAnimationToEnd:
-          timeout: 700
-- waitForAnimationToEnd:
-    timeout: 700
-- tapOn:
-    point: 87%, 70%
-- waitForAnimationToEnd:
-    timeout: 700
-# Pick the category: Streaming is the sheet's first row.
-- tapOn:
-    point: 50%, 86%
-- waitForAnimationToEnd:
-    timeout: 700
-- tapOn:
-    point: 50%, 22%
-- waitForAnimationToEnd:
-    timeout: 700
-# Scroll the form down to the notes field.
-- repeat:
-    times: 4
-    commands:
-      - swipe:
-          start: 50%, 60%
-          end: 50%, 35%
-          duration: 600
-      - waitForAnimationToEnd:
-          timeout: 500
-# Type a note — the description shown on the subscription's detail screen.
-- tapOn: 'Renewal reminder, plan details…'
-- inputText: 'A'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: 'd'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: '-'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: 'f'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: 'r'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: 'e'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: 'e'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: ' '
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: 't'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: 'r'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: 'i'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: 'a'
-- waitForAnimationToEnd:
-    timeout: 250
-- inputText: 'l'
-- waitForAnimationToEnd:
-    timeout: 700
-# Dismiss the keyboard and settle on the notes field.
-- swipe:
-    start: 50%, 40%
-    end: 50%, 68%
-    duration: 800
-- waitForAnimationToEnd:
-    timeout: 1000
-# Scroll the form down to the submit button (bottom of the form).
+    timeout: 500
 - repeat:
     times: 3
     commands:
       - swipe:
+          start: 50%, 85%
+          end: 50%, 81%
+          duration: 500
+- tapOn:
+    point: 87%, 70%
+- waitForAnimationToEnd:
+    timeout: 500
+# Pick Streaming from the category sheet.
+- tapOn:
+    point: 50%, 86%
+- waitForAnimationToEnd:
+    timeout: 500
+- tapOn:
+    point: 50%, 22%
+- waitForAnimationToEnd:
+    timeout: 500
+# Scroll to Notes, enter the description, and reach Submit.
+- repeat:
+    times: 2
+    commands:
+      - swipe:
+          start: 50%, 60%
+          end: 50%, 35%
+          duration: 500
+- tapOn: 'Renewal reminder, plan details…'
+- inputText: 'Ad-free trial'
+- swipe:
+    start: 50%, 40%
+    end: 50%, 68%
+    duration: 600
+- repeat:
+    times: 2
+    commands:
+      - swipe:
           start: 50%, 60%
           end: 50%, 30%
-          duration: 500
-      - waitForAnimationToEnd:
-          timeout: 400
-# Submit: the success toast appears, the modal closes, and the dashboard
-# shows the new subscription.
+          duration: 400
 - tapOn: 'Add subscription'
 - extendedWaitUntil:
     visible: 'Monthly spend'
     timeout: 15000
 - waitForAnimationToEnd:
-    timeout: 3500
-# Open the new subscription to show its description (the note we typed).
-# Its renewal is 38 days out, so it sits in the full list, not the
-# dashboard's 30-day renewal preview.
+    timeout: 1500
+# Open the saved subscription detail screen.
 - tapOn: 'Subscriptions'
 - extendedWaitUntil:
     visible: 'Search subscriptions'
@@ -190,4 +91,4 @@ appId: host.exp.Exponent
     visible: 'Effective cost'
     timeout: 15000
 - waitForAnimationToEnd:
-    timeout: 2500
+    timeout: 1200

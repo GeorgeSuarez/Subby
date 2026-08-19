@@ -52,23 +52,30 @@ export async function scheduleRenewalReminder(
 ): Promise<string | null> {
   if (!remindersEnabled) return null;
 
-  await ensureAndroidChannel();
-  if (!(await ensurePermissions())) return null;
+  try {
+    await ensureAndroidChannel();
+    if (!(await ensurePermissions())) return null;
 
-  const triggerDate = reminderDateFor(sub.nextRenewal);
-  const id = await Notifications.scheduleNotificationAsync({
-    content: {
-      title: `${sub.name} renews tomorrow`,
-      body: `${sub.name} charges ${sub.currency} ${sub.amount} tomorrow.`,
-      sound: true,
-    },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DATE,
-      date: triggerDate,
-      channelId: CHANNEL_ID,
-    },
-  });
-  return id;
+    const triggerDate = reminderDateFor(sub.nextRenewal);
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `${sub.name} renews tomorrow`,
+        body: `${sub.name} charges ${sub.currency} ${sub.amount} tomorrow.`,
+        sound: true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: triggerDate,
+        channelId: CHANNEL_ID,
+      },
+    });
+    return id;
+  } catch {
+    // Notification support is limited in Expo Go and can fail independently
+    // of the subscription mutation. A reminder is optional; never turn a
+    // successful save into a reported subscription failure.
+    return null;
+  }
 }
 
 /** Cancel a previously scheduled reminder (no-op when none was stored). */

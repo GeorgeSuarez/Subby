@@ -2,6 +2,27 @@
 # password, and land back in the app.
 appId: host.exp.Exponent
 ---
+# Reset always starts signed out. Deep-linking to Settings gives signed-in
+# runs a deterministic sign-out step while protected routing sends signed-out
+# runs straight to the auth screen.
+- openLink: exp://127.0.0.1:8081/--/settings
+- swipe:
+    start: '50%,20%'
+    end: '50%,80%'
+- extendedWaitUntil:
+    visible: 'Theme|Sign in'
+    timeout: 60000
+- runFlow:
+    when:
+      visible: 'Theme'
+    commands:
+      - swipe:
+          start: '50%,70%'
+          end: '50%,50%'
+      - extendedWaitUntil:
+          visible: 'Sign out'
+          timeout: 30000
+      - tapOn: 'Sign out'
 - extendedWaitUntil:
     visible: 'Sign in'
     timeout: 60000

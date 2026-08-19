@@ -28,13 +28,3 @@ appId: host.exp.Exponent
 - extendedWaitUntil:
     visible: 'Monthly spend'
     timeout: 120000
-# Warm up a pull-to-refresh so the recorded refresh (a fresh hydrate) is fast.
-- swipe:
-    start: 50%, 18%
-    end: 50%, 60%
-    duration: 1400
-- waitForAnimationToEnd:
-    timeout: 8000
-- extendedWaitUntil:
-    visible: 'Monthly spend'
-    timeout: 30000

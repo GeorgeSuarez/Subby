@@ -12,50 +12,42 @@ appId: host.exp.Exponent
 - extendedWaitUntil:
     visible: 'Search subscriptions'
     timeout: 30000
-# Sort by Cost — the rows reorder by monthly price (descending). The a11y
-# tree lags after the tab switch and the sort's reorder, so an
-# extendedWaitUntil re-reads it before each text tap.
-- extendedWaitUntil:
-    visible: 'Search subscriptions'
-    timeout: 10000
+# Sort by Cost — the rows reorder by monthly price (descending).
 - tapOn: 'Cost'
 - waitForAnimationToEnd:
-    timeout: 1500
-# The sort's reorder leaves the header (search field) scrolled up out of
-# reach; a small downward drag brings it back to the top. The drag may
-# overshoot into a pull-to-refresh, which locks the scroll view for a few
-# seconds; wait it out.
+    timeout: 800
+# Bring the search field back into view after the reorder.
 - swipe:
     start: 50%, 30%
     end: 50%, 60%
-    duration: 500
+    duration: 400
 - waitForAnimationToEnd:
-    timeout: 8000
+    timeout: 2500
 # Search "netflix" — one character at a time, small delay per key.
 - tapOn:
     point: 50%, 11%
 - eraseText: 50
 - inputText: 'n'
 - waitForAnimationToEnd:
-    timeout: 250
+    timeout: 120
 - inputText: 'e'
 - waitForAnimationToEnd:
-    timeout: 250
+    timeout: 120
 - inputText: 't'
 - waitForAnimationToEnd:
-    timeout: 250
+    timeout: 120
 - inputText: 'f'
 - waitForAnimationToEnd:
-    timeout: 250
+    timeout: 120
 - inputText: 'l'
 - waitForAnimationToEnd:
-    timeout: 250
+    timeout: 120
 - inputText: 'i'
 - waitForAnimationToEnd:
-    timeout: 250
+    timeout: 120
 - inputText: 'x'
 - extendedWaitUntil:
     visible: '1 shown'
     timeout: 10000
 - waitForAnimationToEnd:
-    timeout: 3000
+    timeout: 1200

@@ -1,7 +1,16 @@
 # Subscriptions list: search, long-press menu, screenshot.
 appId: host.exp.Exponent
 ---
+- launchApp: host.exp.Exponent
 - openLink: exp://127.0.0.1:8081
+- runFlow:
+    when:
+      visible: 'Subscriptions'
+    commands:
+      - tapOn: 'Dashboard'
+      - swipe:
+          start: '50%,20%'
+          end: '50%,80%'
 - runFlow:
     when:
       visible: 'Sign in'
@@ -13,6 +22,27 @@ appId: host.exp.Exponent
       - eraseText
       - inputText: 'subby123'
       - pressKey: Enter
+- runFlow:
+    when:
+      visible: 'Save Password?'
+    commands:
+      - tapOn: 'Not Now'
+- runFlow:
+    when:
+      visible: 'Sign in'
+    commands:
+      - tapOn: 'you@example.com'
+      - eraseText
+      - inputText: 'test@subby.app'
+      - tapOn: 'Your password'
+      - eraseText
+      - inputText: 'subby123'
+      - pressKey: Enter
+- runFlow:
+    when:
+      visible: 'Save Password?'
+    commands:
+      - tapOn: 'Not Now'
 - extendedWaitUntil:
     visible: 'Monthly spend'
     timeout: 180000

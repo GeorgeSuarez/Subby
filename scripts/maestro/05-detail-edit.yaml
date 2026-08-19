@@ -1,11 +1,52 @@
 # Open the Netflix detail screen, verify it, and edit the amount.
-# NOTE: the subscription id below is local-DB specific — fetch it with:
-#   docker exec supabase_db_Subby psql -U postgres -d postgres -t -c \
-#     "SELECT id FROM public.subscriptions WHERE name='Netflix';"
+# Navigate through the list rather than embedding a local-DB-specific UUID.
 appId: host.exp.Exponent
 ---
-# NOTE: run via the warm-up runner (app already open + signed in).
-- openLink: exp://127.0.0.1:8081/--/subscription/c20167ff-2d0b-4578-bf7c-2116fe60012f
+# Clear any stale formSheet/modal stack left by a previous flow without
+# clearing the signed-in session or local data.
+- launchApp: host.exp.Exponent
+- openLink: exp://127.0.0.1:8081/--/subscriptions
+- runFlow:
+    when:
+      visible: 'Sign in'
+    commands:
+      - tapOn: 'you@example.com'
+      - eraseText
+      - inputText: 'test@subby.app'
+      - tapOn: 'Your password'
+      - eraseText
+      - inputText: 'subby123'
+      - pressKey: Enter
+- runFlow:
+    when:
+      visible: 'Save Password?'
+    commands:
+      - tapOn: 'Not Now'
+- runFlow:
+    when:
+      visible: 'Sign in'
+    commands:
+      - tapOn: 'you@example.com'
+      - eraseText
+      - inputText: 'test@subby.app'
+      - tapOn: 'Your password'
+      - eraseText
+      - inputText: 'subby123'
+      - pressKey: Enter
+- runFlow:
+    when:
+      visible: 'Save Password?'
+    commands:
+      - tapOn: 'Not Now'
+- runFlow:
+    when:
+      visible: 'Monthly spend'
+    commands:
+      - tapOn: 'Subscriptions'
+- extendedWaitUntil:
+    visible: '.*Netflix.*'
+    timeout: 180000
+- tapOn: '.*Netflix.*'
 - extendedWaitUntil:
     visible: 'Effective cost'
     timeout: 60000

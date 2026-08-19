@@ -1,8 +1,7 @@
-# Settings screen: navigate to the tab and capture it.
+# Settings screen: use the route instead of a fixed point over the native tab bar.
 appId: host.exp.Exponent
 ---
-- tapOn:
-    point: '75%,94%'
+- openLink: exp://127.0.0.1:8081/--/settings
 - extendedWaitUntil:
     visible: 'Theme'
     timeout: 30000

@@ -11,32 +11,28 @@ appId: host.exp.Exponent
     visible: 'Monthly spend'
     timeout: 60000
 - waitForAnimationToEnd:
-    timeout: 1500
-# Scroll down to the bottom — one smooth pass.
+    timeout: 800
+# Three passes cover the dashboard sections without replaying empty scroll.
 - repeat:
-    times: 7
+    times: 3
     commands:
       - swipe:
           start: 50%, 65%
           end: 50%, 20%
-          duration: 900
-      - waitForAnimationToEnd:
-          timeout: 100
+          duration: 600
 - waitForAnimationToEnd:
-    timeout: 1500
+    timeout: 500
 # Flick back up to the top.
 - repeat:
-    times: 5
+    times: 3
     commands:
       - swipe:
           start: 50%, 30%
           end: 50%, 75%
-          duration: 300
-      - waitForAnimationToEnd:
-          timeout: 100
+          duration: 200
 - extendedWaitUntil:
     visible: 'Monthly spend'
     timeout: 30000
 # Settle at the top so the recording ends cleanly (no pull-to-refresh).
 - waitForAnimationToEnd:
-    timeout: 2000
+    timeout: 1000

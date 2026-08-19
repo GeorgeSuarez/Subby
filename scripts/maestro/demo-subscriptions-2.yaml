@@ -9,11 +9,11 @@ appId: host.exp.Exponent
     visible: '1 shown'
     timeout: 30000
 - waitForAnimationToEnd:
-    timeout: 2000
+    timeout: 800
 # The keyboard is up from the search; dismiss it so the row tap lands clean.
 - hideKeyboard
 - waitForAnimationToEnd:
-    timeout: 1500
+    timeout: 600
 # The row sits above the keyboard; tap its center by point. The row's text
 # element is not always hittable via text matching while the keyboard is up.
 - tapOn:
@@ -23,4 +23,4 @@ appId: host.exp.Exponent
     visible: 'Effective cost'
     timeout: 15000
 - waitForAnimationToEnd:
-    timeout: 2500
+    timeout: 1200
