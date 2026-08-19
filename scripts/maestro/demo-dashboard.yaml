@@ -7,11 +7,7 @@
 # sitting at the top of the dashboard (run demo-warmup first).
 appId: host.exp.Exponent
 ---
-- extendedWaitUntil:
-    visible: 'Monthly spend'
-    timeout: 60000
-- waitForAnimationToEnd:
-    timeout: 800
+# Warmup leaves the dashboard at the top; start scrolling immediately.
 # Three passes cover the dashboard sections without replaying empty scroll.
 - repeat:
     times: 3

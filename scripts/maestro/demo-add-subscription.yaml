@@ -5,15 +5,11 @@
 # Precondition: the app sits on the Dashboard tab (run demo-warmup first).
 appId: host.exp.Exponent
 ---
-- extendedWaitUntil:
-    visible: 'Monthly spend'
-    timeout: 30000
+# Warmup leaves the app on the Dashboard; open the form immediately.
 - tapOn: 'Add subscription'
 - extendedWaitUntil:
     visible: 'Amount'
     timeout: 30000
-- waitForAnimationToEnd:
-    timeout: 800
 - tapOn: 'e.g. Netflix'
 - inputText: 'HBO Max'
 - tapOn: '0.00'

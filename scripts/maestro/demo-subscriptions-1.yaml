@@ -5,9 +5,7 @@
 # Precondition: the app sits on the Dashboard tab (run demo-warmup first).
 appId: host.exp.Exponent
 ---
-- extendedWaitUntil:
-    visible: 'Monthly spend'
-    timeout: 30000
+# Warmup leaves the app on the Dashboard; switch tabs immediately.
 - tapOn: 'Subscriptions'
 - extendedWaitUntil:
     visible: 'Search subscriptions'

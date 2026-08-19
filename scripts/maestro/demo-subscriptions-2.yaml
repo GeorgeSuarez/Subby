@@ -5,11 +5,7 @@
 # the app shows "1 shown" for the Netflix search.
 appId: host.exp.Exponent
 ---
-- extendedWaitUntil:
-    visible: '1 shown'
-    timeout: 30000
-- waitForAnimationToEnd:
-    timeout: 800
+# Part 1 already asserted the filtered row; continue without another hold.
 # The keyboard is up from the search; dismiss it so the row tap lands clean.
 - hideKeyboard
 - waitForAnimationToEnd:
