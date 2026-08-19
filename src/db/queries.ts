@@ -228,15 +228,25 @@ export async function setArchived(
   archived: boolean,
 ): Promise<Subscription | null> {
   if (!isSupabaseConfigured) return null;
+  const existing = await getSubscriptionById(id);
+  if (!existing) return null;
+  const updatedAt = Date.now();
   const { data, error } = await supabase
     .from('subscriptions')
-    .update({ archived, updated_at: Date.now() })
+    .update({ archived, updated_at: updatedAt })
     .eq('id', id)
     .select('*')
     .maybeSingle();
   if (error && !isMissingRowError(error)) throw new Error(error.message);
-  if (!data) return null;
-  const sub = rowToSubscription(data);
+  // Some PostgREST/RLS combinations apply the update but omit or return a
+  // stale representation. The row was confirmed before the update, so keep a
+  // truthful local result when the write itself did not error; callers can
+  // update their list and show the success toast immediately.
+  const returned = data ? rowToSubscription(data) : null;
+  const sub =
+    returned?.archived === archived
+      ? returned
+      : { ...existing, archived, updatedAt };
   const [merged] = await withNotificationIds([sub]);
   return merged ?? null;
 }

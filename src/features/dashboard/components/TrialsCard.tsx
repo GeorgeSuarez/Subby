@@ -68,8 +68,11 @@ export function TrialsCard() {
   const runArchive = useCallback(
     async (id: string, archived: boolean) => {
       await archive(id, archived);
-      if (useSubscriptionsStore.getState().queuedChange) {
+      const state = useSubscriptionsStore.getState();
+      if (state.queuedChange) {
         toast("Saved — will sync when you're online");
+      } else if (!state.error) {
+        toast(archived ? 'Subscription archived' : 'Subscription unarchived');
       }
     },
     [archive],

@@ -56,9 +56,13 @@ export function DetailScreen({
 
   const onArchive = useCallback(async () => {
     if (!sub) return;
-    const updated = await archive(sub.id, !sub.archived);
-    if (!updated && useSubscriptionsStore.getState().queuedChange) {
+    const archived = !sub.archived;
+    await archive(sub.id, archived);
+    const state = useSubscriptionsStore.getState();
+    if (state.queuedChange) {
       toast("Saved — will sync when you're online");
+    } else if (!state.error) {
+      toast(archived ? 'Subscription archived' : 'Subscription unarchived');
     }
     onDismiss();
   }, [sub, archive, onDismiss]);

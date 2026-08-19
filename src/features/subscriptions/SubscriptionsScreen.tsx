@@ -48,6 +48,7 @@ import {
   formatMonthDay,
   formatRenewalIn,
 } from '@/utils/format';
+import { toast } from '@/store/useToastStore';
 import { selection, impactMedium } from '@/utils/haptics';
 import type { Subscription } from '@/types/subscription';
 
@@ -96,6 +97,19 @@ export function SubscriptionsScreen() {
     [router],
   );
 
+  const runArchive = useCallback(
+    async (id: string, archived: boolean) => {
+      await archive(id, archived);
+      const state = useSubscriptionsStore.getState();
+      if (state.queuedChange) {
+        toast("Saved — will sync when you're online");
+      } else if (!state.error) {
+        toast(archived ? 'Subscription archived' : 'Subscription unarchived');
+      }
+    },
+    [archive],
+  );
+
   const onRowLongPress = useCallback(
     (id: string) => {
       const target = subs.find((s) => s.id === id);
@@ -105,11 +119,11 @@ export function SubscriptionsScreen() {
         name: target.name,
         archived: target.archived,
         onEdit: () => router.push(`/subscription/${id}`),
-        onArchive: () => archive(id, !target.archived),
+        onArchive: () => void runArchive(id, !target.archived),
         onDelete: () => confirmDelete(target.name, () => remove(id)),
       });
     },
-    [subs, router, archive, remove],
+    [subs, router, remove, runArchive],
   );
 
   // Swipe action — archive/unarchive the revealed row.
@@ -118,9 +132,9 @@ export function SubscriptionsScreen() {
       const target = subs.find((s) => s.id === id);
       if (!target) return;
       void impactMedium();
-      archive(id, !target.archived);
+      void runArchive(id, !target.archived);
     },
-    [subs, archive],
+    [subs, runArchive],
   );
 
   const hasAnySubs = subs.length > 0;

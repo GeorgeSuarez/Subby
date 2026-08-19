@@ -108,7 +108,7 @@ export function SwipeableRow({
   }));
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, { backgroundColor: colors.surface }]}>
       <View
         style={[
           styles.action,
@@ -134,7 +134,13 @@ export function SwipeableRow({
       </View>
 
       <GestureDetector gesture={pan}>
-        <Animated.View style={contentStyle}>
+        <Animated.View
+          style={[
+            styles.content,
+            { backgroundColor: colors.surface },
+            contentStyle,
+          ]}
+        >
           <ListRow
             id={id}
             onPressWithId={handlePress}
@@ -150,6 +156,10 @@ export function SwipeableRow({
 const styles = StyleSheet.create({
   wrapper: {
     position: 'relative',
+    overflow: 'hidden',
+  },
+  content: {
+    zIndex: 1,
   },
   action: {
     position: 'absolute',
