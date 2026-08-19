@@ -76,11 +76,8 @@ export function SwipeableRow({
       tx.set(Math.max(-ACTION_WIDTH, Math.min(0, e.translationX)));
     })
     .onEnd(() => {
-      if (tx.get() < -ACTION_WIDTH / 2) {
-        tx.set(withSpring(-ACTION_WIDTH, SNAP));
-      } else {
-        close();
-      }
+      const destination = tx.get() < -ACTION_WIDTH / 2 ? -ACTION_WIDTH : 0;
+      tx.set(withSpring(destination, SNAP));
     });
 
   // Stable handlers passed to the memoized ListRow child.
