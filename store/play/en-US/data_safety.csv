@@ -1,0 +1,6 @@
+# Play Data Safety — v1 (no tracking)
+Data Type,Collected,Shared,Purpose,Encrypted,Deletion
+Email,Yes,No,Account management,Yes,In-app + email
+Subscriptions (name/amount/currency/cycle/category/notes),Yes,No,App functionality,Yes,In-app deletion
+Preferences (currency/budget/reminders),Yes,No,App functionality,Yes,In-app deletion
+Device-local notification IDs,Yes,No,App functionality,No,Cleared with app data

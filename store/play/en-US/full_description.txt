@@ -1,0 +1,14 @@
+Subby is a minimalistic subscription dashboard for tracking monthly recurring expenses.
+
+• Dashboard with monthly spend, yearly total, active count, biggest subscription, upcoming renewals (30 days), category pie and forecast
+• Subscriptions list — sort by name/cost/renewal, filter active/archived/all, search, long-press actions (Edit / Archive / Delete)
+• Subscription detail — hero tile, renewal countdown, monthly/yearly cost breakdown
+• Add/Edit — name, amount, billing cycle, renewal date, category, icon + color, notes, validation
+• Settings — theme (System/Light/Dark), currency (6), monthly budget, renewal reminders (local, day before ~09:00), password change, account deletion
+• Offline-first — cached reads + FIFO write queue, syncs on reconnect
+• Private — no ads, no tracking, data only email + your subscriptions + prefs; stored in Supabase (US) + on device
+
+Permissions: Notifications (optional renewal reminders, POST_NOTIFICATIONS). No exact alarms, no location, no ads.
+
+Support: https://subby.georgejsuarez.com/support
+Privacy: https://subby.georgejsuarez.com/privacy

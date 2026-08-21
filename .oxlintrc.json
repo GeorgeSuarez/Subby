@@ -14,7 +14,8 @@
     ".expo/*",
     "node_modules/*",
     "coverage/*",
-    "android/app/build"
+    "android/app/build",
+    "app.config.ts"
   ],
   "jsPlugins": [
     {

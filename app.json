@@ -13,11 +13,13 @@
       "bundleIdentifier": "com.subby.app",
       "infoPlist": {
         "NSCameraUsageDescription": "Subby uses the camera only if a future update adds receipt scanning — v1 does not access the camera."
+      },
+      "config": {
+        "usesNonExemptEncryption": false
       }
     },
     "android": {
       "package": "com.subby.app",
-      "permissions": ["SCHEDULE_EXACT_ALARM"],
       "adaptiveIcon": {
         "backgroundColor": "#0B0F14",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

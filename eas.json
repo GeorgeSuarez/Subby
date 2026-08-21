@@ -32,10 +32,24 @@
         "applicationArchivePath": "build/Subby.ipa"
       },
       "android": {
-        "applicationArchivePath": "build/Subby.apk"
+        "buildType": "app-bundle",
+        "applicationArchivePath": "build/Subby.aab"
       },
       "env": {
         "APP_VARIANT": "production"
+      }
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "georgesuarezdev@gmail.com",
+        "ascAppId": "PLACEHOLDER_ASC_APP_ID",
+        "appleTeamId": "PLACEHOLDER_TEAM_ID"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./pc-api-PLACEHOLDER.json",
+        "track": "internal"
       }
     }
   }

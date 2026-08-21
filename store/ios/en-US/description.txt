@@ -1,0 +1,8 @@
+Subby is a minimalistic subscription dashboard. Track Netflix, Spotify, iCloud+ and more. See monthly/yearly spend, upcoming renewals, category breakdown and forecast. Add/edit subscriptions with validation, archive or delete with confirmation. Offline-first with queued sync. Private — no ads, no tracking.
+
+Settings: theme, currency, monthly budget, renewal reminders (local notification day before ~09:00), password change, delete account.
+
+Data: email + your subscriptions/preferences, stored in Supabase. On-device notification IDs only. No tracking.
+
+Support: https://subby.georgejsuarez.com/support
+Privacy: https://subby.georgejsuarez.com/privacy
