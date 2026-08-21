@@ -14,16 +14,21 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { useRouter } from 'expo-router';
+
 import { Button, Card, Text } from '@/design/components';
 import { spacing } from '@/design/tokens';
 import { AmountInput } from '@/features/add-subscription/components/AmountInput';
 import { useBudget, useCurrency, useUIStore } from '@/store/useUIStore';
 import { formatCurrency } from '@/utils/format';
+import { useIsPro } from '@/store/useEntitlementStore';
 
 export function BudgetSection() {
   const budget = useBudget();
   const currency = useCurrency();
   const setBudget = useUIStore((s) => s.setBudget);
+  const isPro = useIsPro();
+  const router = useRouter();
 
   // Raw input text — lazily seeded from the persisted value.
   const [text, setText] = useState(() => (budget > 0 ? String(budget) : ''));
@@ -37,6 +42,28 @@ export function BudgetSection() {
     setText('');
     setBudget(0);
   };
+
+  if (!isPro) {
+    return (
+      <Card padding={spacing.lg} elevation="flat">
+        <Card.Header>
+          <Text variant="headline" weight="600">
+            Budget
+          </Text>
+          <Text variant="caption" color="textSecondary">
+            Pro — set a monthly budget and see forecast.
+          </Text>
+        </Card.Header>
+        <Button
+          onPress={() => router.push('/subscription/paywall')}
+          variant="primary"
+          size="sm"
+        >
+          Unlock with Pro
+        </Button>
+      </Card>
+    );
+  }
 
   return (
     <Card padding={spacing.lg} elevation="flat">
