@@ -137,8 +137,25 @@ function buildDefaultDeps(): SyncDeps {
   const queries = require('@/db/queries');
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const sidecar = require('@/db/notification-sidecar');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const notifications = require('@/utils/notifications');
+  // Notifications must not crash the app in Expo Go on Android (SDK 53+
+  // removed remote push support and expo-notifications throws on import).
+  // The lazy wrapper in @/utils/notifications already guards this, but we
+  // also guard the require itself so buildDefaultDeps never throws at
+  // startup (hydratePrefs -> currentDeps -> buildDefaultDeps).
+  let notifications: Pick<
+    SyncDeps,
+    'scheduleRenewalReminder' | 'rescheduleRenewalReminder' | 'cancelRenewalReminder'
+  >;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    notifications = require('@/utils/notifications');
+  } catch {
+    notifications = {
+      scheduleRenewalReminder: async () => null,
+      rescheduleRenewalReminder: async () => null,
+      cancelRenewalReminder: async () => {},
+    };
+  }
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { isSupabaseConfigured, supabase } = require('@/lib/supabase');
   return {

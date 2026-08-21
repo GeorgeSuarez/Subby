@@ -18,7 +18,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import DateTimePicker, {
-  type DateTimePickerEvent,
+  type DateTimePickerChangeEvent,
 } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -99,16 +99,19 @@ export function DateInput({ value, onChange }: DateInputProps) {
     commit(pending);
   }, [close, commit, pending]);
 
-  // Android: the native dialog reports set/dismissed in one event.
-  const onAndroidChange = useCallback(
-    (event: DateTimePickerEvent, date?: Date) => {
+  // Android: the native dialog now uses split callbacks instead of the
+  // deprecated `onChange` (which reported set/dismissed via event.type).
+  const onAndroidValueChange = useCallback(
+    (_event: DateTimePickerChangeEvent, date: Date) => {
       close();
-      if (event.type === 'set' && date) {
-        commit(date);
-      }
+      commit(date);
     },
     [close, commit],
   );
+
+  const onAndroidDismiss = useCallback(() => {
+    close();
+  }, [close]);
 
   return (
     <View>
@@ -160,9 +163,9 @@ export function DateInput({ value, onChange }: DateInputProps) {
             display="spinner"
             minimumDate={minimumDate}
             themeVariant={scheme}
-            onChange={(event, date) => {
-              if (date) setPending(date);
-            }}
+            onValueChange={(_event: DateTimePickerChangeEvent, date: Date) =>
+              setPending(date)
+            }
             style={styles.picker}
           />
         </Sheet>
@@ -172,7 +175,9 @@ export function DateInput({ value, onChange }: DateInputProps) {
           mode="date"
           display="default"
           minimumDate={minimumDate}
-          onChange={onAndroidChange}
+          onValueChange={onAndroidValueChange}
+          onDismiss={onAndroidDismiss}
+          onNeutralButtonPress={onAndroidDismiss}
         />
       ) : null}
     </View>

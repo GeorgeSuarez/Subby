@@ -16,7 +16,6 @@
  */
 
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
 
 import { reminderDateFor } from '@/utils/billing';
 import type { Subscription } from '@/types/subscription';
@@ -25,12 +24,40 @@ const CHANNEL_ID = 'renewals';
 
 let channelReady = false;
 
+// Lazy loader for expo-notifications — static import crashes in Expo Go on
+// Android (SDK 53+) because `expo-notifications` runs side-effect code that
+// calls push-token APIs which throw in that environment (see
+// DevicePushTokenAutoRegistration.fx). We defer the require until first use
+// and guard against Expo Go.
+type NotificationsModule = typeof import('expo-notifications');
+let Notifications: NotificationsModule | null = null;
+let loadAttempted = false;
+
+function getNotifications(): NotificationsModule | null {
+  if (loadAttempted) return Notifications;
+  loadAttempted = true;
+  try {
+    // Skip loading entirely in Expo Go on Android — even requiring the
+    // module throws (push functionality removed in SDK 53).
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { isRunningInExpoGo } = require('expo');
+    if (isRunningInExpoGo?.() && Platform.OS === 'android') return null;
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    Notifications = require('expo-notifications');
+    return Notifications;
+  } catch {
+    return null;
+  }
+}
+
 /** Create the Android channel once. iOS needs no channel. */
 async function ensureAndroidChannel(): Promise<void> {
   if (Platform.OS !== 'android' || channelReady) return;
-  await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
+  const N = getNotifications();
+  if (!N) return;
+  await N.setNotificationChannelAsync(CHANNEL_ID, {
     name: 'Renewal reminders',
-    importance: Notifications.AndroidImportance.DEFAULT,
+    importance: N.AndroidImportance.DEFAULT,
   });
   channelReady = true;
 }
@@ -38,10 +65,12 @@ async function ensureAndroidChannel(): Promise<void> {
 /** Are reminders enabled by the user AND permissions granted? */
 export async function ensurePermissions(): Promise<boolean> {
   if (Platform.OS === 'web') return false;
-  const current = await Notifications.getPermissionsAsync();
+  const N = getNotifications();
+  if (!N) return false;
+  const current = await N.getPermissionsAsync();
   if (current.granted) return true;
   if (!current.canAskAgain) return false;
-  const req = await Notifications.requestPermissionsAsync();
+  const req = await N.requestPermissionsAsync();
   return req.granted;
 }
 
@@ -51,20 +80,22 @@ export async function scheduleRenewalReminder(
   remindersEnabled: boolean,
 ): Promise<string | null> {
   if (!remindersEnabled) return null;
+  const N = getNotifications();
+  if (!N) return null;
 
   try {
     await ensureAndroidChannel();
     if (!(await ensurePermissions())) return null;
 
     const triggerDate = reminderDateFor(sub.nextRenewal);
-    const id = await Notifications.scheduleNotificationAsync({
+    const id = await N.scheduleNotificationAsync({
       content: {
         title: `${sub.name} renews tomorrow`,
         body: `${sub.name} charges ${sub.currency} ${sub.amount} tomorrow.`,
         sound: true,
       },
       trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        type: N.SchedulableTriggerInputTypes.DATE,
         date: triggerDate,
         channelId: CHANNEL_ID,
       },
@@ -83,8 +114,10 @@ export async function cancelRenewalReminder(
   notificationId: string | null | undefined,
 ): Promise<void> {
   if (!notificationId) return;
+  const N = getNotifications();
+  if (!N) return;
   try {
-    await Notifications.cancelScheduledNotificationAsync(notificationId);
+    await N.cancelScheduledNotificationAsync(notificationId);
   } catch {
     // Already cancelled / unknown id — ignore.
   }
