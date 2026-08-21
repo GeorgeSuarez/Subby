@@ -91,7 +91,7 @@ npm run start          # Metro bundler
 
 > **Note:** Web is not supported — `expo-sqlite` requires a native runtime. Use the iOS simulator or an Android emulator/device.
 
-Regenerate branded icons (cyan-on-dark recurring-arrow glyph):
+Regenerate branded icons (cyan-on-dark Ledger Stack mark):
 
 ```bash
 npm run icons          # runs scripts/generate-icons.mjs (Node + sharp)

@@ -1,0 +1,17 @@
+# Android development/preview APK: replay the queued offline mutation.
+# Run after scripts/maestro/android/04-offline.yaml with Supabase online.
+appId: com.subby.app
+---
+- launchApp: com.subby.app
+- openLink: subby://subscriptions
+- extendedWaitUntil:
+    visible: '.*Netflix.*|Retry|Sync now'
+    timeout: 120000
+- runFlow:
+    when:
+      visible: 'Retry|Sync now'
+    commands:
+      - tapOn: 'Retry|Sync now'
+- extendedWaitUntil:
+    visible: '.*Spotify.*'
+    timeout: 30000

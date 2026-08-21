@@ -67,7 +67,11 @@ interface AuthStore {
   /** Restore the persisted session + subscribe to auth changes. Idempotent. */
   initialize: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    emailRedirectTo?: string,
+  ) => Promise<void>;
   /** Re-send the confirmation link to `verificationEmail`. */
   resendVerificationEmail: () => Promise<void>;
   /** True once the email is confirmed (a session exists); mirrors it. */
@@ -123,7 +127,11 @@ export interface AuthSupabase {
       data: { session: Session | null };
       error: AuthError | null;
     }>;
-    signUp: (credentials: { email: string; password: string }) => Promise<{
+    signUp: (credentials: {
+      email: string;
+      password: string;
+      options?: { emailRedirectTo?: string };
+    }) => Promise<{
       data: { session: Session | null; user: User | null };
       error: AuthError | null;
     }>;
@@ -344,7 +352,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     applySession(data.session);
   },
 
-  signUp: async (email, password) => {
+  signUp: async (email, password, emailRedirectTo) => {
     if (!currentDeps().isSupabaseConfigured) {
       throw new Error(NOT_CONFIGURED_MESSAGE);
     }
@@ -352,6 +360,7 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     const { data, error } = await currentDeps().supabase.auth.signUp({
       email: email.trim(),
       password,
+      ...(emailRedirectTo ? { options: { emailRedirectTo } } : null),
     });
     if (error) {
       throw failAuthAction(set, error);

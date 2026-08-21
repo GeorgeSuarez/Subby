@@ -1,133 +1,152 @@
 /**
- * Generate branded app icons, splash glyph, adaptive icons, and favicon.
+ * Generate Subby app icons, splash glyph, adaptive icons, favicon, and the
+ * selected Ledger Stack logo preview.
  *
- * Design language: cool dark-first + electric-cyan accent (#22D3EE on #0B0F14).
- * The glyph is a stylized circular arrow (↻) — the universal "recurring"
- * symbol — rendered as a partial ring with a gap and an arrowhead, evoking
- * the subscription/billing-cycle concept.
+ * Brand direction: recurring subscription rows on a quiet dark canvas. The
+ * three staggered bars represent the user's recurring expenses; the dots make
+ * each bar read as an individual service or billing record.
  *
  * Run: node scripts/generate-icons.mjs
  *
- * Produces (all under assets/images/):
+ * Canonical outputs (under assets/images/):
  *   icon.png                          1024×1024  iOS app icon
- *   splash-icon.png                   200×200    Splash glyph (transparent bg)
+ *   ledger-stack-splash.png            200×200    Splash glyph (transparent bg)
  *   favicon.png                       48×48      Web favicon
  *   android-icon-foreground.png       432×432    Adaptive icon foreground
  *   android-icon-background.png       432×432    Adaptive icon background
  *   android-icon-monochrome.png       432×432    Android 13+ themed icon
+ *
+ * The selected logo preview is generated at assets/logo-options/ledger-stack.*.
  */
 
+import { mkdir, writeFile } from 'node:fs/promises';
 import sharp from 'sharp';
 
 const DARK = '#0B0F14';
-const ELEVATED = '#131920';
 const CYAN = '#22D3EE';
+const CYAN_LIGHT = '#67E8F9';
 const ICON_DIR = 'assets/images';
+const OPTIONS_DIR = 'assets/logo-options';
 
-// ---------------------------------------------------------------------------
-// SVG generators
-// ---------------------------------------------------------------------------
+function iconBackground({ width = 1024, height = 1024 } = {}) {
+  const radius = Math.round(Math.min(width, height) * 0.219);
+  return `
+    <defs>
+      <linearGradient id="background" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#18232D"/>
+        <stop offset="100%" stop-color="${DARK}"/>
+      </linearGradient>
+      <linearGradient id="mark" x1="0.08" y1="0" x2="0.92" y2="1">
+        <stop offset="0%" stop-color="${CYAN_LIGHT}"/>
+        <stop offset="100%" stop-color="${CYAN}"/>
+      </linearGradient>
+    </defs>
+    <rect width="${width}" height="${height}" rx="${radius}" fill="url(#background)"/>
+  `;
+}
 
-/** Cyan recurring-arrow glyph on dark rounded square — the iOS icon */
+/** Three staggered recurring-expense rows with a cadence dot on each row. */
+function ledgerMarkSVG({ fill = 'url(#mark)', dots = DARK } = {}) {
+  return `
+    <g fill="${fill}">
+      <rect x="118" y="142" width="276" height="66" rx="33"/>
+      <rect x="164" y="223" width="276" height="66" rx="33" opacity="0.78"/>
+      <rect x="118" y="304" width="276" height="66" rx="33" opacity="0.56"/>
+    </g>
+    <g fill="${dots}" opacity="0.72">
+      <circle cx="152" cy="175" r="10"/>
+      <circle cx="198" cy="256" r="10"/>
+      <circle cx="152" cy="337" r="10"/>
+    </g>
+  `;
+}
+
+/** Selected app icon: the Ledger Stack mark on the Subby dark canvas. */
 function appIconSVG() {
   return `
     <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#131920"/>
-          <stop offset="100%" stop-color="${DARK}"/>
-        </linearGradient>
-        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="12" result="blur"/>
-          <feMerge>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
-      </defs>
-      <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
-      <!-- Recurring arrow: ~75% ring with arrowhead -->
-      <g transform="translate(512, 512)" filter="url(#glow)">
-        <!-- Ring arc (75% circle, gap at top) -->
-        <path d="
-          M 0,-230
-          A 230,230 0 1,1 -219,71
-        " fill="none" stroke="${CYAN}" stroke-width="72" stroke-linecap="round"/>
-        <!-- Arrowhead at the end of the arc (bottom-left) -->
-        <polygon points="-160,42 -272,108 -212,170" fill="${CYAN}"/>
+      ${iconBackground()}
+      <g transform="scale(2)">
+        ${ledgerMarkSVG()}
       </g>
     </svg>
   `;
 }
 
-/** Glyph only — transparent background, used for splash + favicon */
+/** Transparent glyph used for the splash screen and auth lockup. */
 function glyphSVG() {
   return `
-    <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-      <g transform="translate(100, 100)">
-        <path d="
-          M 0,-72
-          A 72,72 0 1,1 -68,22
-        " fill="none" stroke="${CYAN}" stroke-width="22" stroke-linecap="round"/>
-        <polygon points="-50,13 -85,34 -67,53" fill="${CYAN}"/>
-      </g>
+    <svg width="200" height="200" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="mark" x1="0.08" y1="0" x2="0.92" y2="1">
+          <stop offset="0%" stop-color="${CYAN_LIGHT}"/>
+          <stop offset="100%" stop-color="${CYAN}"/>
+        </linearGradient>
+      </defs>
+      ${ledgerMarkSVG()}
     </svg>
   `;
 }
 
-/** Android adaptive background — solid dark with subtle gradient */
+/** Android adaptive background — quiet dark gradient behind the foreground. */
 function adaptiveBackgroundSVG() {
   return `
     <svg width="432" height="432" viewBox="0 0 432 432" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="${ELEVATED}"/>
+        <linearGradient id="background" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#18232D"/>
           <stop offset="100%" stop-color="${DARK}"/>
         </linearGradient>
       </defs>
-      <rect width="432" height="432" fill="url(#bg)"/>
+      <rect width="432" height="432" fill="url(#background)"/>
     </svg>
   `;
 }
 
-/** Android adaptive foreground — glyph centered with padding for safe zone */
+/** Android adaptive foreground — centered inside the adaptive safe zone. */
 function adaptiveForegroundSVG() {
   return `
     <svg width="432" height="432" viewBox="0 0 432 432" xmlns="http://www.w3.org/2000/svg">
-      <g transform="translate(216, 216)">
-        <path d="
-          M 0,-100
-          A 100,100 0 1,1 -95,31
-        " fill="none" stroke="${CYAN}" stroke-width="30" stroke-linecap="round"/>
-        <polygon points="-68,18 -116,47 -91,73" fill="${CYAN}"/>
+      <defs>
+        <linearGradient id="mark" x1="0.08" y1="0" x2="0.92" y2="1">
+          <stop offset="0%" stop-color="${CYAN_LIGHT}"/>
+          <stop offset="100%" stop-color="${CYAN}"/>
+        </linearGradient>
+      </defs>
+      <g transform="scale(0.844)">
+        ${ledgerMarkSVG()}
       </g>
     </svg>
   `;
 }
 
-/** Android 13+ monochrome icon — white glyph on transparent (system tints) */
+/** Android 13+ monochrome icon — a solid white Ledger Stack mark. */
 function monochromeSVG() {
   return `
     <svg width="432" height="432" viewBox="0 0 432 432" xmlns="http://www.w3.org/2000/svg">
-      <g transform="translate(216, 216)">
-        <path d="
-          M 0,-100
-          A 100,100 0 1,1 -95,31
-        " fill="none" stroke="#FFFFFF" stroke-width="30" stroke-linecap="round"/>
-        <polygon points="-68,18 -116,47 -91,73" fill="#FFFFFF"/>
+      <g transform="scale(0.844)">
+        ${ledgerMarkSVG({ fill: '#FFFFFF', dots: '#FFFFFF' })}
       </g>
     </svg>
   `;
 }
 
-// ---------------------------------------------------------------------------
-// Render + write
-// ---------------------------------------------------------------------------
+const logoOptions = [
+  { slug: 'ledger-stack', svg: appIconSVG(), selected: true },
+];
 
 async function generate() {
+  await mkdir(ICON_DIR, { recursive: true });
+  await mkdir(OPTIONS_DIR, { recursive: true });
+
   const tasks = [
     { svg: appIconSVG(), file: `${ICON_DIR}/icon.png`, w: 1024, h: 1024 },
-    { svg: glyphSVG(), file: `${ICON_DIR}/splash-icon.png`, w: 200, h: 200 },
+    {
+      svg: glyphSVG(),
+      file: `${ICON_DIR}/ledger-stack-splash.png`,
+      w: 200,
+      h: 200,
+    },
     { svg: glyphSVG(), file: `${ICON_DIR}/favicon.png`, w: 48, h: 48 },
     {
       svg: adaptiveBackgroundSVG(),
@@ -149,14 +168,30 @@ async function generate() {
     },
   ];
 
-  for (const t of tasks) {
-    await sharp(Buffer.from(t.svg)).resize(t.w, t.h).png().toFile(t.file);
-    console.log(`  ✓ ${t.file} (${t.w}×${t.h})`);
+  for (const task of tasks) {
+    await sharp(Buffer.from(task.svg))
+      .resize(task.w, task.h)
+      .png()
+      .toFile(task.file);
+    console.log(`  ✓ ${task.file} (${task.w}×${task.h})`);
   }
-  console.log('Done.');
+
+  for (const option of logoOptions) {
+    await writeFile(
+      `${OPTIONS_DIR}/${option.slug}.svg`,
+      option.svg.trimStart(),
+    );
+    await sharp(Buffer.from(option.svg))
+      .resize(512, 512)
+      .png()
+      .toFile(`${OPTIONS_DIR}/${option.slug}.png`);
+    console.log(`  ✓ ${OPTIONS_DIR}/${option.slug}.png (selected app logo)`);
+  }
+
+  console.log('Done. The Ledger Stack mark is selected in app config.');
 }
 
-generate().catch((e) => {
-  console.error(e);
+generate().catch((error) => {
+  console.error(error);
   process.exit(1);
 });

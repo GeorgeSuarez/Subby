@@ -198,6 +198,23 @@ describe('useAuthStore', () => {
     expect(useAuthStore.getState().verificationEmail).toBe('ada@lovelace.dev');
   });
 
+  it('forwards the platform-visible sign-up redirect', async () => {
+    mockAuth().signUp.mockResolvedValueOnce({
+      data: { session: null, user: fakeUser('ada@lovelace.dev') },
+      error: null,
+    });
+
+    await useAuthStore
+      .getState()
+      .signUp('ada@lovelace.dev', 'sup3r-secret', 'http://10.0.2.2:3000/');
+
+    expect(mockAuth().signUp).toHaveBeenCalledWith({
+      email: 'ada@lovelace.dev',
+      password: 'sup3r-secret',
+      options: { emailRedirectTo: 'http://10.0.2.2:3000/' },
+    });
+  });
+
   it('resends the verification email to the pending address', async () => {
     useAuthStore.setState({ verificationEmail: 'ada@lovelace.dev' });
     await useAuthStore.getState().resendVerificationEmail();

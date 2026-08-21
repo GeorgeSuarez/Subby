@@ -48,6 +48,7 @@ import {
   type AuthMode,
 } from '@/features/auth/auth-helpers';
 import { useAuthStore } from '@/store/useAuthStore';
+import { authRedirectUrl } from '@/features/auth/auth-redirect';
 import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
 import { loadSeedData } from '@/db/seed';
 import { isTestAccountEmail } from '@/utils/constants';
@@ -111,7 +112,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
       if (mode === 'signIn') {
         await signIn(email, draft.password);
       } else {
-        await signUp(email, draft.password);
+        await signUp(email, draft.password, authRedirectUrl());
         // Email confirmation is enabled — no session yet. Send the user to
         // the verify-email screen instead of loading them into the app.
         if (!useAuthStore.getState().isSignedIn) {

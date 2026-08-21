@@ -1,8 +1,8 @@
 /**
  * BrandLockup — Subby brand anchor for the auth screens.
  *
- * The recurring-arrow glyph (the same asset used in the splash screen) sits in
- * a hairline ring with a soft accent glow, beneath the "subby" wordmark.
+ * The Ledger Stack glyph (the same asset used in the splash screen) sits in a
+ * hairline ring with a soft accent glow, beneath the "subby" wordmark.
  * Deliberately static: the calmer variant of the concept keeps the ring still.
  *
  * Skill rules:
@@ -18,7 +18,7 @@ import { Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { radius, spacing } from '@/design/tokens';
 
-const GLYPH = require('@/assets/images/splash-icon.png');
+const GLYPH = require('@/assets/images/ledger-stack-splash.png');
 
 export function BrandLockup() {
   const { colors, shadow } = useTheme();

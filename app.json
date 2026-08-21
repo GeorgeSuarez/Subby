@@ -17,6 +17,7 @@
     },
     "android": {
       "package": "com.subby.app",
+      "permissions": ["SCHEDULE_EXACT_ALARM"],
       "adaptiveIcon": {
         "backgroundColor": "#0B0F14",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -35,18 +36,35 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#0B0F14",
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/ledger-stack-splash.png",
           "imageWidth": 76,
           "resizeMode": "contain",
           "dark": {
             "backgroundColor": "#0B0F14",
-            "image": "./assets/images/splash-icon.png"
+            "image": "./assets/images/ledger-stack-splash.png"
           }
         }
       ],
       "expo-sqlite",
       "@react-native-community/datetimepicker",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/android-icon-monochrome.png",
+          "color": "#22D3EE",
+          "defaultChannel": "renewals"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true,

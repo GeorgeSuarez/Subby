@@ -1,0 +1,25 @@
+# Android development/preview APK: notification permission/channel smoke path.
+# Preconditions: signed-in demo account and a fresh install when validating the
+# Android 13+ POST_NOTIFICATIONS prompt.
+appId: com.subby.app
+---
+- launchApp: com.subby.app
+- openLink: subby://subscription/add
+- extendedWaitUntil:
+    visible: 'New subscription'
+    timeout: 30000
+- tapOn: 'e.g. Netflix'
+- inputText: 'Android notification test'
+- tapOn: '0.00'
+- inputText: '4.99'
+- hideKeyboard
+- runFlow:
+    when:
+      visible: 'Allow'
+    commands:
+      - tapOn: 'Allow'
+- tapOn:
+    id: 'add-submit'
+- extendedWaitUntil:
+    visible: 'Monthly spend|Subscription added'
+    timeout: 60000

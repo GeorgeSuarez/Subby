@@ -1,0 +1,16 @@
+# Android Expo Go smoke flow. Expo Go reaches the Mac through 10.0.2.2.
+# Start Metro with `npm run android`, then run this flow on the Pixel emulator.
+appId: host.exp.exponent
+---
+- launchApp: host.exp.exponent
+- openLink: exp://10.0.2.2:8081/--/auth/sign-in
+- extendedWaitUntil:
+    visible: 'Sign in'
+    timeout: 90000
+- assertVisible: 'Track every subscription, all in one place.'
+- openLink: exp://10.0.2.2:8081/--/settings
+- extendedWaitUntil:
+    visible: 'Theme'
+    timeout: 30000
+- pressKey: Back
+- assertVisible: 'Settings'

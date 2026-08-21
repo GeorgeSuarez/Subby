@@ -23,14 +23,12 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as Linking from 'expo-linking';
-
 import { Button, Text } from '@/design/components';
 import { Surface } from '@/design/components/Surface';
 import { layout, spacing } from '@/design/tokens';
 import { TextField } from '@/features/add-subscription/components/TextField';
 import { BrandLockup } from '@/features/auth/components/BrandLockup';
-import { SUPABASE_URL } from '@/lib/supabase';
+import { authRedirectUrl } from '@/features/auth/auth-redirect';
 import { useAuthStore } from '@/store/useAuthStore';
 import { notifyError, notifySuccess } from '@/utils/haptics';
 import { isValidEmail } from '@/features/auth/auth-helpers';
@@ -42,9 +40,7 @@ import { isValidEmail } from '@/features/auth/auth-helpers';
  *    and hands off to the app via a deep link.
  *  - hosted → the app's own deep link (subby:// in builds, exp:// in Expo Go).
  */
-const RESET_REDIRECT = /(127\.0\.0\.1|localhost)/.test(SUPABASE_URL)
-  ? 'http://127.0.0.1:3000/reset-password'
-  : Linking.createURL('reset-password');
+const RESET_REDIRECT = authRedirectUrl('reset-password');
 
 export function ForgotPasswordScreen() {
   const router = useRouter();

@@ -1,0 +1,21 @@
+# Android development/preview APK: offline queue and replay.
+# Run this flow after stopping the local Supabase stack, then run 04-sync.yaml
+# after starting it again. Preconditions: signed-in demo account.
+appId: com.subby.app
+---
+- launchApp: com.subby.app
+- openLink: subby://subscriptions
+- extendedWaitUntil:
+    visible: '.*Netflix.*'
+    timeout: 120000
+- extendedWaitUntil:
+    visible: 'Offline.*'
+    timeout: 30000
+- longPressOn: '.*Spotify.*'
+- extendedWaitUntil:
+    visible: 'Archive'
+    timeout: 20000
+- tapOn: 'Archive'
+- assertVisible:
+    text: 'Queued|Offline'
+    optional: true

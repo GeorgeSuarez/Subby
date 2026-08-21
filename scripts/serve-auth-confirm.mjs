@@ -21,7 +21,11 @@
 import { createServer } from 'http';
 
 const PORT = 3000;
-const HOST = '127.0.0.1';
+const METRO_PORT = process.env.SUBBY_METRO_PORT ?? '8081';
+// Bind all interfaces so Android's 10.0.2.2 and a physical device can reach
+// the local handoff page. The page URL still uses whichever host the client
+// used, so iOS loopback remains supported.
+const HOST = process.env.SUBBY_DEV_BIND_HOST ?? '0.0.0.0';
 
 const STYLE = `
   :root { color-scheme: dark; }
@@ -89,7 +93,7 @@ const RESET_PAGE = `
         '</p><p>In Subby: Sign in &rarr; Forgot password &rarr; send a new link, then open it in the Simulator&#39;s Safari.</p>';
     } else {
       const hostname = window.location.hostname;
-      const expBase = 'exp://' + hostname + ':8081/--/reset-password';
+      const expBase = 'exp://' + hostname + ':' + '${METRO_PORT}' + '/--/reset-password';
       const subbyBase = 'subby://reset-password';
       const expLink = expBase + window.location.hash;
       const subbyLink = subbyBase + window.location.hash;
@@ -131,5 +135,7 @@ createServer((req, res) => {
   res.writeHead(404, { 'Content-Type': 'text/plain' });
   res.end('Not found');
 }).listen(PORT, HOST, () => {
-  console.log(`Subby auth redirect page on http://${HOST}:${PORT}`);
+  console.log(
+    `Subby auth redirect page listening on ${HOST}:${PORT}; Expo Go handoff port ${METRO_PORT}`,
+  );
 });

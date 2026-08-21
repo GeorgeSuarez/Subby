@@ -1,0 +1,65 @@
+# Android development/preview APK: subscription CRUD plus native date picker.
+# Preconditions: signed-in demo account and local Supabase running.
+appId: com.subby.app
+---
+- launchApp: com.subby.app
+- openLink: subby://subscription/add
+- extendedWaitUntil:
+    visible: 'New subscription'
+    timeout: 30000
+- tapOn: 'e.g. Netflix'
+- inputText: 'Pixel Android Test'
+- tapOn: '0.00'
+- inputText: '9.99'
+- hideKeyboard
+- tapOn: 'Pick a date'
+- extendedWaitUntil:
+    visible: 'OK|CANCEL'
+    timeout: 10000
+- tapOn: 'OK'
+- extendedWaitUntil:
+    visible: 'New subscription'
+    timeout: 10000
+- swipe:
+    start: '50%,70%'
+    end: '50%,25%'
+    duration: 500
+- tapOn:
+    id: 'add-submit'
+- extendedWaitUntil:
+    visible: 'Monthly spend|Subscription added'
+    timeout: 60000
+- tapOn: 'Subscriptions'
+- extendedWaitUntil:
+    visible: '.*Pixel Android Test.*'
+    timeout: 30000
+- tapOn: '.*Pixel Android Test.*'
+- extendedWaitUntil:
+    visible: 'Effective cost'
+    timeout: 30000
+- tapOn: 'Edit subscription'
+- extendedWaitUntil:
+    visible: 'Edit subscription'
+    timeout: 30000
+- tapOn: '9.99'
+- eraseText
+- inputText: '10.99'
+- hideKeyboard
+- tapOn:
+    id: 'add-submit'
+- extendedWaitUntil:
+    visible: 'Effective cost'
+    timeout: 30000
+- pressKey: Back
+- extendedWaitUntil:
+    visible: '.*Pixel Android Test.*'
+    timeout: 30000
+- longPressOn: '.*Pixel Android Test.*'
+- extendedWaitUntil:
+    visible: 'Delete'
+    timeout: 10000
+- tapOn: 'Delete'
+- extendedWaitUntil:
+    visible: 'Cancel|Delete'
+    timeout: 10000
+- tapOn: 'Delete'

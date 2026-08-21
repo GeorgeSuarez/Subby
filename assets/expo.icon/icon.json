@@ -6,8 +6,8 @@
     {
       "layers": [
         {
-          "image-name": "recurring-arrow.svg",
-          "name": "recurring-arrow",
+          "image-name": "ledger-stack.svg",
+          "name": "ledger-stack",
           "position": {
             "scale": 1,
             "translation-in-points": [0, -16]

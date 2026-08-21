@@ -38,17 +38,5 @@
         "APP_VARIANT": "production"
       }
     }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "georgesuarezmbp@example.com",
-        "ascAppId": "",
-        "appleTeamId": ""
-      },
-      "android": {
-        "serviceAccountKeyPath": ""
-      }
-    }
   }
 }

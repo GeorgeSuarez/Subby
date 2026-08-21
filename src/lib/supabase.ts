@@ -13,13 +13,22 @@
  * imported from Jest-tested modules.
  */
 
+import { Platform } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
+
+import { supabaseUrlForPlatform } from '@/lib/supabase-env';
 
 const PLACEHOLDER_URL = 'https://placeholder.supabase.co';
 const PLACEHOLDER_KEY = 'placeholder-anon-key';
 
-export const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+const RAW_SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+
+/** Device-reachable URL; Android maps host loopback to 10.0.2.2 by default. */
+export const SUPABASE_URL = supabaseUrlForPlatform(
+  RAW_SUPABASE_URL,
+  Platform.OS,
+);
 export const SUPABASE_ANON_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 

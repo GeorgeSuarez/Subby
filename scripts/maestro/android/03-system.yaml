@@ -1,0 +1,31 @@
+# Android development/preview APK: keyboard, modal dismissal, and system back.
+# Preconditions: signed-in demo account.
+appId: com.subby.app
+---
+- launchApp: com.subby.app
+- openLink: subby://subscription/add
+- extendedWaitUntil:
+    visible: 'New subscription'
+    timeout: 30000
+- tapOn: 'e.g. Netflix'
+- inputText: 'Back behavior test'
+- assertVisible: 'Back behavior test'
+- hideKeyboard
+- tapOn: 'Pick a date'
+- extendedWaitUntil:
+    visible: 'OK|CANCEL'
+    timeout: 10000
+- pressKey: Back
+- extendedWaitUntil:
+    visible: 'New subscription'
+    timeout: 10000
+- pressKey: Back
+- extendedWaitUntil:
+    visible: 'Monthly spend|Subscriptions'
+    timeout: 30000
+- tapOn: 'Subscriptions'
+- extendedWaitUntil:
+    visible: 'Search subscriptions'
+    timeout: 30000
+- pressKey: Back
+- assertVisible: 'Subscriptions'
