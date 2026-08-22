@@ -11,3 +11,11 @@ const explicit = process.env.EXPO_PUBLIC_ENABLE_DEMO;
 
 export const ENABLE_DEMO_DATA: boolean =
   explicit === '1' ? true : explicit === '0' ? false : __DEV__;
+
+/**
+ * When true, the paywall and entitlement store use mocked products and a
+ * fake Pro state so QA can exercise the paywall without sandbox purchases.
+ * Enabled with `EXPO_PUBLIC_ENABLE_PAYWALL_MOCK=1`.
+ */
+export const ENABLE_PAYWALL_MOCK: boolean =
+  process.env.EXPO_PUBLIC_ENABLE_PAYWALL_MOCK === '1';

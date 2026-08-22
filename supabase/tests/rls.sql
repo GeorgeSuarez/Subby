@@ -7,7 +7,7 @@
 
 begin;
 
-select plan(13);
+select plan(20);
 
 -- Fixture: two users
 insert into auth.users (instance_id, id, aud, role, email, encrypted_password,
@@ -141,6 +141,58 @@ select is(
   (select name from public.subscriptions),
   'User B sub',
   'user B reads only their own row'
+);
+
+-- user_entitlements: isolation + no client write
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000001';
+-- Insert via service role would succeed; here as authenticated, insert must fail (no policy)
+select throws_ok(
+  $$ insert into public.user_entitlements (user_id, is_pro, product_id, expires_at, entitlement_source, updated_at)
+     values ('00000000-0000-4000-8000-000000000001', true, 'subby_pro_yearly', null, 'app_store', 1) $$,
+  '42501',
+  NULL,
+  'authenticated cannot insert into user_entitlements (service_role only)'
+);
+
+-- Seed a row as postgres (simulating webhook) then verify read isolation
+set local role postgres;
+insert into public.user_entitlements (user_id, is_pro, product_id, expires_at, entitlement_source, updated_at)
+values ('00000000-0000-4000-8000-000000000001', true, 'subby_pro_yearly', 9999999999999, 'app_store', 1),
+       ('00000000-0000-4000-8000-000000000002', false, null, null, 'play_store', 1);
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000001';
+
+select is(
+  (select count(*)::int from public.user_entitlements),
+  1,
+  'user A sees exactly their own entitlement row'
+);
+
+select is(
+  (select is_pro from public.user_entitlements),
+  true,
+  'user A reads own is_pro'
+);
+
+update public.user_entitlements set is_pro = false where user_id = '00000000-0000-4000-8000-000000000001';
+select is(
+  (select is_pro from public.user_entitlements where user_id = '00000000-0000-4000-8000-000000000001'),
+  true,
+  'authenticated update is ignored (still true, no policy)'
+);
+
+delete from public.user_entitlements where user_id = '00000000-0000-4000-8000-000000000001';
+select is(
+  (select count(*)::int from public.user_entitlements where user_id = '00000000-0000-4000-8000-000000000001'),
+  1,
+  'authenticated delete is ignored (row still exists)'
+);
+
+set local request.jwt.claim.sub = '00000000-0000-4000-8000-000000000002';
+select is(
+  (select is_pro from public.user_entitlements),
+  false,
+  'user B reads own entitlement (false)'
 );
 
 select * from finish();

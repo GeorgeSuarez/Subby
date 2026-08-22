@@ -45,6 +45,8 @@ import { UnverifiedEmailBanner } from '@/features/dashboard/components/Unverifie
 import { pickInsight } from '@/features/dashboard/insights';
 import { shouldShowOnboarding } from '@/features/onboarding';
 import { useCurrency } from '@/store/useUIStore';
+import { useIsPro } from '@/store/useEntitlementStore';
+import { ProGate } from '@/features/paywall/components/ProGate';
 
 type ScrollViewProps = ComponentProps<typeof ScrollView>;
 
@@ -56,6 +58,7 @@ export function DashboardScreen() {
   const hasHydrated = useHasHydrated();
   const hydrate = useSubscriptionsStore((s) => s.hydrate);
   const currency = useCurrency();
+  const isPro = useIsPro();
 
   // First-run gate — evaluated only after hydration settles so a cold start
   // never flashes an existing account into the wizard while rows are loading.
@@ -128,7 +131,13 @@ export function DashboardScreen() {
         <QuickStats />
         <RenewalsList />
         <TrialsCard />
-        <CategoryBreakdown />
+        {isPro ? (
+          <CategoryBreakdown />
+        ) : (
+          <ProGate feature="pieChart">
+            <CategoryBreakdown />
+          </ProGate>
+        )}
       </ScrollView>
       {/* Primary add affordance — floats above the tab bar. The empty state
           has its own centered CTA, so the FAB only shows with content. */}

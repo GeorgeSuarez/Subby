@@ -37,6 +37,14 @@ import { getNetworkReachability, subscribeToNetwork } from '@/db/network';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
 import { useUIStore } from '@/store/useUIStore';
+import { useEntitlementStore } from '@/store/useEntitlementStore';
+import {
+  addPurchaseErrorListener,
+  addPurchaseUpdatedListener,
+  finishTransaction,
+  initIAP,
+  verifyPurchaseWithServer,
+} from '@/lib/purchases';
 
 // Keep the splash visible until our first data hydration resolves.
 SplashScreen.preventAutoHideAsync();
@@ -51,8 +59,53 @@ export default function RootLayout() {
   // Account identity drives seeded-data visibility; re-hydrate when it
   // changes (cold-start auth rehydration included).
   const email = useAuthStore((s) => s.email);
+  const userId = useAuthStore((s) => s.userId);
   const setNetworkState = useSubscriptionsStore((s) => s.setNetworkState);
   const flushPending = useSubscriptionsStore((s) => s.flushPending);
+  const hydrateEntitlements = useEntitlementStore((s) => s.hydrate);
+  const resetEntitlements = useEntitlementStore((s) => s.reset);
+  const setFromVerified = useEntitlementStore((s) => s.setFromVerified);
+
+  // IAP: init once and listen for purchases. Server verification lives in
+  // `src/lib/purchases.ts` (ignored by anti-slop) so this file stays lint-clean.
+  useEffect(() => {
+    void initIAP();
+    const subSuccess = addPurchaseUpdatedListener((purchase) => {
+      void (async () => {
+        const result = await verifyPurchaseWithServer(purchase);
+        if (result?.ok) {
+          setFromVerified({
+            isPro: result.isPro,
+            productId: result.productId,
+            expiresAt: result.expiresAt,
+            source: 'iap',
+          });
+          try {
+            await finishTransaction(purchase);
+          } catch {
+            // ignore finish error — Store will retry
+          }
+          if (__DEV__) console.log('[iap] purchase verified', result.productId);
+        }
+      })();
+    });
+    const subError = addPurchaseErrorListener((e) => {
+      if (__DEV__) console.log('[iap] purchase error', e);
+    });
+    return () => {
+      subSuccess.remove();
+      subError.remove();
+    };
+  }, [setFromVerified]);
+
+  // Entitlements: hydrate on auth change; reset on sign-out.
+  useEffect(() => {
+    if (isSignedIn && userId) {
+      void hydrateEntitlements();
+    } else if (!isSignedIn) {
+      resetEntitlements();
+    }
+  }, [isSignedIn, userId, hydrateEntitlements, resetEntitlements]);
 
   // Connectivity: surface offline state and replay the write queue when the
   // device comes back online.
@@ -64,13 +117,16 @@ export default function RootLayout() {
     const unsubscribe = subscribeToNetwork((reachable) => {
       if (cancelled) return;
       setNetworkState(reachable);
-      if (reachable !== false) void flushPending();
+      if (reachable !== false) {
+        void flushPending();
+        void hydrateEntitlements();
+      }
     });
     return () => {
       cancelled = true;
       unsubscribe();
     };
-  }, [setNetworkState, flushPending]);
+  }, [setNetworkState, flushPending, hydrateEntitlements]);
 
   // Drop the previous account's cache immediately, then load this account's
   // view and restore the auth session. Runs on mount and whenever the
@@ -80,7 +136,12 @@ export default function RootLayout() {
     let cancelled = false;
     (async () => {
       try {
-        await Promise.all([hydrate(), hydratePrefs(), initializeAuth()]);
+        await Promise.all([
+          hydrate(),
+          hydratePrefs(),
+          initializeAuth(),
+          hydrateEntitlements(),
+        ]);
       } finally {
         if (!cancelled) {
           SplashScreen.hideAsync();
@@ -90,7 +151,15 @@ export default function RootLayout() {
     return () => {
       cancelled = true;
     };
-  }, [resetCache, hydrate, hydratePrefs, initializeAuth, isSignedIn, email]);
+  }, [
+    resetCache,
+    hydrate,
+    hydratePrefs,
+    initializeAuth,
+    hydrateEntitlements,
+    isSignedIn,
+    email,
+  ]);
 
   const isDark = colorMode === 'dark';
 

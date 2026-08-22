@@ -13,6 +13,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 
 import { Surface } from '@/design/components/Surface';
 import { spacing } from '@/design/tokens';
+import { ProSection } from '@/features/settings/components/ProSection';
 import { ThemeSection } from '@/features/settings/components/ThemeSection';
 import { CurrencySection } from '@/features/settings/components/CurrencySection';
 import { BudgetSection } from '@/features/settings/components/BudgetSection';
@@ -30,6 +31,7 @@ export function SettingsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        <ProSection />
         <ThemeSection />
         <CurrencySection />
         <BudgetSection />

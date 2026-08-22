@@ -12,15 +12,20 @@
 
 import { StyleSheet, Switch, View } from 'react-native';
 
-import { Card, Text } from '@/design/components';
+import { useRouter } from 'expo-router';
+
+import { Button, Card, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
 import { useRemindersEnabled, useUIStore } from '@/store/useUIStore';
+import { useIsPro } from '@/store/useEntitlementStore';
 
 export function RemindersSection() {
   const enabled = useRemindersEnabled();
   const setRemindersEnabled = useUIStore((s) => s.setRemindersEnabled);
   const { colors } = useTheme();
+  const isPro = useIsPro();
+  const router = useRouter();
 
   return (
     <Card padding={spacing.lg} elevation="flat">
@@ -54,6 +59,20 @@ export function RemindersSection() {
           accessibilityLabel="Renewal reminders"
         />
       </View>
+      {!isPro ? (
+        <View style={styles.proNote}>
+          <Text variant="caption" color="textSecondary">
+            Pro unlocks 1d / 3d / 7d advance reminders.
+          </Text>
+          <Button
+            onPress={() => router.push('/subscription/paywall')}
+            variant="ghost"
+            size="sm"
+          >
+            Unlock Pro
+          </Button>
+        </View>
+      ) : null}
     </Card>
   );
 }
@@ -71,5 +90,12 @@ const styles = StyleSheet.create({
   meta: {
     flex: 1,
     gap: spacing.xs / 2,
+  },
+  proNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: spacing.sm,
+    gap: spacing.sm,
   },
 });

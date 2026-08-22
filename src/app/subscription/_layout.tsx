@@ -22,6 +22,10 @@ export default function SubscriptionModalLayout() {
           and sheet-over-sheet in one stack renders a blank black screen. */}
       <Stack.Screen name="edit" options={{ presentation: 'card' }} />
       <Stack.Screen name="[id]" />
+      <Stack.Screen
+        name="paywall"
+        options={{ presentation: 'formSheet', title: '', headerShown: false }}
+      />
     </Stack>
   );
 }

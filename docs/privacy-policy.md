@@ -15,6 +15,9 @@ explains what data the App processes and how.
   devices.
 - **Device-local data**: scheduled reminder notifications and their IDs live
   only on your device and are never uploaded.
+- **Purchase history**: if you upgrade to Pro, Apple/Google share purchase
+  receipts (product + expiry + transaction ID) so we can verify your
+  entitlement. We do not see your card details.
 
 ## How data is used
 
@@ -41,7 +44,14 @@ changes you make; they sync to the server when connectivity returns.
 
 ## Contact
 
+## Subscriptions
+
+Subby Pro ($2.99/mo · $19.99/yr with 7-day trial · $49.99 lifetime) uses
+Apple In-App Purchase / Google Play Billing and auto-renews unless canceled
+in the App Store / Play Store subscription settings. See our
+[Terms of Use](./legal/terms.md).
+
 Questions about this policy can be directed to the app developer at
 georgesuarezdev@gmail.com.
 
-_Last updated: August 2026_
+_Last updated: August 2026_ — hosted version pending at `https://subby.app/privacy` (local fallback: `docs/legal/privacy.md`).
