@@ -144,7 +144,9 @@ function buildDefaultDeps(): SyncDeps {
   // startup (hydratePrefs -> currentDeps -> buildDefaultDeps).
   let notifications: Pick<
     SyncDeps,
-    'scheduleRenewalReminder' | 'rescheduleRenewalReminder' | 'cancelRenewalReminder'
+    | 'scheduleRenewalReminder'
+    | 'rescheduleRenewalReminder'
+    | 'cancelRenewalReminder'
   >;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports

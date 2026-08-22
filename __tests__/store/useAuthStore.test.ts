@@ -13,6 +13,7 @@ import type { Session, User } from '@supabase/supabase-js';
 import {
   setAuthDeps,
   useAuthStore,
+  DUPLICATE_ACCOUNT_MESSAGE,
   type AuthDeps,
   type AuthSupabase,
 } from '@/store/useAuthStore';
@@ -59,6 +60,10 @@ const supabase: AuthSupabase = {
       },
     ),
     signInWithPassword: jest.fn(),
+    signInAnonymously: jest.fn(async () => ({
+      data: { session: null },
+      error: null,
+    })),
     signUp: jest.fn(),
     resend: jest.fn(async () => ({ error: null })),
     resetPasswordForEmail: jest.fn(async () => ({ error: null })),
@@ -68,6 +73,7 @@ const supabase: AuthSupabase = {
       data: { user: fakeUser('ada@lovelace.dev') },
       error: null,
     })),
+    getUser: jest.fn(async () => ({ data: { user: fakeUser() }, error: null })),
     signOut: jest.fn(async () => ({ error: null })),
   },
   functions: {
@@ -80,6 +86,9 @@ const authDeps: AuthDeps = {
   supabase,
   clearCacheForUser: jest.fn(async () => undefined),
   clearQueueForUser: jest.fn(async () => undefined),
+  writePendingCredentials: jest.fn(async () => undefined),
+  readPendingCredentials: jest.fn(async () => null),
+  clearPendingCredentials: jest.fn(async () => undefined),
 };
 
 /** Mock-shaped view of the auth doubles so tests can stub responses. */
@@ -87,12 +96,14 @@ interface AuthDoubles {
   getSession: jest.Mock;
   onAuthStateChange: jest.Mock;
   signInWithPassword: jest.Mock;
+  signInAnonymously: jest.Mock;
   signUp: jest.Mock;
   resend: jest.Mock;
   resetPasswordForEmail: jest.Mock;
   verifyOtp: jest.Mock;
   setSession: jest.Mock;
   updateUser: jest.Mock;
+  getUser: jest.Mock;
   signOut: jest.Mock;
 }
 
@@ -123,6 +134,7 @@ describe('useAuthStore', () => {
       isLoading: true,
       error: null,
       verificationEmail: null,
+      pendingVerificationEmail: null,
       recoveryPending: false,
       recoveryEmail: null,
       hasInitialized: false,
@@ -213,6 +225,222 @@ describe('useAuthStore', () => {
       password: 'sup3r-secret',
       options: { emailRedirectTo: 'http://10.0.2.2:3000/' },
     });
+  });
+
+  it('defers a session-less sign-up onto an anonymous bridge session', async () => {
+    const anonSession: Session = {
+      user: { ...fakeUser(), id: 'anon-1', is_anonymous: true },
+      access_token: 'token',
+      refresh_token: 'refresh',
+      expires_in: 3600,
+      token_type: 'bearer',
+    };
+    mockAuth().signUp.mockResolvedValueOnce({
+      data: { session: null, user: fakeUser('ada@lovelace.dev') },
+      error: null,
+    });
+    mockAuth().signInAnonymously.mockResolvedValueOnce({
+      data: { session: anonSession },
+      error: null,
+    });
+
+    await useAuthStore.getState().signUp('ada@lovelace.dev', 'sup3r-secret');
+
+    // Straight into the app on the anonymous session; verification pending.
+    expect(useAuthStore.getState().isSignedIn).toBe(true);
+    expect(useAuthStore.getState().isAnonymous).toBe(true);
+    expect(useAuthStore.getState().userId).toBe('anon-1');
+    expect(useAuthStore.getState().pendingVerificationEmail).toBe(
+      'ada@lovelace.dev',
+    );
+    expect(useAuthStore.getState().verificationEmail).toBeNull();
+    expect(authDeps.writePendingCredentials).toHaveBeenCalledWith({
+      email: 'ada@lovelace.dev',
+      password: 'sup3r-secret',
+    });
+    // The conversion email is pre-filled without waiting on the user.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(mockAuth().updateUser).toHaveBeenCalledWith({
+      email: 'ada@lovelace.dev',
+      password: 'sup3r-secret',
+    });
+    expect(useAuthStore.getState().verificationEmailSent).toBe(true);
+  });
+
+  it('keeps a usable bridge account when the sign-up auto-send fails', async () => {
+    const anonSession: Session = {
+      user: { ...fakeUser(), id: 'anon-1', is_anonymous: true },
+      access_token: 'token',
+      refresh_token: 'refresh',
+      expires_in: 3600,
+      token_type: 'bearer',
+    };
+    mockAuth().signUp.mockResolvedValueOnce({
+      data: { session: null, user: fakeUser() },
+      error: null,
+    });
+    mockAuth().signInAnonymously.mockResolvedValueOnce({
+      data: { session: anonSession },
+      error: null,
+    });
+    mockAuth().updateUser.mockRejectedValueOnce(new Error('offline'));
+
+    await useAuthStore.getState().signUp('ada@lovelace.dev', 'sup3r-secret');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Entry into the app is never blocked by the best-effort email.
+    expect(useAuthStore.getState().isSignedIn).toBe(true);
+    expect(useAuthStore.getState().pendingVerificationEmail).toBe(
+      'ada@lovelace.dev',
+    );
+    expect(useAuthStore.getState().verificationEmailSent).toBe(false);
+  });
+
+  it('rejects a duplicate sign-up for an existing unconfirmed account', async () => {
+    // GoTrue's anti-enumeration response: HTTP 200, user with identities [].
+    mockAuth().signUp.mockResolvedValueOnce({
+      data: {
+        session: null,
+        user: { ...fakeUser('taken@lovelace.dev'), identities: [] },
+      },
+      error: null,
+    });
+
+    await expect(
+      useAuthStore.getState().signUp('taken@lovelace.dev', 'sup3r-secret'),
+    ).rejects.toThrow(DUPLICATE_ACCOUNT_MESSAGE);
+
+    // No bridge, no stashed credentials — the collision stops here.
+    expect(useAuthStore.getState().isSignedIn).toBe(false);
+    expect(mockAuth().signInAnonymously).not.toHaveBeenCalled();
+    expect(authDeps.writePendingCredentials).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().pendingVerificationEmail).toBeNull();
+  });
+
+  it('maps the confirmed-duplicate error onto friendly copy', async () => {
+    mockAuth().signUp.mockResolvedValueOnce({
+      data: { session: null, user: null },
+      error: new AuthError('User already registered'),
+    });
+
+    await expect(
+      useAuthStore.getState().signUp('taken@lovelace.dev', 'sup3r-secret'),
+    ).rejects.toThrow(DUPLICATE_ACCOUNT_MESSAGE);
+    expect(useAuthStore.getState().error).toBe(DUPLICATE_ACCOUNT_MESSAGE);
+  });
+
+  it('falls back to the verify screen when anonymous sign-ins are disabled', async () => {
+    mockAuth().signUp.mockResolvedValueOnce({
+      data: { session: null, user: fakeUser() },
+      error: null,
+    });
+    mockAuth().signInAnonymously.mockResolvedValueOnce({
+      data: { session: null },
+      error: new AuthApiError(
+        'Anonymous sign-ins are disabled',
+        400,
+        'anonymous_provider_disabled',
+      ),
+    });
+
+    await useAuthStore.getState().signUp('ada@lovelace.dev', 'sup3r-secret');
+
+    expect(useAuthStore.getState().isSignedIn).toBe(false);
+    expect(useAuthStore.getState().pendingVerificationEmail).toBeNull();
+    expect(useAuthStore.getState().verificationEmail).toBe('ada@lovelace.dev');
+    expect(authDeps.writePendingCredentials).not.toHaveBeenCalled();
+  });
+
+  it('beginAccountVerification converts the bridge account via updateUser', async () => {
+    // SAFETY: `readPendingCredentials` is a jest.fn on the deps double; the
+    // cast exposes Mock so tests can stub responses.
+    (authDeps.readPendingCredentials as jest.Mock).mockResolvedValueOnce({
+      email: 'ada@lovelace.dev',
+      password: 'sup3r-secret',
+    });
+    useAuthStore.setState({
+      isSignedIn: true,
+      isAnonymous: true,
+      pendingVerificationEmail: 'ada@lovelace.dev',
+    });
+
+    await useAuthStore.getState().beginAccountVerification();
+
+    expect(mockAuth().updateUser).toHaveBeenCalledWith({
+      email: 'ada@lovelace.dev',
+      password: 'sup3r-secret',
+    });
+    expect(useAuthStore.getState().error).toBeNull();
+  });
+
+  it('beginAccountVerification explains missing credentials instead of throwing raw', async () => {
+    useAuthStore.setState({ pendingVerificationEmail: 'ada@lovelace.dev' });
+
+    await expect(
+      useAuthStore.getState().beginAccountVerification(),
+    ).rejects.toThrow('Sign-up details are missing');
+    expect(mockAuth().updateUser).not.toHaveBeenCalled();
+  });
+
+  it('checkAccountVerified clears the pending state once the email confirms', async () => {
+    const confirmedUser = {
+      ...fakeUser('ada@lovelace.dev'),
+      email_confirmed_at: '2026-01-02T00:00:00.000Z',
+    };
+    mockAuth().getUser.mockResolvedValueOnce({
+      data: { user: confirmedUser },
+      error: null,
+    });
+    useAuthStore.setState({
+      isSignedIn: true,
+      isAnonymous: true,
+      email: null,
+      pendingVerificationEmail: 'ada@lovelace.dev',
+    });
+
+    await expect(useAuthStore.getState().checkAccountVerified()).resolves.toBe(
+      true,
+    );
+    expect(useAuthStore.getState().email).toBe('ada@lovelace.dev');
+    expect(useAuthStore.getState().isAnonymous).toBe(false);
+    expect(useAuthStore.getState().pendingVerificationEmail).toBeNull();
+    expect(authDeps.clearPendingCredentials).toHaveBeenCalled();
+  });
+
+  it('checkAccountVerified stays false while the email is unconfirmed', async () => {
+    // No email_confirmed_at yet — the confirmation has not landed.
+    mockAuth().getUser.mockResolvedValueOnce({
+      data: { user: fakeUser('ada@lovelace.dev') },
+      error: null,
+    });
+    useAuthStore.setState({
+      isSignedIn: true,
+      isAnonymous: true,
+      pendingVerificationEmail: 'ada@lovelace.dev',
+    });
+
+    await expect(useAuthStore.getState().checkAccountVerified()).resolves.toBe(
+      false,
+    );
+    expect(useAuthStore.getState().pendingVerificationEmail).toBe(
+      'ada@lovelace.dev',
+    );
+    expect(authDeps.clearPendingCredentials).not.toHaveBeenCalled();
+  });
+
+  it('signOut drops the pending verification stash with the session', async () => {
+    useAuthStore.setState({
+      isSignedIn: true,
+      isAnonymous: true,
+      pendingVerificationEmail: 'ada@lovelace.dev',
+      verificationEmailSent: true,
+    });
+
+    await useAuthStore.getState().signOut();
+
+    expect(authDeps.clearPendingCredentials).toHaveBeenCalled();
+    expect(useAuthStore.getState().pendingVerificationEmail).toBeNull();
+    expect(useAuthStore.getState().verificationEmailSent).toBe(false);
   });
 
   it('resends the verification email to the pending address', async () => {

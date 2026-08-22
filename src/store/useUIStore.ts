@@ -47,6 +47,13 @@ export interface UIStore {
   budget: number;
   /** Schedule local renewal-reminder notifications. */
   remindersEnabled: boolean;
+  /**
+   * User ids that finished (or skipped) the Getting Started wizard.
+   * Device-level: keyed per account so a second account on the same device
+   * still gets onboarding; a reinstall re-shows it once (accepted tradeoff).
+   */
+  completedOnboardingUserIds: string[];
+  completeOnboarding: (userId: string) => void;
   setCurrency: (c: CurrencyCode) => void;
   setSort: (s: SubscriptionSort) => void;
   setFilter: (f: SubscriptionFilter) => void;
@@ -89,6 +96,16 @@ export const useUIStore = create<UIStore>()(
       ...ACCOUNT_PREF_DEFAULTS,
       sort: 'nextRenewal',
       filter: 'active',
+      completedOnboardingUserIds: [],
+
+      completeOnboarding: (userId) => {
+        const { completedOnboardingUserIds } = get();
+        // Idempotent — the Done step's commit button may fire twice.
+        if (completedOnboardingUserIds.includes(userId)) return;
+        set({
+          completedOnboardingUserIds: [...completedOnboardingUserIds, userId],
+        });
+      },
 
       setCurrency: (currency) => {
         set({ currency });
@@ -182,6 +199,7 @@ export const useUIStore = create<UIStore>()(
       partialize: (s) => ({
         sort: s.sort,
         filter: s.filter,
+        completedOnboardingUserIds: s.completedOnboardingUserIds,
       }),
     },
   ),
@@ -205,4 +223,9 @@ export function useBudget(): number {
 /** Are renewal reminders enabled? */
 export function useRemindersEnabled(): boolean {
   return useUIStore((s) => s.remindersEnabled);
+}
+
+/** User ids that completed Getting Started on this device. */
+export function useCompletedOnboardingUserIds(): readonly string[] {
+  return useUIStore((s) => s.completedOnboardingUserIds);
 }

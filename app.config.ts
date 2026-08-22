@@ -27,7 +27,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           ...opts,
           android: {
             ...android,
-            usesCleartextTraffic: isProd ? false : (android.usesCleartextTraffic as boolean) ?? true,
+            usesCleartextTraffic: isProd
+              ? false
+              : ((android.usesCleartextTraffic as boolean) ?? true),
           },
         },
       ];

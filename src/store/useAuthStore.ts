@@ -39,9 +39,44 @@ import {
   isSessionExpiredError,
   SESSION_EXPIRED_MESSAGE,
 } from '@/lib/session-errors';
+import type { PendingCredentials } from '@/lib/pending-credentials';
 
 export const NOT_CONFIGURED_MESSAGE =
   'Supabase is not configured — add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to .env';
+
+/** Copy for a sign-up that collides with an existing account (either form:
+ * the 422 error or the empty-identities obfuscation). */
+export const DUPLICATE_ACCOUNT_MESSAGE =
+  'An account with this email already exists. Try signing in — if you signed up recently, confirm the link we emailed you first.';
+
+/** Turn GoTrue rate-limit errors into copy a user can act on. */
+function friendlyAuthError(error: Error): string {
+  // GoTrue's resend/OTP 429s carry a generic `msg` ("For security purposes,
+  // you can only request this after 0 seconds.") that matches no message
+  // regex — classify by the structured error code first.
+  if (error instanceof AuthApiError) {
+    if (error.code === 'over_email_send_rate_limit') {
+      return 'Too many emails sent — please wait about an hour and try again.';
+    }
+    if (error.code === 'user_already_exists') {
+      return DUPLICATE_ACCOUNT_MESSAGE;
+    }
+    if (error.code === 'over_request_rate_limit') {
+      return 'Too many attempts — please wait a moment and try again.';
+    }
+  }
+  const message = error.message;
+  if (/email rate limit|over_email_send_rate_limit/i.test(message)) {
+    return 'Too many emails sent — please wait about an hour and try again.';
+  }
+  if (/too many requests|rate limit/i.test(message)) {
+    return 'Too many attempts — please wait a moment and try again.';
+  }
+  if (/already registered|already exists|email exists/i.test(message)) {
+    return DUPLICATE_ACCOUNT_MESSAGE;
+  }
+  return message;
+}
 
 interface AuthStore {
   isSignedIn: boolean;
@@ -55,6 +90,23 @@ interface AuthStore {
   error: string | null;
   /** Email awaiting email confirmation — drives the verify-email screen. */
   verificationEmail: string | null;
+  /**
+   * True while the active session belongs to an anonymous user bridging a
+   * deferred email verification (sign-up let them straight in).
+   */
+  isAnonymous: boolean;
+  /**
+   * Email awaiting deferred verification for the anonymous bridge account.
+   * Null when nothing is pending. Backed device-side by the pending
+   * credentials needed to convert the account (`src/lib/pending-credentials`).
+   */
+  pendingVerificationEmail: string | null;
+  /**
+   * True once the conversion email went out for the pending account (the
+   * sign-up auto-send or a later manual send). Lets the Verify screen skip
+   * its intro straight to the "check your inbox" phase.
+   */
+  verificationEmailSent: boolean;
   /**
    * True while a password-recovery session is active (PASSWORD_RECOVERY
    * event or a recovery code/link verified). Drives the reset screen.
@@ -74,6 +126,18 @@ interface AuthStore {
   ) => Promise<void>;
   /** Re-send the confirmation link to `verificationEmail`. */
   resendVerificationEmail: () => Promise<void>;
+  /**
+   * Send the confirmation email that converts the anonymous bridge account
+   * into a real one (updateUser with the stashed sign-up credentials).
+   * Throws when the pending credentials are gone (e.g. Keychain cleared) so
+   * the UI can ask the user to sign up again.
+   */
+  beginAccountVerification: () => Promise<void>;
+  /**
+   * True once the confirmation landed — the user's email matches the pending
+   * address and is confirmed. Clears the pending state on success.
+   */
+  checkAccountVerified: () => Promise<boolean>;
   /** True once the email is confirmed (a session exists); mirrors it. */
   checkVerification: () => Promise<boolean>;
   /** Send the password-reset email. `redirectTo` must be allow-listed. */
@@ -127,6 +191,14 @@ export interface AuthSupabase {
       data: { session: Session | null };
       error: AuthError | null;
     }>;
+    signInAnonymously: () => Promise<{
+      data: { session: Session | null };
+      error: AuthError | null;
+    }>;
+    getUser: () => Promise<{
+      data: { user: User | null };
+      error: AuthError | null;
+    }>;
     signUp: (credentials: {
       email: string;
       password: string;
@@ -156,6 +228,8 @@ export interface AuthSupabase {
     }>;
     updateUser: (attributes: {
       password: string;
+      /** Present when converting an anonymous bridge account to a real one. */
+      email?: string;
     }) => Promise<{ data: { user: User | null }; error: AuthError | null }>;
     signOut: () => Promise<{ error: AuthError | null }>;
   };
@@ -170,6 +244,10 @@ export interface AuthDeps {
   supabase: AuthSupabase;
   clearCacheForUser: (userId: string) => Promise<void>;
   clearQueueForUser: (userId: string) => Promise<void>;
+  /** Stash/read/drop the deferred sign-up credentials (Keychain-backed). */
+  writePendingCredentials: (creds: PendingCredentials) => Promise<void>;
+  readPendingCredentials: () => Promise<PendingCredentials | null>;
+  clearPendingCredentials: () => Promise<void>;
 }
 
 let deps: AuthDeps | null = null;
@@ -183,6 +261,8 @@ let deps: AuthDeps | null = null;
 function buildDefaultDeps(): AuthDeps {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { isSupabaseConfigured, supabase } = require('@/lib/supabase');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const pending = require('@/lib/pending-credentials');
   return {
     isSupabaseConfigured,
     supabase,
@@ -192,6 +272,9 @@ function buildDefaultDeps(): AuthDeps {
     clearQueueForUser: (userId) =>
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       require('@/db/offline').clearQueueForUser(userId),
+    writePendingCredentials: (creds) => pending.writePendingCredentials(creds),
+    readPendingCredentials: () => pending.readPendingCredentials(),
+    clearPendingCredentials: () => pending.clearPendingCredentials(),
   };
 }
 
@@ -213,6 +296,20 @@ export function setAuthDeps(next: AuthDeps | null): AuthDeps | null {
 
 let unsubscribeAuth: (() => void) | null = null;
 
+/**
+ * Fire the conversion email for an anonymous bridge account (updateUser with
+ * its stashed credentials). Returns true when GoTrue accepted the send.
+ */
+async function sendConversionEmail(
+  creds: PendingCredentials,
+): Promise<boolean> {
+  const { error } = await currentDeps().supabase.auth.updateUser({
+    email: creds.email,
+    password: creds.password,
+  });
+  return error === null;
+}
+
 /** Extract the one-time recovery token from a pasted reset link. */
 export function parseRecoveryToken(link: string): string | null {
   const m = /[?&]token=([^&#]+)/.exec(link);
@@ -233,29 +330,6 @@ function decodeJwtSub(token: string): string | null {
   } catch {
     return null;
   }
-}
-
-/** Turn GoTrue rate-limit errors into copy a user can act on. */
-function friendlyAuthError(error: Error): string {
-  // GoTrue's resend/OTP 429s carry a generic `msg` ("For security purposes,
-  // you can only request this after 0 seconds.") that matches no message
-  // regex — classify by the structured error code first.
-  if (error instanceof AuthApiError) {
-    if (error.code === 'over_email_send_rate_limit') {
-      return 'Too many emails sent — please wait about an hour and try again.';
-    }
-    if (error.code === 'over_request_rate_limit') {
-      return 'Too many attempts — please wait a moment and try again.';
-    }
-  }
-  const message = error.message;
-  if (/email rate limit|over_email_send_rate_limit/i.test(message)) {
-    return 'Too many emails sent — please wait about an hour and try again.';
-  }
-  if (/too many requests|rate limit/i.test(message)) {
-    return 'Too many attempts — please wait a moment and try again.';
-  }
-  return message;
 }
 
 /**
@@ -280,9 +354,17 @@ function clearLocalSession(
   message?: string,
 ): void {
   applySession(null);
+  // The pending identity dies with the session — drop its credentials too.
+  void currentDeps()
+    .clearPendingCredentials()
+    .catch(() => {
+      // Nothing to clean up or storage unavailable — either way move on.
+    });
   set({
     recoveryPending: false,
     recoveryEmail: null,
+    pendingVerificationEmail: null,
+    verificationEmailSent: false,
     ...(message ? { error: message } : null),
   });
 }
@@ -293,6 +375,7 @@ function applySession(session: Session | null): void {
     isSignedIn: Boolean(session),
     email: session?.user.email ?? null,
     userId: session?.user.id ?? null,
+    isAnonymous: session?.user.is_anonymous === true,
     isLoading: false,
     error: null,
     verificationEmail: null,
@@ -303,9 +386,12 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
   isSignedIn: false,
   email: null,
   userId: null,
+  isAnonymous: false,
   isLoading: true,
   error: null,
   verificationEmail: null,
+  pendingVerificationEmail: null,
+  verificationEmailSent: false,
   recoveryPending: false,
   recoveryEmail: null,
   hasInitialized: false,
@@ -320,6 +406,25 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
 
     const { data } = await currentDeps().supabase.auth.getSession();
     applySession(data.session);
+
+    // Deferred verification survives restarts: an anonymous bridge session
+    // rehydrates its pending email from the Keychain stash. A non-anonymous
+    // session means conversion already happened — self-heal any stale file.
+    if (data.session?.user.is_anonymous === true) {
+      const creds = await currentDeps().readPendingCredentials();
+      // Send state is unknown after a restart — the Verify screen falls back
+      // to its intro (a manual send is harmless; GoTrue rate-limits repeats).
+      if (creds?.email) {
+        set({
+          pendingVerificationEmail: creds.email,
+          verificationEmailSent: false,
+        });
+      }
+    } else {
+      await currentDeps()
+        .clearPendingCredentials()
+        .catch(() => {});
+    }
 
     unsubscribeAuth?.();
     const { data: subscription } =
@@ -365,16 +470,74 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     if (error) {
       throw failAuthAction(set, error);
     }
+    // Duplicate sign-up guard: for an email that already exists GoTrue
+    // returns HTTP 200 with an empty `identities` array (anti-enumeration
+    // obfuscation). Treating that as a fresh sign-up would bridge onto an
+    // anonymous session whose credentials can never convert — stop here
+    // instead and point the user at sign-in / their confirmation email.
+    if (
+      data.session === null &&
+      data.user !== null &&
+      Array.isArray(data.user.identities) &&
+      data.user.identities.length === 0
+    ) {
+      set({ isLoading: false });
+      throw new Error(DUPLICATE_ACCOUNT_MESSAGE);
+    }
     if (data.session) {
       applySession(data.session);
     } else {
-      // Email confirmation is enabled — no session until the link is clicked.
-      // Hand the sign-up over to the verify-email screen.
-      set({
-        isLoading: false,
-        error: null,
-        verificationEmail: email.trim(),
-      });
+      // Email confirmation is enabled — GoTrue created the user but holds
+      // the session until the link is clicked, and sign-in is blocked for
+      // unconfirmed emails. Defer instead of blocking: bridge onto an
+      // anonymous session so the app is usable immediately, stash the
+      // sign-up credentials for the later conversion, and let Settings / the
+      // dashboard banner drive verification. Falls back to the legacy
+      // blocking verify screen when anonymous sign-ins are unavailable.
+      try {
+        const anon = await currentDeps().supabase.auth.signInAnonymously();
+        if (anon.error || !anon.data.session) {
+          throw anon.error ?? new Error('Anonymous sign-in unavailable');
+        }
+        await currentDeps().writePendingCredentials({
+          email: email.trim(),
+          password,
+        });
+        applySession(anon.data.session);
+        set({
+          isLoading: false,
+          error: null,
+          pendingVerificationEmail: email.trim(),
+          verificationEmailSent: false,
+        });
+        // Pre-fill the inbox: fire the conversion email right away so the
+        // confirmation is waiting instead of a cold "Send" button. Best-
+        // effort — failure just means the banner / Verify screen resend.
+        const creds = { email: email.trim(), password } as const;
+        void sendConversionEmail(creds)
+          .then((sent) => {
+            const state = useAuthStore.getState();
+            // Flag only if nothing changed mid-flight (still signed in on the
+            // same anonymous bridge, still the same pending address).
+            if (
+              sent &&
+              state.isSignedIn &&
+              state.isAnonymous &&
+              state.pendingVerificationEmail === creds.email
+            ) {
+              useAuthStore.setState({ verificationEmailSent: true });
+            }
+          })
+          .catch(() => {
+            // Offline / rate-limited — resurfaced by the manual send path.
+          });
+      } catch {
+        set({
+          isLoading: false,
+          error: null,
+          verificationEmail: email.trim(),
+        });
+      }
     }
   },
 
@@ -389,6 +552,59 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
       email,
     });
     if (error) throw failAuthAction(set, error);
+  },
+
+  beginAccountVerification: async () => {
+    if (!currentDeps().isSupabaseConfigured) {
+      throw new Error(NOT_CONFIGURED_MESSAGE);
+    }
+    const creds = await currentDeps().readPendingCredentials();
+    if (!creds) {
+      // The Keychain stash is gone (cleared storage, OS cleanup). The
+      // anonymous account can't be converted without its credentials.
+      throw new Error(
+        'Sign-up details are missing on this device — create the account again.',
+      );
+    }
+    set({ isLoading: true, error: null });
+    // Converts the anonymous user in place: same uid, so subscriptions,
+    // prefs, and the offline queue all stay valid. GoTrue emails a
+    // confirmation to the address; checkAccountVerified polls for it.
+    const { error } = await currentDeps().supabase.auth.updateUser({
+      email: creds.email,
+      password: creds.password,
+    });
+    if (error) {
+      if (isSessionExpiredError(error)) {
+        await get().expireSession(SESSION_EXPIRED_MESSAGE);
+        throw new Error(SESSION_EXPIRED_MESSAGE);
+      }
+      throw failAuthAction(set, error);
+    }
+    set({ isLoading: false, error: null, verificationEmailSent: true });
+  },
+
+  checkAccountVerified: async () => {
+    if (!currentDeps().isSupabaseConfigured) return false;
+    const pending = get().pendingVerificationEmail;
+    if (pending === null) return true;
+    const { data, error } = await currentDeps().supabase.auth.getUser();
+    if (error || !data.user) return false;
+    const confirmedAt = data.user.email_confirmed_at ?? data.user.confirmed_at;
+    if (data.user.email !== pending || !confirmedAt) return false;
+    // Conversion landed — drop the stash and mirror the now-real account.
+    await currentDeps()
+      .clearPendingCredentials()
+      .catch(() => {});
+    set({
+      email: data.user.email ?? pending,
+      isAnonymous: data.user.is_anonymous === true,
+      pendingVerificationEmail: null,
+      verificationEmailSent: false,
+      isLoading: false,
+      error: null,
+    });
+    return true;
   },
 
   checkVerification: async () => {
@@ -558,11 +774,20 @@ export const useAuthStore = create<AuthStore>()((set, get) => ({
     // Account is gone server-side — wipe everything local and sign out.
     await currentDeps().clearCacheForUser(userId);
     await currentDeps().clearQueueForUser(userId);
+    await currentDeps()
+      .clearPendingCredentials()
+      .catch(() => {});
     if (currentDeps().isSupabaseConfigured) {
       await currentDeps().supabase.auth.signOut();
     }
     applySession(null);
-    set({ recoveryPending: false, recoveryEmail: null, isLoading: false });
+    set({
+      recoveryPending: false,
+      recoveryEmail: null,
+      pendingVerificationEmail: null,
+      verificationEmailSent: false,
+      isLoading: false,
+    });
   },
 
   expireSession: async (message) => {

@@ -60,6 +60,9 @@ export interface SubscriptionsStore {
   subs: Subscription[];
   /** True while the initial DB read is running. */
   isLoading: boolean;
+  /** True once the first hydrate attempt has settled (success or failure).
+   * Lets screens distinguish "no data yet" from "still loading". */
+  hasHydrated: boolean;
   /** Error from the last failed operation; cleared on next success. */
   error: string | null;
   /** True when the device reports no internet (reads served from cache). */
@@ -153,6 +156,7 @@ export const useSubscriptionsStore = create<SubscriptionsStore>()(
   (set, get) => ({
     subs: [],
     isLoading: false,
+    hasHydrated: false,
     error: null,
     isOffline: false,
     pendingCount: 0,
@@ -182,6 +186,7 @@ export const useSubscriptionsStore = create<SubscriptionsStore>()(
           set({
             subs: cached ?? [],
             isLoading: false,
+            hasHydrated: true,
             isOffline: true,
             queuedChange: false,
           });
@@ -189,13 +194,24 @@ export const useSubscriptionsStore = create<SubscriptionsStore>()(
         }
         const subs = await getAllSubscriptions(includeSeeded);
         if (userId) await writeCache('subs', userId, subs);
-        set({ subs, isLoading: false, isOffline: false, queuedChange: false });
+        set({
+          subs,
+          isLoading: false,
+          hasHydrated: true,
+          isOffline: false,
+          queuedChange: false,
+        });
         await refreshPendingCount(set);
       } catch (e) {
         // Never leave a stale/previous account's rows visible on failure —
         // empty beats wrong.
         const failure = e instanceof Error ? e : new Error(String(e));
-        set({ isLoading: false, error: failure.message, subs: [] });
+        set({
+          isLoading: false,
+          hasHydrated: true,
+          error: failure.message,
+          subs: [],
+        });
         if (/session|jwt|foreign key/i.test(failure.message)) {
           void useAuthStore.getState().expireSession(SESSION_EXPIRED_MESSAGE);
           return;
@@ -295,6 +311,11 @@ export function useSubscriptionById(id: string): Subscription | undefined {
 /** Boolean: true until the first hydrate completes. */
 export function useIsLoadingSubscriptions(): boolean {
   return useSubscriptionsStore((s) => s.isLoading);
+}
+
+/** True once the first hydrate attempt has settled. */
+export function useHasHydrated(): boolean {
+  return useSubscriptionsStore((s) => s.hasHydrated);
 }
 
 /** Last error message, or null. */

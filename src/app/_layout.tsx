@@ -137,6 +137,35 @@ export default function RootLayout() {
                   headerBackButtonDisplayMode: 'minimal',
                 }}
               />
+              {/* First-run Getting Started wizard — gated like (tabs) so a
+                  signed-out user can't deep link into it; entry is driven by
+                  shouldShowOnboarding() via a Redirect from the dashboard. */}
+              <Stack.Screen
+                name="onboarding"
+                options={{
+                  gestureEnabled: false,
+                  animation: 'fade',
+                }}
+              />
+              {/* Deferred email verification — converts the anonymous bridge
+                  account into the real one; same uid, no data migration. */}
+              <Stack.Screen
+                name="verify-account"
+                options={{
+                  headerShown: true,
+                  title: 'Verify your email',
+                  headerBackButtonDisplayMode: 'minimal',
+                }}
+              />
+              {/* Post-sign-up interstitial — confirms the auto-sent email,
+                  then hands off to the Getting Started wizard via the
+                  dashboard's onboarding gate. No back path into auth. */}
+              <Stack.Screen
+                name="welcome"
+                options={{
+                  gestureEnabled: false,
+                }}
+              />
             </Stack.Protected>
             <Stack.Protected guard={!isSignedIn}>
               <Stack.Screen name="auth" />
