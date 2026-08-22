@@ -1,7 +1,6 @@
 import {
   ONBOARDING_STEPS,
   canAdvance,
-  draftFromPrefs,
   initialDraft,
   nextStep,
   prevStep,
@@ -90,26 +89,13 @@ describe('canAdvance', () => {
   });
 });
 
-describe('initialDraft / draftFromPrefs', () => {
+describe('initialDraft', () => {
   it('seeds defaults for a brand-new account', () => {
     expect(initialDraft('USD')).toEqual({
       currency: 'USD',
       budget: '',
       remindersEnabled: true,
     });
-  });
-
-  it('maps stored prefs onto the draft shape', () => {
-    expect(
-      draftFromPrefs({ currency: 'EUR', budget: 30, remindersEnabled: false }),
-    ).toEqual({ currency: 'EUR', budget: '30', remindersEnabled: false });
-  });
-
-  it('renders an unset (0) budget as an empty field', () => {
-    expect(
-      draftFromPrefs({ currency: 'JPY', budget: 0, remindersEnabled: true })
-        .budget,
-    ).toBe('');
   });
 });
 

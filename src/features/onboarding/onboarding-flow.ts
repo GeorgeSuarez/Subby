@@ -85,22 +85,6 @@ export function initialDraft(currency: CurrencyCode): OnboardingDraft {
   return { currency, budget: '', remindersEnabled: true };
 }
 
-/**
- * Seed the draft from stored account prefs (`useUIStore`). A stored budget
- * of 0 ("not set") renders as an empty field so the placeholder shows.
- */
-export function draftFromPrefs(prefs: {
-  currency: CurrencyCode;
-  budget: number;
-  remindersEnabled: boolean;
-}): OnboardingDraft {
-  return {
-    currency: prefs.currency,
-    budget: prefs.budget > 0 ? String(prefs.budget) : '',
-    remindersEnabled: prefs.remindersEnabled,
-  };
-}
-
 /** Inputs for the show-gate, all cheaply available at render time. */
 export interface ShowGateInput {
   isSignedIn: boolean;
