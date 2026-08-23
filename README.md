@@ -18,8 +18,10 @@ Silent looping videos of the app — Dashboard (spend, budget projection,
 billing-cycle progress, active trials, renewals timeline, category pie,
 forecast), the full add-subscription flow, and the subscriptions list with
 search and detail views. Served from a lazy-loading showcase page:
-[**watch the demos**](docs/demo/index.html) (WebM/MP4, works offline, click
-any video to pause).
+[**watch the demos**](https://georgesuarez.github.io/Subby/demo/) (WebM/MP4,
+works offline, click any video to pause).
+
+Also on GitHub Pages: the [animated app-flow diagram](https://georgesuarez.github.io/Subby/app-flow.html) and a [landing page](https://georgesuarez.github.io/Subby/) linking both.
 
 ## Features
 
