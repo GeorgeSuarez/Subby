@@ -1,7 +1,8 @@
 /**
  * Pro gating — which features require an active entitlement.
  *
- * Free users have unlimited subscriptions; power features are gated.
+ * Free users can track up to five subscriptions; Pro unlocks unlimited
+ * tracking. Other power features are gated separately.
  * Pure helpers (no RN imports) so fully Jest-testable.
  */
 
@@ -23,6 +24,19 @@ export const SUBSCRIPTION_PRODUCT_IDS = [
 ] as const;
 
 export const LIFETIME_PRODUCT_ID: ProProductId = 'subby_pro_lifetime';
+
+/** Maximum active subscriptions on the free tier. */
+export const FREE_SUB_LIMIT = 5;
+
+export const FREE_SUB_LIMIT_MESSAGE = `Free accounts can track up to ${FREE_SUB_LIMIT} subscriptions. Upgrade to Pro for unlimited tracking.`;
+
+/** Whether a tier can add another active subscription. */
+export function canAddSubscription(
+  currentCount: number,
+  isPro: boolean,
+): boolean {
+  return isPro || currentCount < FREE_SUB_LIMIT;
+}
 
 /**
  * Closed registry: only features whose behaviour actually flips with Pro.

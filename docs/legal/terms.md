@@ -38,7 +38,7 @@ You must be at least 13 years old. You are responsible for your account and subs
 
 ## 4. Pro entitlements
 
-Pro unlocks category insights (pie/breakdown), budget & forecast, export, advanced reminders (1d/3d/7d), and trials nudges. Features may evolve; core unlimited tracking remains free.
+Free accounts may track up to five active subscriptions. Pro unlocks unlimited subscription tracking, category insights (pie/breakdown), budget & forecast, advanced reminders (1d/3d/7d), and trials nudges. Features may evolve; core tracking remains free.
 
 ## 5. Termination
 

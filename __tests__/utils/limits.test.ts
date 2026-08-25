@@ -5,6 +5,8 @@ import {
   PRO_FEATURES,
   PRO_PRODUCT_IDS,
   SUBSCRIPTION_PRODUCT_IDS,
+  canAddSubscription,
+  FREE_SUB_LIMIT,
 } from '@/utils/limits';
 
 describe('PRO_PRODUCT_IDS', () => {
@@ -67,12 +69,16 @@ describe('canUseFeature', () => {
   });
 });
 
-describe('regression: unlimited subs', () => {
-  it('adding any number of subs is allowed for both tiers (no FREE_SUB_LIMIT)', () => {
-    // The old cap was 5. Now subs are always unlimited — verify the module
-    // does not export a FREE_SUB_LIMIT constant.
-    const mod = require('@/utils/limits');
-    expect(mod).not.toHaveProperty('FREE_SUB_LIMIT');
-    expect(mod).not.toHaveProperty('canAddSubscription');
+describe('subscription limit', () => {
+  it('caps free accounts at five active subscriptions', () => {
+    expect(FREE_SUB_LIMIT).toBe(5);
+    expect(canAddSubscription(4, false)).toBe(true);
+    expect(canAddSubscription(5, false)).toBe(false);
+    expect(canAddSubscription(6, false)).toBe(false);
+  });
+
+  it('lets Pro accounts track beyond the free limit', () => {
+    expect(canAddSubscription(FREE_SUB_LIMIT, true)).toBe(true);
+    expect(canAddSubscription(100, true)).toBe(true);
   });
 });

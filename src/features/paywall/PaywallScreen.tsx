@@ -106,7 +106,8 @@ export function PaywallScreen() {
             Unlock Subby Pro
           </Text>
           <Text variant="body" color="textSecondary" style={styles.heroSub}>
-            Unlimited tracking stays free. Pro unlocks the power features.
+            Free plans track up to 5 subscriptions. Pro unlocks unlimited
+            tracking and other power features.
           </Text>
         </View>
 
@@ -122,14 +123,14 @@ export function PaywallScreen() {
             desc="Monthly budget progress & forecast"
           />
           <FeatureBullet
-            icon="download-outline"
-            title="Export"
-            desc="CSV / JSON export of all subscriptions"
-          />
-          <FeatureBullet
             icon="notifications-outline"
             title="Advanced reminders"
             desc="1 day / 3 days / 7 days before renewal"
+          />
+          <FeatureBullet
+            icon="infinite-outline"
+            title="Unlimited tracking"
+            desc="Track more than 5 subscriptions"
           />
           <FeatureBullet
             icon="gift-outline"

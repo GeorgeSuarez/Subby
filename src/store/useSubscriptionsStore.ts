@@ -28,6 +28,7 @@ import { getAllSubscriptions } from '@/db/queries';
 import {
   applyMutation,
   flushPendingOps,
+  getPendingOps,
   isNetworkError,
   pendingOpCount,
   readCache,
@@ -40,6 +41,8 @@ import { SESSION_EXPIRED_MESSAGE } from '@/lib/session-errors';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useUIStore } from '@/store/useUIStore';
 import { isTestAccountEmail } from '@/utils/constants';
+import { canAddSubscription, FREE_SUB_LIMIT_MESSAGE } from '@/utils/limits';
+import { useEntitlementStore } from '@/store/useEntitlementStore';
 import type {
   Subscription,
   SubscriptionDraft,
@@ -74,7 +77,7 @@ export interface SubscriptionsStore {
   hydrate: () => Promise<void>;
   /** Drop the in-memory cache without touching the DB. */
   resetCache: () => void;
-  /** Add a new subscription. Returns the persisted row on success. */
+  /** Add a new subscription. Free accounts are limited to five active rows. */
   add: (draft: SubscriptionDraft) => Promise<Subscription | null>;
   /** Patch fields on an existing subscription. Returns the updated row, or null. */
   edit: (id: string, patch: SubscriptionPatch) => Promise<Subscription | null>;
@@ -214,6 +217,23 @@ export const useSubscriptionsStore = create<SubscriptionsStore>()(
     add: async (draft) => {
       const ctx = syncContext();
       if (!ctx) return null;
+
+      const entitlement = useEntitlementStore.getState();
+      const pendingAdds = (await getPendingOps(ctx.userId)).filter(
+        (op) => op.type === 'add',
+      ).length;
+      // ponytail: queued removals/archives reserve their slots until flush;
+      // replaying the full queue here would add complexity for a conservative ceiling.
+      const activeCount =
+        get().subs.filter((sub) => !sub.archived).length + pendingAdds;
+      if (
+        !entitlement.isLoading &&
+        !canAddSubscription(activeCount, entitlement.isPro)
+      ) {
+        set({ error: FREE_SUB_LIMIT_MESSAGE });
+        return null;
+      }
+
       const result = await applyMutation({ type: 'add', draft }, ctx);
       return applyResult(set, get, result);
     },

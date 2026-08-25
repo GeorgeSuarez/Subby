@@ -107,7 +107,8 @@ export function ProSection() {
             Upgrade to Pro
           </Text>
           <Text variant="caption" color="textSecondary">
-            Category insights · Budget & forecast · Export · Advanced reminders
+            Category insights · Budget & forecast · Advanced reminders ·
+            Unlimited tracking
           </Text>
         </View>
       </View>

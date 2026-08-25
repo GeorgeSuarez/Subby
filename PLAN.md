@@ -44,20 +44,20 @@ Subby is a polished, offline-first, Supabase-backed subscription tracker — a c
 
 | Product                  | Price                       | Notes                                                                                                                                            |
 | ------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Subby Free**           | $0                          | Unlimited subs, core tracking fully usable — retention funnel                                                                                    |
+| **Subby Free**           | $0                          | Up to 5 subscriptions, core tracking usable — upgrade for unlimited                                                                              |
 | **Subby Pro — Monthly**  | **$2.99 / mo**              | Low-friction entry; competitor median ~$3–5                                                                                                      |
 | **Subby Pro — Yearly**   | **$19.99 / yr** (~$1.67/mo) | **Hero offer — 40–45% savings vs monthly, pushes yearly on paywall. Includes 7-day free trial (StoreKit introductory offer / Play free trial).** |
 | **Subby Pro — Lifetime** | **$49.99 one-time**         | **First-class alongside subscriptions** (not hidden) — captures price-sensitive users. Shown as third option on paywall + Settings → Upgrade.    |
 
 > Prices in parity via App Store Connect / Play Console pricing templates. Yearly trial is a StoreKit `introductoryOffer` (free trial 7 days) and Play `freeTrial` — monthly has no trial.
 
-### Free vs Pro feature matrix — REVISED per feedback (unlimited subs, gate power features)
+### Free vs Pro feature matrix — REVISED per feedback (5 free subscriptions, gate power features)
 
-Principles: Free allows the **full core loop unlimited** (track any number → see spend → get value) so the app retains & refers. Pro gates **insights/export/reminders** — power features heavy users hit naturally. This is intentionally less punitive than a sub-count cap.
+Principles: Free allows the **full core loop for up to five subscriptions** (track → see spend → get value) so the app retains & refers. Pro unlocks **unlimited tracking** and gates insights/reminders — power features heavy users hit naturally.
 
 | Feature                            | Free                                      | Pro                                         |
 | ---------------------------------- | ----------------------------------------- | ------------------------------------------- |
-| Active subscriptions               | **Unlimited**                             | Unlimited                                   |
+| Active subscriptions               | **Up to 5**                               | Unlimited                                   |
 | Currencies                         | 1 default (user's pick)                   | All 6 + future                              |
 | Dashboard hero / upcoming renewals | ✅                                        | ✅                                          |
 | **Category breakdown / pie chart** | ❌ (teaser/blur + "Unlock with Pro" pill) | ✅                                          |
@@ -67,7 +67,6 @@ Principles: Free allows the **full core loop unlimited** (track any number → s
 | Search / sort / filter             | ✅                                        | ✅                                          |
 | Archive / notes / colors           | ✅                                        | ✅                                          |
 | **Budget & forecast (month keys)** | ❌ (teaser)                               | ✅                                          |
-| **CSV / JSON export**              | ❌ (paywalled)                            | ✅                                          |
 | Multi-device sync                  | ✅                                        | ✅ (no gating — sync is core)               |
 | Themes (system/light/dark)         | ✅                                        | ✅                                          |
 | Receipt scanning / bank import     | —                                         | **Future Pro** placeholder                  |
@@ -90,12 +89,12 @@ Device                         Store                    Supabase
 - **Entitlements source of truth**: Supabase `user_entitlements` written by **Supabase Edge Function(s)** that (a) verify the on-device transaction receipt/JWS server-side on purchase, and (b) handle **App Store Server Notifications V2** + **Google Play Developer Notifications (RTDN)** webhooks for renewals/cancellations/expirations/billing issues. Client never writes `is_pro` directly (RLS denies client insert/update).
 - **Client guard**: `useEntitlementStore` (Zustand) mirrors `expo-iap` `getAvailablePurchases()` / purchase listener + Supabase row; offline it serves last-cached value from SQLite KV (`sync_cache` pattern) with `expires_at` check. `finishTransaction` only after server confirms entitlement.
 
-### Paywall UX — REVISED (no sub-count cap; feature-gated triggers only)
+### Paywall UX — REVISED (five-subscription free tier; feature-gated triggers)
 
-- **Triggers**: (1) tapping blurred Pro feature (pie chart, budget, forecast), (2) tapping Export / advanced reminders (1d/3d/7d), (3) explicit "Go Pro" CTA in Settings + Dashboard insight strip. **Not** triggered on Add — adding subs is always free/unlimited.
-- **Design**: native modal (`subscription/paywall` route group, `presentation: 'formSheet'` like add/edit), single screen: hero benefit bullets ("Category insights", "Budget & forecast", "Advanced reminders", "Export your data"), **three-way toggle Monthly / Yearly (hero, pre-selected, "Save 44% + 7-day free trial" badge) / Lifetime ($49.99)**, CTA, restore link, Terms/Privacy links, `×` dismiss. Follow App Store Guideline 3.1.2 — clearly state price, billing period, trial, auto-renewal.
+- **Triggers**: (1) tapping blurred Pro feature (pie chart, budget, forecast), (2) tapping advanced reminders (1d/3d/7d), (3) reaching the five-subscription free limit, (4) explicit "Go Pro" CTA in Settings + Dashboard insight strip.
+- **Design**: native modal (`subscription/paywall` route group, `presentation: 'formSheet'` like add/edit), single screen: hero benefit bullets ("Unlimited tracking", "Category insights", "Budget & forecast", "Advanced reminders"), **three-way toggle Monthly / Yearly (hero, pre-selected, "Save 44% + 7-day free trial" badge) / Lifetime ($49.99)**, CTA, restore link, Terms/Privacy links, `×` dismiss. Follow App Store Guideline 3.1.2 — clearly state price, billing period, trial, auto-renewal.
 - **Copy compliance**: price + period + trial terms shown per product; links to Privacy Policy + Terms of Use (see §5 3.1a — hosted required before App Review, local `docs/legal/*` fallback until hosted).
-- **No dark pattern**: dismissible, not blocking launch; free tier remains fully usable.
+- **No dark pattern**: dismissible, not blocking launch; free tier remains usable within its five-subscription limit.
 
 ---
 
@@ -114,7 +113,7 @@ Device                         Store                    Supabase
 | `src/features/paywall/usePaywall.ts`     | Hook: loads products via `getProducts`, handles `requestPurchase` → server verify → `finishTransaction`, restore, error mapping. No analytics in v1 (deferred).                                                                                                                                         |
 | `src/db/schema.ts`                       | **Migration 7**: extend `sync_cache` usage for entitlements (`entitlement:<userId>`); no new SQLite table required.                                                                                                                                                                                     |
 | `src/design/tokens.ts`                   | Optional: `paywall` semantic tokens if needed (likely reuse existing accent/positive).                                                                                                                                                                                                                  |
-| `src/utils/limits.ts`                    | `PRO_FEATURES` enum (`'pieChart' \| 'budget' \| 'forecast' \| 'export' \| 'advancedReminders' \| 'trialsNudge'`), `isProFeature(key, isPro)`, `canUseFeature()`. **No `FREE_SUB_LIMIT`** — subs are unlimited. Pure, Jest-tested.                                                                       |
+| `src/utils/limits.ts`                    | `PRO_FEATURES` (`'pieChart' \| 'budget' \| 'advancedReminders'`), `FREE_SUB_LIMIT = 5`, `canAddSubscription()`, `isProFeature(key)`, and `canUseFeature()`. Pure, Jest-tested.                                                                                                                          |
 
 ### App code (modify)
 
@@ -123,8 +122,8 @@ Device                         Store                    Supabase
 | `src/app/_layout.tsx`                                                          | Init `expo-iap` on mount (`initConnection()`), hydrate entitlements alongside `hydrate()`/`hydratePrefs()`, subscribe to `purchaseUpdatedListener` + `purchaseErrorListener`, verify receipt server-side → `finishTransaction` on success. On sign-out reset store. |
 | `src/app/subscription/_layout.tsx` (or create `src/app/(paywall)/_layout.tsx`) | Register paywall modal route (`presentation: 'formSheet'`, `headerShown: false`).                                                                                                                                                                                   |
 | `src/features/dashboard/DashboardScreen.tsx`                                   | Blur/gate CategoryBreakdown, PieChart, InsightStrip budget forecast for free tier; inject "Go Pro" pill → paywall. No layout shift.                                                                                                                                 |
-| `src/features/add-subscription/AddEditScreen.tsx`                              | **No gating** — adding subs stays free/unlimited. (Verify no limit check remains.)                                                                                                                                                                                  |
-| `src/features/subscription-detail/DetailScreen.tsx`                            | Gate export / advanced cost breakdown rows behind `isProFeature()`.                                                                                                                                                                                                 |
+| `src/features/add-subscription/AddEditScreen.tsx`                              | Enforce the five-subscription free limit; Pro unlocks unlimited tracking.                                                                                                                                                                                           |
+| `src/features/subscription-detail/DetailScreen.tsx`                            | Gate advanced cost breakdown rows behind `isProFeature()`.                                                                                                                                                                                                          |
 | `src/features/settings/SettingsScreen.tsx`                                     | Add `ProSection` / `UpgradeCard` above `ThemeSection`; when `!isPro` show benefits + Go Pro CTA; when `isPro` show "Pro ✓ — Manage" (links to `https://apps.apple.com/account/subscriptions` / Play subscriptions) + Restore.                                       |
 | `src/features/settings/components/*`                                           | New `ProSection.tsx` (or `UpgradeSection.tsx`).                                                                                                                                                                                                                     |
 | `src/app/(tabs)/_layout.tsx`                                                   | Optional: Pro badge on Settings tab — keep clean for v1.                                                                                                                                                                                                            |
@@ -154,21 +153,21 @@ Device                         Store                    Supabase
 
 ## 4. Reuse — Existing Code to Build On
 
-| Existing                     | Path                                                                                                                        | How to reuse                                                                                                                                                                                   |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Zustand pattern              | `src/store/useSubscriptionsStore.ts`, `src/store/useUIStore.ts`                                                             | Clone selector + `create()` shape for `useEntitlementStore`; follow `react-state-minimize` (no derived state) and `useShallow` for collections.                                                |
-| Sync coordinator             | `src/db/offline.ts` (`applyMutation`, `readCache`/`writeCache`, `sync_cache`/`sync_queue`)                                  | Reuse cache helpers for entitlement caching (key `entitlement:<userId>`). Do **not** queue entitlement writes — they're server-driven via `verify-purchase` / `iap-webhook`.                   |
-| Auth store + session         | `src/store/useAuthStore.ts`, `src/lib/supabase.ts`                                                                          | Supabase `userId` is passed as `appAccountToken` / `obfuscatedAccountId` on `requestPurchase` so server can map Store transaction → Supabase user. No RevenueCat `appUserID`.                  |
-| Network layer                | `src/db/network.ts`                                                                                                         | Hydrate entitlements online, serve cache when `reachable === false` — same pattern as `hydratePrefs()`.                                                                                        |
-| RLS migration pattern        | `supabase/migrations/20260812224817_add_subscriptions_and_user_prefs.sql`                                                   | Copy policy/grants shape for `user_entitlements` — `(select auth.uid()) = user_id`, explicit `grant` to `authenticated` (select only), no client insert/update.                                |
-| Edge Function precedent      | `supabase/functions/delete-account/index.ts`                                                                                | Same Deno + `supabase-js` + `serve` shape for `verify-purchase` + `iap-webhook`. Local serve via `supabase functions serve`.                                                                   |
-| Design tokens + components   | `src/design/tokens.ts`, `src/design/components/*` (`Card`, `Button`, `Badge`, `Surface`)                                    | Build paywall with existing `Button`, `Card`, `Text`, `Badge`, `Surface`; reuse `accent`/`positive`/`warning` + `radius`/`spacing`/`motion`. No new color primitives.                          |
-| Navigation                   | `src/app/_layout.tsx` (`Stack.Protected`), `src/app/(tabs)/_layout.tsx` (native-tabs)                                       | Paywall is a `Stack.Screen` with `presentation: 'formSheet'` in the same `Stack.Protected` guard (signed-in only). Keep `app.json` `expo-router` plugin.                                       |
-| Feature folder convention    | `src/features/<area>/` (thin `app/` re-exports)                                                                             | New `src/features/paywall/` mirrors `dashboard/`/`settings/` layout; `src/app/subscription/paywall.tsx` is a one-liner re-export.                                                              |
-| Formatting & billing helpers | `src/utils/format.ts` (`formatCurrency`, `formatCurrencyCompact`), `src/utils/billing.ts` (`parseDate`, `nextRenewalAfter`) | Use for paywall pricing display (`formatCurrency(19.99, currency)`), trial countdown.                                                                                                          |
-| Haptics                      | `src/utils/haptics.ts`                                                                                                      | Selection tick on plan toggle, success chime on purchase.                                                                                                                                      |
-| Constants / env              | `src/utils/constants.ts`, `src/utils/environment.ts` (`ENABLE_DEMO_DATA` gate)                                              | Add `PRO_PRODUCT_IDS` (`subby_pro_monthly`, `subby_pro_yearly`, `subby_pro_lifetime`), `PRO_FEATURES` enum, `ENABLE_PAYWALL_MOCK` dev flag similar to demo-data gate. **No `FREE_SUB_LIMIT`.** |
-| Quality gates                | `.opencode/AGENTS.md` Mandatory Quality Gates (`lint`, `typecheck`, `test`, `format:check`)                                 | Run after each phase; add Jest tests for `limits.ts` + `usePaywall` state machine (like `auth-flow.ts`).                                                                                       |
+| Existing                     | Path                                                                                                                        | How to reuse                                                                                                                                                                                    |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Zustand pattern              | `src/store/useSubscriptionsStore.ts`, `src/store/useUIStore.ts`                                                             | Clone selector + `create()` shape for `useEntitlementStore`; follow `react-state-minimize` (no derived state) and `useShallow` for collections.                                                 |
+| Sync coordinator             | `src/db/offline.ts` (`applyMutation`, `readCache`/`writeCache`, `sync_cache`/`sync_queue`)                                  | Reuse cache helpers for entitlement caching (key `entitlement:<userId>`). Do **not** queue entitlement writes — they're server-driven via `verify-purchase` / `iap-webhook`.                    |
+| Auth store + session         | `src/store/useAuthStore.ts`, `src/lib/supabase.ts`                                                                          | Supabase `userId` is passed as `appAccountToken` / `obfuscatedAccountId` on `requestPurchase` so server can map Store transaction → Supabase user. No RevenueCat `appUserID`.                   |
+| Network layer                | `src/db/network.ts`                                                                                                         | Hydrate entitlements online, serve cache when `reachable === false` — same pattern as `hydratePrefs()`.                                                                                         |
+| RLS migration pattern        | `supabase/migrations/20260812224817_add_subscriptions_and_user_prefs.sql`                                                   | Copy policy/grants shape for `user_entitlements` — `(select auth.uid()) = user_id`, explicit `grant` to `authenticated` (select only), no client insert/update.                                 |
+| Edge Function precedent      | `supabase/functions/delete-account/index.ts`                                                                                | Same Deno + `supabase-js` + `serve` shape for `verify-purchase` + `iap-webhook`. Local serve via `supabase functions serve`.                                                                    |
+| Design tokens + components   | `src/design/tokens.ts`, `src/design/components/*` (`Card`, `Button`, `Badge`, `Surface`)                                    | Build paywall with existing `Button`, `Card`, `Text`, `Badge`, `Surface`; reuse `accent`/`positive`/`warning` + `radius`/`spacing`/`motion`. No new color primitives.                           |
+| Navigation                   | `src/app/_layout.tsx` (`Stack.Protected`), `src/app/(tabs)/_layout.tsx` (native-tabs)                                       | Paywall is a `Stack.Screen` with `presentation: 'formSheet'` in the same `Stack.Protected` guard (signed-in only). Keep `app.json` `expo-router` plugin.                                        |
+| Feature folder convention    | `src/features/<area>/` (thin `app/` re-exports)                                                                             | New `src/features/paywall/` mirrors `dashboard/`/`settings/` layout; `src/app/subscription/paywall.tsx` is a one-liner re-export.                                                               |
+| Formatting & billing helpers | `src/utils/format.ts` (`formatCurrency`, `formatCurrencyCompact`), `src/utils/billing.ts` (`parseDate`, `nextRenewalAfter`) | Use for paywall pricing display (`formatCurrency(19.99, currency)`), trial countdown.                                                                                                           |
+| Haptics                      | `src/utils/haptics.ts`                                                                                                      | Selection tick on plan toggle, success chime on purchase.                                                                                                                                       |
+| Constants / env              | `src/utils/constants.ts`, `src/utils/environment.ts` (`ENABLE_DEMO_DATA` gate)                                              | Add `PRO_PRODUCT_IDS` (`subby_pro_monthly`, `subby_pro_yearly`, `subby_pro_lifetime`), `PRO_FEATURES` enum, `FREE_SUB_LIMIT = 5`, and `ENABLE_PAYWALL_MOCK` dev flag similar to demo-data gate. |
+| Quality gates                | `.opencode/AGENTS.md` Mandatory Quality Gates (`lint`, `typecheck`, `test`, `format:check`)                                 | Run after each phase; add Jest tests for `limits.ts` + `usePaywall` state machine (like `auth-flow.ts`).                                                                                        |
 
 ---
 
@@ -192,13 +191,13 @@ Device                         Store                    Supabase
 - [ ] **1.6 Wire `_layout.tsx`**: on mount `initConnection()`; on `isSignedIn`/`userId` change hydrate entitlements; subscribe to `purchaseUpdatedListener` → call `verify-purchase` → `finishTransaction` on success; `purchaseErrorListener` → surface error. On sign-out reset store. Offline: serve `sync_cache`.
 - [ ] **1.7 Dev mock**: `EXPO_PUBLIC_ENABLE_PAYWALL_MOCK` flag (like `ENABLE_DEMO_DATA`) that stubs `isPro: false` + fake `getProducts` so paywall can be QA'd without real purchases/sandbox.
 
-### Phase 2 — Gating & paywall UI — UNLIMITED subs, feature-gated Pro
+### Phase 2 — Gating & paywall UI — 5-sub free tier, feature-gated Pro
 
-- [ ] **2.1 `src/utils/limits.ts`**: export `PRO_FEATURES` + `isProFeature(key, isPro)` — pure, Jest-tested. No `FREE_SUB_LIMIT`, no `canAddSubscription` cap.
+- [ ] **2.1 `src/utils/limits.ts`**: export `PRO_FEATURES`, `FREE_SUB_LIMIT = 5`, `canAddSubscription()`, and `isProFeature(key)` — pure, Jest-tested.
 - [ ] **2.2 `src/features/paywall/*` + `src/app/subscription/paywall.tsx`**: build paywall per §2 (3-way toggle Monthly/Yearly/Lifetime, Yearly pre-selected + "Save 44% + 7-day free trial" badge). Use `Card`/`Button`/`Badge`/`Surface`, `tokens.*`, `formatCurrency`. States: loading (ActivityIndicator), error, restore. CTA calls `requestPurchase` → `verify-purchase` → `finishTransaction`. Follow Guideline 3.1.2 copy.
-- [ ] **2.3 `AddEditScreen`**: **No gating** — adding subscriptions stays unlimited for free users. (Add a regression test that free user can add 6th+ sub.)
+- [ ] **2.3 `AddEditScreen`**: gate the sixth free subscription behind the paywall; Pro users remain unlimited.
 - [ ] **2.4 Gate dashboard**: blur/teaser for `CategoryBreakdown`/`PieChart`/`InsightStrip` budget forecast when `!isPro` — show "Unlock with Pro" pill → paywall. No layout shift.
-- [ ] **2.5 Gate advanced features**: `RemindersSection` (1d/3d/7d options), `BudgetSection`, export (CSV/JSON) → `if (!isPro) router.push('/subscription/paywall')` with warning haptic. Day-of reminder + basic trials list stay free.
+- [ ] **2.5 Gate advanced features**: `RemindersSection` (1d/3d/7d options), `BudgetSection` → `if (!isPro) router.push('/subscription/paywall')` with warning haptic. Day-of reminder + basic trials list stay free.
 - [ ] **2.6 `SettingsScreen` ProSection**: when `!isPro` show upgrade card (benefits + "Go Pro" CTA → paywall); when `isPro` show "Pro ✓ — Manage" (links to `https://apps.apple.com/account/subscriptions` / Play subscriptions) + Restore. Order: `ProSection` above `ThemeSection`.
 - [ ] **2.7 Analytics: DEFERRED per feedback** — no PostHog/Amplitude in v1. Keep only `__DEV__` `console.log` for `paywall_viewed`/`purchase_*` during QA; revisit post-launch.
 
@@ -207,9 +206,9 @@ Device                         Store                    Supabase
 - [ ] **3.1 App Store compliance**: paywall copy states price + period + auto-renewal + trial terms; includes links to [Privacy Policy] + [Terms of Use]; Restore Purchases button works; subscription group in App Store Connect configured. **3.1a Legal pages — BLOCKING**: no hosted Privacy/Terms yet — create `docs/legal/privacy.md` + `terms.md`, host them (e.g., `https://subby.app/privacy` + `/terms` or Supabase-hosted), add URLs to paywall. Until hosted, render local markdown in-app via `expo-web-browser` fallback. App Review **requires** these links on any subscription paywall.
 - [ ] **3.2 Entitlement verification hardening**: server-side `verify-purchase` is primary; `iap-webhook` handles renewals/expirations. Add cron/edge-function belt-and-suspenders: `expires_at < now` → `is_pro = false`. Handle `REFUND`/`REVOKE` → revoke Pro.
 - [ ] **3.3 Offline entitlement**: verify `readCache('entitlement', userId)` survives airplane mode and **does not** grant Pro after `expires_at`. Add test (cache expiry check).
-- [ ] **3.4 QA matrix**: test (1) fresh install (free) → add 6+ subs OK, gated features show teasers; (2) trigger gate (tap pie/budget/export) → paywall; (3) sandbox purchase Yearly with trial → `isPro` true, gates unlock without restart; (4) purchase Lifetime → `is_pro` with no expiry; (5) restore on second device (same Supabase login, same Store account) → Pro restored via `getAvailablePurchases`; (6) cross-account (same Store, different Supabase) → Pro **not** leaked (entitlement is per-Supabase `user_id` via `appAccountToken` mapping). Document in FAQ.
+- [ ] **3.4 QA matrix**: test (1) fresh install (free) → add 5 subs, sixth opens the paywall; (2) tap a gated insight/budget/reminder feature → paywall; (3) sandbox purchase Yearly with trial → `isPro` true, gates and unlimited tracking unlock without restart; (4) purchase Lifetime → `is_pro` with no expiry; (5) restore on second device (same Supabase login, same Store account) → Pro restored via `getAvailablePurchases`; (6) cross-account (same Store, different Supabase) → Pro **not** leaked (entitlement is per-Supabase `user_id` via `appAccountToken` mapping). Document in FAQ.
 - [ ] **3.5 Pricing change ready**: structure `limits.ts` so price display comes from `getProducts()` (store-driven) — no app update needed for price change; only copy change needs update.
-- [ ] **3.6 Screenshots + review notes**: update App Store screenshots to show paywall (Apple requires IAP screenshot), write review notes explaining free tier is functional unlimited without purchase, trial terms, restore flow.
+- [ ] **3.6 Screenshots + review notes**: update App Store screenshots to show paywall (Apple requires IAP screenshot), write review notes explaining the five-subscription free tier, unlimited Pro tracking, trial terms, and restore flow.
 - [ ] **3.7 Post-launch backlog** (not blocking): receipt scanning (future Pro+ tier), bank import (higher tier), family sharing, affiliate cancel-flow.
 
 ---
@@ -247,9 +246,9 @@ supabase db reset  # verify migration 7 applies cleanly
 
 ### Manual
 
-- [ ] **Free user** fresh install → add 6+ subs OK (unlimited), gated features (pie, budget, forecast, export, advanced reminders) show teaser/blur + "Unlock with Pro" pill → paywall on tap, dismiss returns to functional free app.
+- [ ] **Free user** fresh install → add 5 subs, sixth attempt shows the paywall; gated features (pie, budget, forecast, advanced reminders) show teaser/blur + "Unlock with Pro" pill → paywall on tap, dismiss returns to functional free app.
 - [ ] **Paywall** toggle Monthly/Yearly/Lifetime → price updates via `formatCurrency` from `getProducts()`, Yearly badge shows "Save 44% + 7-day free trial".
-- [ ] **Purchase flow** (sandbox): Yearly with trial → success haptic, `isPro` flips true after `verify-purchase` + `finishTransaction`, previously gated pie/budget/export unlock without restart.
+- [ ] **Purchase flow** (sandbox): Yearly with trial → success haptic, `isPro` flips true after `verify-purchase` + `finishTransaction`, previously gated features and subscription tracking beyond five unlock without restart.
 - [ ] **Purchase Lifetime**: sandbox buy `subby_pro_lifetime` → `is_pro` true with `expires_at` null (no expiry).
 - [ ] **Restore**: delete app, reinstall, sign in same Supabase account → `getProducts` + `getAvailablePurchases` → tap Restore → Pro restored (server re-verifies).
 - [ ] **Offline**: airplane mode → gated features stay gated (free) or Pro stays Pro if cached & `expires_at` not passed; Lifetime stays Pro indefinitely. Tapping gate shows paywall from cache (no network needed for UI, purchase blocked offline).
@@ -269,7 +268,7 @@ supabase db reset  # verify migration 7 applies cleanly
 ## 7. Decisions — RESOLVED (from review feedback)
 
 1. **Pricing & trial — APPROVED**: $2.99/mo · $19.99/yr (hero, 7-day free trial) · $49.99 lifetime. Locked.
-2. **Primary limiter — RESOLVED: unlimited subs, gate insights/export/reminders**. Free tier keeps unlimited tracking; Pro gates `pieChart`/`budget`/`forecast`/`export`/`advancedReminders`/`trialsNudge`.
+2. **Primary limiter — RESOLVED: five free subscriptions**. Free tier supports up to five active subscriptions; Pro unlocks unlimited tracking and gates `pieChart`/`budget`/`advancedReminders`.
 3. **Lifetime — APPROVED first-class** alongside subscriptions (3-way toggle on paywall + Settings).
 4. **IAP provider — RESOLVED: direct StoreKit/Google Billing via `expo-iap`**, not RevenueCat (avoid vendor lock-in). App owns receipt/JWS verification via Edge Functions.
 5. **Timeline — PRE-LAUNCH BLOCKER**: Phase 1+2 ship together before App Store submission; no feature-flag split.
@@ -278,7 +277,7 @@ supabase db reset  # verify migration 7 applies cleanly
 
 ---
 
-## 8. Risks & Mitigations — REVISED for `expo-iap` + unlimited-free
+## 8. Risks & Mitigations — REVISED for `expo-iap` + five-subscription-free tier
 
 | Risk                                                    | Mitigation                                                                                                                                                                                                                   |
 | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -297,9 +296,9 @@ supabase db reset  # verify migration 7 applies cleanly
 - **Pro+ tier**: receipt OCR (camera), bank-statement import (Plaid) — $39.99/yr.
 - **Team / family sharing**: 5 seats for $29.99/yr (needs Supabase org model).
 - **Smart cancellation**: affiliate revenue when user archives a sub (partner offers).
-- **Annual spend report PDF**: Pro export with charts (shareable).
+- **Annual spend report PDF**: deferred paid report with charts (shareable).
 - **Re-engagement**: winback offer via StoreKit `offer` (50% off 1 month after cancel) — no RevenueCat needed.
 
 ---
 
-_Scope locked per feedback (unlimited-free + `expo-iap` + lifetime + pre-launch). Ready for `plannotator_submit_plan`._
+_Scope locked per feedback (five-subscription-free + `expo-iap` + lifetime + pre-launch). Ready for `plannotator_submit_plan`._
