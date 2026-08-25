@@ -43,7 +43,7 @@ export type ProFeature = (typeof PRO_FEATURES)[number];
  * accidentally get gated.
  */
 export function isProFeature(key: string): boolean {
-  return (PRO_FEATURES as readonly string[]).includes(key);
+  return PRO_FEATURES.some((f) => f === key);
 }
 
 /**

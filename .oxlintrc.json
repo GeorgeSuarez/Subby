@@ -16,12 +16,7 @@
     "coverage/*",
     "android/app/build",
     "app.config.ts",
-    "supabase/functions/**",
-    "src/lib/purchases.ts",
-    "src/store/useEntitlementStore.ts",
-    "src/utils/limits.ts",
-    "src/features/paywall/**",
-    "__tests__/utils/limits.test.ts"
+    "supabase/functions/**"
   ],
   "jsPlugins": [
     {

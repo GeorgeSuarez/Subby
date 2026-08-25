@@ -18,14 +18,13 @@ const ORDER: ProProductId[] = [
   'subby_pro_lifetime',
 ];
 
-const LABELS: Record<
-  ProProductId,
-  { title: string; sub: string; badge?: string }
-> = {
+// Inferred keys + satisfies keeps exhaustiveness over ProProductId without
+// widening the binding to an open Record.
+const LABELS = {
   subby_pro_monthly: { title: 'Monthly', sub: '$2.99 / month' },
-  subby_pro_yearly: { title: 'Yearly', sub: 'Save 44%', badge: 'Best value' },
+  subby_pro_yearly: { title: 'Yearly', sub: 'Save 44%' },
   subby_pro_lifetime: { title: 'Lifetime', sub: 'Pay once' },
-};
+} as const satisfies Record<ProProductId, { title: string; sub: string }>;
 
 export function PlanToggle({ products, selected, onSelect }: PlanToggleProps) {
   const { colors } = useTheme();
@@ -63,7 +62,9 @@ export function PlanToggle({ products, selected, onSelect }: PlanToggleProps) {
               <Text variant="body" weight="700" color="textPrimary">
                 {meta.title}
               </Text>
-              {meta.badge ? <Badge tone="positive">{meta.badge}</Badge> : null}
+              {id === 'subby_pro_yearly' ? (
+                <Badge tone="positive">Best value</Badge>
+              ) : null}
             </View>
             <Text variant="caption" color="textSecondary">
               {id === 'subby_pro_yearly' ? '7-day free trial, then ' : ''}

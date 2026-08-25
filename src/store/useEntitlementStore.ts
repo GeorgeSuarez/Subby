@@ -69,6 +69,9 @@ async function readEntitlementFromSupabase(
       .eq('user_id', userId)
       .maybeSingle();
     if (error || !data) return null;
+    // SAFETY: the supabase client has no generated Database types, so the
+    // row is untyped; the keys mirror the user_entitlements schema and every
+    // field is re-validated (Number()/Boolean()) below.
     const row = data as {
       is_pro: boolean;
       product_id: string | null;
@@ -188,7 +191,7 @@ export const useEntitlementStore = create<EntitlementState>()((set, get) => ({
         expiresAt: expired ? null : supa.expiresAt,
         source: 'supabase' as const,
         isLoading: false,
-        error: null as string | null,
+        error: null,
       };
       set(state);
       await writeCache('entitlement', userId, {
@@ -197,7 +200,7 @@ export const useEntitlementStore = create<EntitlementState>()((set, get) => ({
         expiresAt: state.expiresAt,
         source: state.source,
         updatedAt: Date.now(),
-      } as CachedEntitlement);
+      });
       return;
     }
 

@@ -20,6 +20,9 @@
 
 import { Platform } from 'react-native';
 
+// Type-only import: erased at build time, so the native module stays lazily
+// loaded via require() below.
+import type { RequestPurchaseProps } from 'expo-iap';
 import { ENABLE_PAYWALL_MOCK } from '@/utils/environment';
 import { PRO_PRODUCT_IDS } from '@/utils/limits';
 
@@ -28,17 +31,15 @@ import { PRO_PRODUCT_IDS } from '@/utils/limits';
 // ---------------------------------------------------------------------------
 
 export interface IAPPurchase {
-  id?: string;
+  id?: string | null;
   productId: string;
-  transactionId?: string;
-  transactionDate?: number;
-  purchaseToken?: string;
+  transactionId?: string | null;
+  transactionDate?: number | null;
+  purchaseToken?: string | null;
   // platform-specific JWS / receipt string when available
-  transactionReceipt?: string;
+  transactionReceipt?: string | null;
   /** Store that issued the purchase ("IOS" | "ANDROID"), when expo-iap reports it. */
-  platform?: string;
-  // expo-iap Purchase type is open; keep index signature
-  [key: string]: unknown;
+  platform?: string | null;
 }
 
 export interface IAPProduct {
@@ -59,7 +60,11 @@ export interface IAPProduct {
 export interface PurchaseError {
   code: string;
   message: string;
-  [key: string]: unknown;
+}
+
+/** Cancellation handle returned by the listener wrappers. */
+export interface IAPSubscription {
+  remove: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -78,6 +83,8 @@ function getExpoIap(): ExpoIapModule | null {
   if (loadFailed) return null;
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
+    // SAFETY: require() returns `any`; the module shape is pinned by the
+    // ExpoIapModule type above and exercised by initIAP on first use.
     expoIap = require('expo-iap') as ExpoIapModule;
     return expoIap;
   } catch {
@@ -141,9 +148,7 @@ export async function endIAP(): Promise<void> {
   const mod = getExpoIap();
   if (!mod) return;
   try {
-    // Some expo-iap versions expose endConnection; guard.
-    const maybe = mod as unknown as { endConnection?: () => Promise<void> };
-    if (maybe.endConnection) await maybe.endConnection();
+    await mod.endConnection();
   } catch {
     // ignore
   }
@@ -172,7 +177,7 @@ export async function getProducts(
     const arr = Array.isArray(result) ? result : [];
     if (arr.length === 0)
       return MOCK_PRODUCTS.filter((p) => skus.includes(p.id));
-    return arr.map((p: unknown) => normalizeProduct(p));
+    return arr.map((p) => normalizeProduct(p));
   } catch (e) {
     if (__DEV__)
       console.log('[purchases] fetchProducts failed, using mocks', e);
@@ -203,7 +208,7 @@ export async function requestPurchase(
 
   // OpenIAP shape: { request: { apple: { sku }, google: { skus: [] } }, type }
   // Some builds accept appAccountToken via request.apple.appAccountToken
-  const requestPayload: unknown = {
+  const requestPayload = {
     request: {
       apple: {
         sku: productId,
@@ -217,9 +222,9 @@ export async function requestPurchase(
       },
     },
     type,
-  };
+  } satisfies RequestPurchaseProps;
 
-  await mod.requestPurchase(requestPayload as never);
+  await mod.requestPurchase(requestPayload);
 }
 
 /** Purchases that have not been finished (active subs + non-consumables). */
@@ -229,7 +234,7 @@ export async function getAvailablePurchases(): Promise<IAPPurchase[]> {
   if (!mod) return [];
   try {
     const purchases = await mod.getAvailablePurchases();
-    return (purchases as unknown as IAPPurchase[]) ?? [];
+    return purchases ?? [];
   } catch (e) {
     if (__DEV__) console.log('[purchases] getAvailablePurchases failed', e);
     return [];
@@ -260,13 +265,16 @@ export async function finishTransaction(
   const mod = getExpoIap();
   if (!mod) return;
   try {
+    // SAFETY: our IAPPurchase wrapper is structurally the store Purchase we
+    // received from expo-iap listeners; finishTransaction re-validates the
+    // fields natively before acknowledging.
     await mod.finishTransaction({
       purchase: purchase as never,
       isConsumable,
     });
   } catch (e) {
     if (__DEV__) console.log('[purchases] finishTransaction failed', e);
-    throw e as Error;
+    throw e; // preserve the original error for callers
   }
 }
 
@@ -276,18 +284,24 @@ export async function finishTransaction(
 
 export function addPurchaseUpdatedListener(
   cb: (purchase: IAPPurchase) => void,
-): { remove: () => void } {
+): IAPSubscription {
   const mod = getExpoIap();
   if (!mod) return { remove: () => {} };
-  return mod.purchaseUpdatedListener((p) => cb(p as unknown as IAPPurchase));
+  // expo-iap Purchase is assignable field-for-field to our open IAPPurchase
+  // contract (all fields optional or compatible).
+  return mod.purchaseUpdatedListener((p) => cb(p));
 }
 
-export function addPurchaseErrorListener(cb: (error: PurchaseError) => void): {
-  remove: () => void;
-} {
+export function addPurchaseErrorListener(
+  cb: (error: PurchaseError) => void,
+): IAPSubscription {
   const mod = getExpoIap();
   if (!mod) return { remove: () => {} };
-  return mod.purchaseErrorListener((e) => cb(e as unknown as PurchaseError));
+  // SAFETY: expo-iap types code as its own ErrorCode enum; normalize it to a
+  // plain string so callers get our PurchaseError contract.
+  return mod.purchaseErrorListener((e) =>
+    cb({ code: String(e.code), message: e.message }),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -305,10 +319,7 @@ export interface VerifiedPurchase {
 export async function verifyPurchases(
   purchases: IAPPurchase[],
 ): Promise<VerifiedPurchase[]> {
-  const valid = purchases.filter(
-    (p): p is IAPPurchase & { productId: string } =>
-      typeof p.productId === 'string' && p.productId !== '',
-  );
+  const valid = purchases.filter((p) => p.productId !== '');
   if (valid.length === 0) return [];
   // Lazy import to avoid cycle
   const { supabase } = await import('@/lib/supabase');
@@ -333,19 +344,17 @@ export async function verifyPurchases(
             platform: purchase.platform,
           }),
         });
-        const body: unknown = await res.json().catch(() => null);
-        if (typeof body !== 'object' || body === null || !('ok' in body))
-          return null;
         // SAFETY: verify-purchase edge-function contract — a reply carrying
         // ok:true is the server's verdict for this purchase and carries the
-        // entitlement fields below.
-        const json = body as {
+        // entitlement fields below. Any other shape (error JSON, null) fails
+        // the ok !== true check below, so untrusted payloads stay inert.
+        const json = (await res.json().catch(() => null)) as {
           ok?: boolean;
           isPro?: boolean;
           productId?: string;
           expiresAt?: number | null;
-        };
-        if (json.ok !== true) return null;
+        } | null;
+        if (json?.ok !== true) return null;
         return {
           productId: json.productId ?? purchase.productId,
           isPro: Boolean(json.isPro),
@@ -363,30 +372,43 @@ export async function verifyPurchases(
 // Helpers
 // ---------------------------------------------------------------------------
 
-function normalizeProduct(raw: unknown): IAPProduct {
-  const r = raw as Record<string, unknown>;
-  const id =
-    (r.productId as string) ??
-    (r.id as string) ??
-    (r.sku as string) ??
-    String(r.id ?? 'unknown');
+/** Keys normalizeProduct reads off an expo-iap / OpenIAP product payload.
+ * Everything is optional because shapes vary across stores and versions;
+ * missing keys fall back below (id 'unknown', empty price). */
+interface RawProduct {
+  productId?: string | null;
+  id?: string | null;
+  sku?: string | null;
+  displayPrice?: string | null;
+  localizedPrice?: string | null;
+  price?: string | number | null;
+  priceString?: string | null;
+  title?: string | null;
+  displayName?: string | null;
+  description?: string | null;
+  currency?: string | null;
+  type?: string | null;
+}
+
+function normalizeProduct(raw: RawProduct): IAPProduct {
+  const r = raw;
+  const id = String(r.productId ?? r.id ?? r.sku ?? 'unknown');
   // expo-iap product shapes vary; best-effort normalize.
   const price =
-    (r.displayPrice as string) ??
-    (r.localizedPrice as string) ??
-    (r.price as string) ??
-    '';
-  const title = (r.title as string) ?? (r.displayName as string) ?? id;
-  const description = (r.description as string) ?? '';
-  const currency = (r.currency as string) ?? undefined;
-  const type = (r.type as string) ?? 'subs';
+    r.displayPrice ??
+    r.localizedPrice ??
+    (r.price != null ? String(r.price) : '');
+  const title = r.title ?? r.displayName ?? id;
+  const description = r.description ?? '';
+  const currency = r.currency ?? undefined;
+  const type = r.type ?? 'subs';
 
   return {
     id,
     productId: id,
     title,
     description,
-    price: price || (r as { priceString?: string }).priceString || '',
+    price: price || r.priceString || '',
     currency,
     type,
     raw,

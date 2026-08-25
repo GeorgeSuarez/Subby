@@ -71,8 +71,8 @@ describe('regression: unlimited subs', () => {
   it('adding any number of subs is allowed for both tiers (no FREE_SUB_LIMIT)', () => {
     // The old cap was 5. Now subs are always unlimited — verify the module
     // does not export a FREE_SUB_LIMIT constant.
-    const mod = require('@/utils/limits') as Record<string, unknown>;
-    expect(mod.FREE_SUB_LIMIT).toBeUndefined();
-    expect(mod.canAddSubscription).toBeUndefined();
+    const mod = require('@/utils/limits');
+    expect(mod).not.toHaveProperty('FREE_SUB_LIMIT');
+    expect(mod).not.toHaveProperty('canAddSubscription');
   });
 });
