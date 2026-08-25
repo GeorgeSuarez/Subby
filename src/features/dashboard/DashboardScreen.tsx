@@ -45,6 +45,7 @@ import { UnverifiedEmailBanner } from '@/features/dashboard/components/Unverifie
 import { pickInsight } from '@/features/dashboard/insights';
 import { shouldShowOnboarding } from '@/features/onboarding';
 import { useCurrency } from '@/store/useUIStore';
+import { ProGate } from '@/features/paywall/components/ProGate';
 
 type ScrollViewProps = ComponentProps<typeof ScrollView>;
 
@@ -128,7 +129,9 @@ export function DashboardScreen() {
         <QuickStats />
         <RenewalsList />
         <TrialsCard />
-        <CategoryBreakdown />
+        <ProGate feature="pieChart">
+          <CategoryBreakdown />
+        </ProGate>
       </ScrollView>
       {/* Primary add affordance — floats above the tab bar. The empty state
           has its own centered CTA, so the FAB only shows with content. */}

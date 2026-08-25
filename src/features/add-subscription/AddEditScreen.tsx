@@ -58,6 +58,7 @@ import type {
 } from '@/types/subscription';
 import { useUIStore } from '@/store/useUIStore';
 import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
+import { FREE_SUB_LIMIT_MESSAGE } from '@/utils/limits';
 import { toast } from '@/store/useToastStore';
 
 export interface AddEditScreenProps {
@@ -68,6 +69,8 @@ export interface AddEditScreenProps {
   /** Save handler: parent owns navigation; receives saved sub id on success. */
   onSaved: (id: string) => void;
   onDismiss: () => void;
+  /** Called when a free account has reached its subscription limit. */
+  onLimitReached?: () => void;
 }
 
 export function AddEditScreen({
@@ -75,6 +78,7 @@ export function AddEditScreen({
   defaultCurrency,
   onSaved,
   onDismiss,
+  onLimitReached,
 }: AddEditScreenProps) {
   // Initialize the draft exactly once from the existing sub or a default.
   // Skill `react-state-fallback`: `undefined` means "no preference yet" — the
@@ -212,23 +216,28 @@ export function AddEditScreen({
       if (saved) {
         toast('Subscription added');
         onSaved(saved.id);
-      } else if (useSubscriptionsStore.getState().queuedChange) {
-        // Offline — the add is queued and will sync on reconnect.
-        toast("Saved — will sync when you're online");
-        onDismiss();
       } else {
         // The store swallows the underlying failure — surface its error so
         // real problems aren't hidden behind a generic message.
-        const reason = useSubscriptionsStore.getState().error;
-        Alert.alert(
-          'Could not add subscription',
-          reason
-            ? `Something went wrong saving: ${reason}`
-            : 'Something went wrong saving. Try again.',
-        );
+        const state = useSubscriptionsStore.getState();
+        if (state.error === FREE_SUB_LIMIT_MESSAGE && onLimitReached) {
+          onLimitReached();
+        } else if (state.queuedChange) {
+          // Offline — the add is queued and will sync on reconnect.
+          toast("Saved — will sync when you're online");
+          onDismiss();
+        } else {
+          const reason = state.error;
+          Alert.alert(
+            'Could not add subscription',
+            reason
+              ? `Something went wrong saving: ${reason}`
+              : 'Something went wrong saving. Try again.',
+          );
+        }
       }
     }
-  }, [draft, isValid, isEdit, existing, onSaved, onDismiss]);
+  }, [draft, isValid, isEdit, existing, onSaved, onDismiss, onLimitReached]);
 
   const shouldShow = useCallback(
     (field: FieldKey) => attemptedSubmit || touched.has(field),

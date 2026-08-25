@@ -7,10 +7,18 @@
  */
 
 import { useCallback } from 'react';
+import { StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
+import { EmptyState } from '@/design/components';
+import { Surface } from '@/design/components/Surface';
 import { AddEditScreen } from '@/features/add-subscription';
-import { useSubscriptionsStore } from '@/store/useSubscriptionsStore';
+import { useIsPro, useIsProLoading } from '@/store/useEntitlementStore';
+import {
+  useActiveSubscriptions,
+  useSubscriptionsStore,
+} from '@/store/useSubscriptionsStore';
+import { canAddSubscription, FREE_SUB_LIMIT_MESSAGE } from '@/utils/limits';
 
 export default function AddSubscriptionRoute() {
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -21,6 +29,9 @@ export default function AddSubscriptionRoute() {
   const existing = useSubscriptionsStore((s) =>
     idParam ? (s.subs.find((x) => x.id === idParam) ?? null) : null,
   );
+  const activeSubscriptions = useActiveSubscriptions();
+  const isPro = useIsPro();
+  const isProLoading = useIsProLoading();
 
   const onSaved = useCallback(
     (savedId: string) => {
@@ -42,11 +53,41 @@ export default function AddSubscriptionRoute() {
     }
   }, [router]);
 
+  const onUpgrade = useCallback(() => {
+    router.replace('/subscription/paywall');
+  }, [router]);
+
+  if (
+    !idParam &&
+    !isProLoading &&
+    !canAddSubscription(activeSubscriptions.length, isPro)
+  ) {
+    return (
+      <Surface background="surface" style={styles.limit}>
+        <EmptyState
+          title="Free plan limit reached"
+          body={FREE_SUB_LIMIT_MESSAGE}
+          actionLabel="Unlock unlimited tracking"
+          onAction={onUpgrade}
+          decorationIcon="infinite-outline"
+        />
+      </Surface>
+    );
+  }
+
   return (
     <AddEditScreen
       existing={existing}
       onSaved={onSaved}
       onDismiss={onDismiss}
+      onLimitReached={onUpgrade}
     />
   );
 }
+
+const styles = StyleSheet.create({
+  limit: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+});
