@@ -287,9 +287,18 @@ export function addPurchaseUpdatedListener(
 ): IAPSubscription {
   const mod = getExpoIap();
   if (!mod) return { remove: () => {} };
-  // expo-iap Purchase is assignable field-for-field to our open IAPPurchase
-  // contract (all fields optional or compatible).
-  return mod.purchaseUpdatedListener((p) => cb(p));
+  try {
+    // expo-iap Purchase is assignable field-for-field to our open IAPPurchase
+    // contract (all fields optional or compatible).
+    return mod.purchaseUpdatedListener((p) => cb(p));
+  } catch (e) {
+    // Native module missing (Expo Go / build without expo-iap): require()
+    // succeeds above but every function throws at call time.
+    loadFailed = true;
+    if (__DEV__)
+      console.log('[purchases] purchaseUpdatedListener unavailable', e);
+    return { remove: () => {} };
+  }
 }
 
 export function addPurchaseErrorListener(
@@ -297,11 +306,18 @@ export function addPurchaseErrorListener(
 ): IAPSubscription {
   const mod = getExpoIap();
   if (!mod) return { remove: () => {} };
-  // SAFETY: expo-iap types code as its own ErrorCode enum; normalize it to a
-  // plain string so callers get our PurchaseError contract.
-  return mod.purchaseErrorListener((e) =>
-    cb({ code: String(e.code), message: e.message }),
-  );
+  try {
+    // SAFETY: expo-iap types code as its own ErrorCode enum; normalize it to a
+    // plain string so callers get our PurchaseError contract.
+    return mod.purchaseErrorListener((e) =>
+      cb({ code: String(e.code), message: e.message }),
+    );
+  } catch (e) {
+    loadFailed = true;
+    if (__DEV__)
+      console.log('[purchases] purchaseErrorListener unavailable', e);
+    return { remove: () => {} };
+  }
 }
 
 // ---------------------------------------------------------------------------

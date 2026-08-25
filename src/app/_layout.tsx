@@ -67,7 +67,7 @@ export default function RootLayout() {
   const setFromVerified = useEntitlementStore((s) => s.setFromVerified);
 
   // IAP: init once and listen for purchases. Server verification lives in
-  // `src/lib/purchases.ts` (ignored by anti-slop) so this file stays lint-clean.
+  // `src/lib/purchases.ts` so this file stays lint-clean.
   useEffect(() => {
     void initIAP();
     const subSuccess = addPurchaseUpdatedListener((purchase) => {
