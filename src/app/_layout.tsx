@@ -43,7 +43,7 @@ import {
   addPurchaseUpdatedListener,
   finishTransaction,
   initIAP,
-  verifyPurchaseWithServer,
+  verifyPurchases,
 } from '@/lib/purchases';
 
 // Keep the splash visible until our first data hydration resolves.
@@ -72,8 +72,8 @@ export default function RootLayout() {
     void initIAP();
     const subSuccess = addPurchaseUpdatedListener((purchase) => {
       void (async () => {
-        const result = await verifyPurchaseWithServer(purchase);
-        if (result?.ok) {
+        const [result] = await verifyPurchases([purchase]);
+        if (result) {
           setFromVerified({
             isPro: result.isPro,
             productId: result.productId,

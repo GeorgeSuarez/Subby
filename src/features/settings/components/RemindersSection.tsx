@@ -18,13 +18,13 @@ import { Button, Card, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
 import { useRemindersEnabled, useUIStore } from '@/store/useUIStore';
-import { useIsPro } from '@/store/useEntitlementStore';
+import { useCanUse } from '@/store/useEntitlementStore';
 
 export function RemindersSection() {
   const enabled = useRemindersEnabled();
   const setRemindersEnabled = useUIStore((s) => s.setRemindersEnabled);
   const { colors } = useTheme();
-  const isPro = useIsPro();
+  const canUseReminders = useCanUse('advancedReminders');
   const router = useRouter();
 
   return (
@@ -59,7 +59,7 @@ export function RemindersSection() {
           accessibilityLabel="Renewal reminders"
         />
       </View>
-      {!isPro ? (
+      {!canUseReminders ? (
         <View style={styles.proNote}>
           <Text variant="caption" color="textSecondary">
             Pro unlocks 1d / 3d / 7d advance reminders.

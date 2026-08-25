@@ -168,6 +168,10 @@ export const useSubscriptionsStore = create<SubscriptionsStore>()(
       });
     },
 
+    // ponytail: offline-hydrate dance (reachability → cache → fetch →
+    // write-back) is hand-rolled here, in useEntitlementStore.hydrate, and in
+    // useUIStore; extract one shared helper when a 4th consumer appears or
+    // these branches stop diverging.
     hydrate: async () => {
       set({ isLoading: true, error: null });
       const userId = await currentUserId();

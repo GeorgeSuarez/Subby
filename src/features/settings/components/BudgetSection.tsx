@@ -21,13 +21,13 @@ import { spacing } from '@/design/tokens';
 import { AmountInput } from '@/features/add-subscription/components/AmountInput';
 import { useBudget, useCurrency, useUIStore } from '@/store/useUIStore';
 import { formatCurrency } from '@/utils/format';
-import { useIsPro } from '@/store/useEntitlementStore';
+import { useCanUse } from '@/store/useEntitlementStore';
 
 export function BudgetSection() {
   const budget = useBudget();
   const currency = useCurrency();
   const setBudget = useUIStore((s) => s.setBudget);
-  const isPro = useIsPro();
+  const canUseBudget = useCanUse('budget');
   const router = useRouter();
 
   // Raw input text — lazily seeded from the persisted value.
@@ -43,7 +43,7 @@ export function BudgetSection() {
     setBudget(0);
   };
 
-  if (!isPro) {
+  if (!canUseBudget) {
     return (
       <Card padding={spacing.lg} elevation="flat">
         <Card.Header>

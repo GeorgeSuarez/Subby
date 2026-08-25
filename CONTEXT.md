@@ -44,3 +44,11 @@ verify`) and whether a visitor is redirected to the verify step.
 - **Demo data / test account** — `test@subby.app`; dev-only seeded
   subscriptions and the Settings sections that manage them
   (`ENABLE_DEMO_DATA`).
+
+## Monetization
+
+- **Pro** — an active purchase-based entitlement unlocking gated features;
+  verified server-side and served from cache while offline.
+- **Gated feature** — a capability that requires Pro (category insights,
+  budget tracking, advanced reminders). The gate list only names features
+  whose behaviour actually flips; anything unlisted is free by default.

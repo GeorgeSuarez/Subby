@@ -35,6 +35,8 @@ export interface IAPPurchase {
   purchaseToken?: string;
   // platform-specific JWS / receipt string when available
   transactionReceipt?: string;
+  /** Store that issued the purchase ("IOS" | "ANDROID"), when expo-iap reports it. */
+  platform?: string;
   // expo-iap Purchase type is open; keep index signature
   [key: string]: unknown;
 }
@@ -289,53 +291,72 @@ export function addPurchaseErrorListener(cb: (error: PurchaseError) => void): {
 }
 
 // ---------------------------------------------------------------------------
-// Server verification helper (used by _layout listener to keep _layout lint-clean)
+// Server verification (used by the _layout listener and paywall restore)
 // ---------------------------------------------------------------------------
 
-export async function verifyPurchaseWithServer(purchase: IAPPurchase): Promise<{
-  ok: boolean;
-  isPro: boolean;
+/** One purchase the verify-purchase edge function verified successfully.
+ * Unverifiable purchases (no id, no session, failed request) are omitted. */
+export interface VerifiedPurchase {
   productId: string;
+  isPro: boolean;
   expiresAt: number | null;
-} | null> {
-  const productId =
-    typeof purchase.productId === 'string' ? purchase.productId : '';
-  if (!productId) return null;
+}
+
+export async function verifyPurchases(
+  purchases: IAPPurchase[],
+): Promise<VerifiedPurchase[]> {
+  const valid = purchases.filter(
+    (p): p is IAPPurchase & { productId: string } =>
+      typeof p.productId === 'string' && p.productId !== '',
+  );
+  if (valid.length === 0) return [];
   // Lazy import to avoid cycle
   const { supabase } = await import('@/lib/supabase');
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
-  if (!token) return null;
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
-  if (!url) return null;
-  const res = await fetch(`${url}/functions/v1/verify-purchase`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      productId,
-      purchaseToken: purchase.purchaseToken,
-      transactionId: purchase.transactionId,
-      platform: (purchase as unknown as { platform?: string }).platform,
+  if (!token || !url) return [];
+
+  const results = await Promise.all(
+    valid.map(async (purchase): Promise<VerifiedPurchase | null> => {
+      try {
+        const res = await fetch(`${url}/functions/v1/verify-purchase`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            productId: purchase.productId,
+            purchaseToken: purchase.purchaseToken,
+            transactionId: purchase.transactionId,
+            platform: purchase.platform,
+          }),
+        });
+        const body: unknown = await res.json().catch(() => null);
+        if (typeof body !== 'object' || body === null || !('ok' in body))
+          return null;
+        // SAFETY: verify-purchase edge-function contract — a reply carrying
+        // ok:true is the server's verdict for this purchase and carries the
+        // entitlement fields below.
+        const json = body as {
+          ok?: boolean;
+          isPro?: boolean;
+          productId?: string;
+          expiresAt?: number | null;
+        };
+        if (json.ok !== true) return null;
+        return {
+          productId: json.productId ?? purchase.productId,
+          isPro: Boolean(json.isPro),
+          expiresAt: json.expiresAt ?? null,
+        };
+      } catch {
+        return null;
+      }
     }),
-  });
-  const json = await res.json().catch(() => null);
-  if (!json || typeof json !== 'object' || !('ok' in json)) return null;
-  const j = json as {
-    ok?: boolean;
-    isPro?: boolean;
-    productId?: string;
-    expiresAt?: number | null;
-  };
-  if (!j.ok) return null;
-  return {
-    ok: true,
-    isPro: Boolean(j.isPro),
-    productId: j.productId ?? productId,
-    expiresAt: j.expiresAt ?? null,
-  };
+  );
+  return results.filter((r): r is VerifiedPurchase => r !== null);
 }
 
 // ---------------------------------------------------------------------------

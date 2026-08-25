@@ -4,7 +4,6 @@ import {
   LIFETIME_PRODUCT_ID,
   PRO_FEATURES,
   PRO_PRODUCT_IDS,
-  proFeatureLabel,
   SUBSCRIPTION_PRODUCT_IDS,
 } from '@/utils/limits';
 
@@ -27,19 +26,10 @@ describe('PRO_PRODUCT_IDS', () => {
 });
 
 describe('PRO_FEATURES', () => {
-  it('includes the gated feature keys', () => {
-    expect(PRO_FEATURES).toContain('pieChart');
-    expect(PRO_FEATURES).toContain('budget');
-    expect(PRO_FEATURES).toContain('forecast');
-    expect(PRO_FEATURES).toContain('export');
-    expect(PRO_FEATURES).toContain('advancedReminders');
-    expect(PRO_FEATURES).toContain('trialsNudge');
-  });
-
-  it('proFeatureLabel returns a non-empty label for each', () => {
-    for (const f of PRO_FEATURES) {
-      expect(proFeatureLabel(f).length).toBeGreaterThan(0);
-    }
+  it('lists exactly the gated features', () => {
+    // Closed registry, pruned to real gates. Re-add a key when the feature
+    // ships; unknown keys stay free via isProFeature.
+    expect(PRO_FEATURES).toEqual(['pieChart', 'budget', 'advancedReminders']);
   });
 });
 

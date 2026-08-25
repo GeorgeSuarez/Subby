@@ -10,12 +10,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useEntitlementStore } from '@/store/useEntitlementStore';
 import {
+  getAvailablePurchases,
   getProducts,
   requestPurchase,
   restorePurchases,
+  verifyPurchases,
   type IAPProduct,
 } from '@/lib/purchases';
-import { supabase } from '@/lib/supabase';
 import { PRO_PRODUCT_IDS, type ProProductId } from '@/utils/limits';
 
 type Status =
@@ -65,8 +66,8 @@ export function usePaywall() {
     try {
       const userId = useAuthStore.getState().userId ?? undefined;
       await requestPurchase(selected, userId);
-      // Result comes via purchaseUpdatedListener in _layout; wait a moment then hydrate.
-      setTimeout(() => void hydrate(), 1500);
+      // Completion arrives via purchaseUpdatedListener in _layout, which
+      // verifies server-side and updates the entitlement store reactively.
       setStatus('ready');
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -74,41 +75,15 @@ export function usePaywall() {
       setStatus('error');
       if (__DEV__) console.log('[paywall] purchase failed', e);
     }
-  }, [selected, hydrate]);
+  }, [selected]);
 
   const restore = useCallback(async () => {
     setStatus('restoring');
     setError(null);
     try {
       await restorePurchases();
-      // After restore, try verify-purchase for each available purchase
-      const { getAvailablePurchases } = await import('@/lib/purchases');
-      const available = await getAvailablePurchases();
-      for (const p of available) {
-        const pid = String(
-          (p as unknown as Record<string, unknown>).productId ??
-            (p as unknown as Record<string, unknown>).id ??
-            '',
-        );
-        if (!pid) continue;
-        const { data } = await supabase.auth.getSession();
-        const token = data.session?.access_token;
-        if (!token) continue;
-        await fetch(
-          `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/verify-purchase`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              productId: pid,
-              platform: (p as unknown as Record<string, unknown>).platform,
-            }),
-          },
-        );
-      }
+      // Verify every restored purchase server-side, then re-read entitlements.
+      await verifyPurchases(await getAvailablePurchases());
       await hydrate();
       setStatus('ready');
     } catch (e) {

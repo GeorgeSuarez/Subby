@@ -40,7 +40,6 @@ import { InsightStrip } from '@/features/dashboard/components/InsightStrip';
 import { AddFab } from '@/features/dashboard/components/AddFab';
 import { pickInsight } from '@/features/dashboard/insights';
 import { useCurrency } from '@/store/useUIStore';
-import { useIsPro } from '@/store/useEntitlementStore';
 import { ProGate } from '@/features/paywall/components/ProGate';
 
 type ScrollViewProps = ComponentProps<typeof ScrollView>;
@@ -52,7 +51,6 @@ export function DashboardScreen() {
   const isLoading = useIsLoadingSubscriptions();
   const hydrate = useSubscriptionsStore((s) => s.hydrate);
   const currency = useCurrency();
-  const isPro = useIsPro();
 
   // First-applicable dashboard insight — null hides the strip entirely.
   const insight = pickInsight(subs, currency);
@@ -107,13 +105,9 @@ export function DashboardScreen() {
         <QuickStats />
         <RenewalsList />
         <TrialsCard />
-        {isPro ? (
+        <ProGate feature="pieChart">
           <CategoryBreakdown />
-        ) : (
-          <ProGate feature="pieChart">
-            <CategoryBreakdown />
-          </ProGate>
-        )}
+        </ProGate>
       </ScrollView>
       {/* Primary add affordance — floats above the tab bar. The empty state
           has its own centered CTA, so the FAB only shows with content. */}

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Button, Card, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
-import { useIsPro } from '@/store/useEntitlementStore';
+import { useCanUse } from '@/store/useEntitlementStore';
 
 interface ProGateProps {
   feature: string;
@@ -13,16 +13,12 @@ interface ProGateProps {
   compact?: boolean;
 }
 
-export function ProGate({
-  feature: _feature,
-  children,
-  compact = false,
-}: ProGateProps) {
-  const isPro = useIsPro();
+export function ProGate({ feature, children, compact = false }: ProGateProps) {
+  const canUse = useCanUse(feature);
   const router = useRouter();
   const { colors } = useTheme();
 
-  if (isPro) return <>{children}</>;
+  if (canUse) return <>{children}</>;
 
   const onUnlock = () => router.push('/subscription/paywall');
 

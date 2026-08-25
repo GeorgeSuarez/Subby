@@ -17,6 +17,7 @@
 import { create } from 'zustand';
 
 import { ENABLE_PAYWALL_MOCK } from '@/utils/environment';
+import { canUseFeature } from '@/utils/limits';
 import { readCache, writeCache } from '@/db/offline';
 import { getNetworkReachability } from '@/db/network';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
@@ -249,4 +250,13 @@ export function useIsProLoading(): boolean {
 }
 export function useEntitlementSource(): EntitlementSource {
   return useEntitlementStore((s) => s.source);
+}
+
+/**
+ * The one gating decision every screen and ProGate routes through: does the
+ * current tier allow this feature? Delegates to the pure canUseFeature in
+ * utils/limits; unknown feature keys are free by default.
+ */
+export function useCanUse(feature: string): boolean {
+  return useEntitlementStore((s) => canUseFeature(feature, s.isPro));
 }

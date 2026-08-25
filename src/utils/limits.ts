@@ -24,30 +24,18 @@ export const SUBSCRIPTION_PRODUCT_IDS = [
 
 export const LIFETIME_PRODUCT_ID: ProProductId = 'subby_pro_lifetime';
 
+/**
+ * Closed registry: only features whose behaviour actually flips with Pro.
+ * Anything unlisted is free by default (see isProFeature) — add a key when
+ * the feature ships, not before.
+ */
 export const PRO_FEATURES = [
   'pieChart',
   'budget',
-  'forecast',
-  'export',
   'advancedReminders',
-  'trialsNudge',
 ] as const;
 
 export type ProFeature = (typeof PRO_FEATURES)[number];
-
-const PRO_FEATURE_LABELS: Record<ProFeature, string> = {
-  pieChart: 'Category insights',
-  budget: 'Budget tracking',
-  forecast: 'Forecast',
-  export: 'Export',
-  advancedReminders: 'Advanced reminders',
-  trialsNudge: 'Trials nudges',
-};
-
-/** Human label for a gated feature (paywall bullets). */
-export function proFeatureLabel(feature: ProFeature): string {
-  return PRO_FEATURE_LABELS[feature] ?? feature;
-}
 
 /**
  * True when the feature requires Pro. Every value in PRO_FEATURES returns
