@@ -18,7 +18,7 @@
 
 import { useCallback, type ComponentProps } from 'react';
 import { RefreshControl, ScrollView, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Redirect, useRouter } from 'expo-router';
 
 import { EmptyState } from '@/design/components';
 import { Surface } from '@/design/components/Surface';
@@ -26,9 +26,12 @@ import { useTheme } from '@/design/theme';
 import { layout, spacing } from '@/design/tokens';
 import {
   useActiveSubscriptions,
+  useHasHydrated,
   useIsLoadingSubscriptions,
   useSubscriptionsStore,
 } from '@/store/useSubscriptionsStore';
+import { useCompletedOnboardingUserIds } from '@/store/useUIStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from '@/store/useToastStore';
 import { notifyWarning } from '@/utils/haptics';
 import { HeroSpend } from '@/features/dashboard/components/HeroSpend';
@@ -38,7 +41,9 @@ import { RenewalsList } from '@/features/dashboard/components/RenewalsList';
 import { TrialsCard } from '@/features/dashboard/components/TrialsCard';
 import { InsightStrip } from '@/features/dashboard/components/InsightStrip';
 import { AddFab } from '@/features/dashboard/components/AddFab';
+import { UnverifiedEmailBanner } from '@/features/dashboard/components/UnverifiedEmailBanner';
 import { pickInsight } from '@/features/dashboard/insights';
+import { shouldShowOnboarding } from '@/features/onboarding';
 import { useCurrency } from '@/store/useUIStore';
 import { ProGate } from '@/features/paywall/components/ProGate';
 
@@ -49,8 +54,26 @@ export function DashboardScreen() {
   const { colors } = useTheme();
   const subs = useActiveSubscriptions();
   const isLoading = useIsLoadingSubscriptions();
+  const hasHydrated = useHasHydrated();
   const hydrate = useSubscriptionsStore((s) => s.hydrate);
   const currency = useCurrency();
+
+  // First-run gate — evaluated only after hydration settles so a cold start
+  // never flashes an existing account into the wizard while rows are loading.
+  const isSignedIn = useAuthStore((s) => s.isSignedIn);
+  const userId = useAuthStore((s) => s.userId);
+  const completedUserIds = useCompletedOnboardingUserIds();
+  if (
+    hasHydrated &&
+    shouldShowOnboarding({
+      isSignedIn,
+      userId,
+      completedUserIds,
+      subscriptionCount: subs.length,
+    })
+  ) {
+    return <Redirect href="/onboarding" />;
+  }
 
   // First-applicable dashboard insight — null hides the strip entirely.
   const insight = pickInsight(subs, currency);
@@ -100,6 +123,7 @@ export function DashboardScreen() {
   return (
     <Surface background="surface" style={styles.root}>
       <ScrollView {...scrollProps}>
+        <UnverifiedEmailBanner />
         {insight ? <InsightStrip insight={insight} /> : null}
         <HeroSpend />
         <QuickStats />

@@ -79,3 +79,37 @@ export function validateDraft(draft: AuthDraft, mode: AuthMode) {
 
   return errors;
 }
+
+// --- Deferred email verification ---------------------------------------------
+
+/** Inputs for the deferred-verification visibility predicates. */
+export interface VerificationStateInput {
+  isSignedIn: boolean;
+  /** Active session belongs to the anonymous bridge account. */
+  isAnonymous: boolean;
+  /** Email awaiting deferred verification; null when nothing is pending. */
+  pendingVerificationEmail: string | null;
+}
+
+/**
+ * True while the user is living on an anonymous bridge account with an
+ * unconfirmed email — drives both the dashboard banner and the Settings
+ * "verify now" affordance.
+ */
+export function needsDeferredVerification(
+  input: VerificationStateInput,
+): boolean {
+  return (
+    input.isSignedIn &&
+    input.isAnonymous &&
+    input.pendingVerificationEmail !== null
+  );
+}
+
+/** Copy for the account row: what to call the signed-in identity. */
+export function accountLabelFor(input: VerificationStateInput): string {
+  if (needsDeferredVerification(input)) {
+    return `${input.pendingVerificationEmail ?? ''} (unverified)`;
+  }
+  return 'Unknown user';
+}

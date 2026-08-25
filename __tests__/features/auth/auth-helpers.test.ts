@@ -1,4 +1,9 @@
-import { defaultDraft, validateDraft } from '@/features/auth/auth-helpers';
+import {
+  accountLabelFor,
+  defaultDraft,
+  needsDeferredVerification,
+  validateDraft,
+} from '@/features/auth/auth-helpers';
 
 describe('validateDraft', () => {
   it('accepts a valid sign-in draft', () => {
@@ -70,5 +75,58 @@ describe('validateDraft', () => {
 describe('defaultDraft', () => {
   it('starts both fields empty', () => {
     expect(defaultDraft()).toEqual({ email: '', password: '' });
+  });
+});
+
+describe('needsDeferredVerification', () => {
+  const verified = {
+    isSignedIn: true,
+    isAnonymous: false,
+    pendingVerificationEmail: null,
+  };
+
+  it('fires for an anonymous session with a pending email', () => {
+    expect(
+      needsDeferredVerification({
+        ...verified,
+        isAnonymous: true,
+        pendingVerificationEmail: 'ada@lovelace.dev',
+      }),
+    ).toBe(true);
+  });
+
+  it('never fires when signed out, real, or without a pending email', () => {
+    expect(needsDeferredVerification({ ...verified, isSignedIn: false })).toBe(
+      false,
+    );
+    expect(needsDeferredVerification(verified)).toBe(false);
+    expect(
+      needsDeferredVerification({
+        ...verified,
+        pendingVerificationEmail: 'ada@lovelace.dev',
+      }),
+    ).toBe(false);
+  });
+});
+
+describe('accountLabelFor', () => {
+  it('marks the pending email as unverified for bridge accounts', () => {
+    expect(
+      accountLabelFor({
+        isSignedIn: true,
+        isAnonymous: true,
+        pendingVerificationEmail: 'ada@lovelace.dev',
+      }),
+    ).toBe('ada@lovelace.dev (unverified)');
+  });
+
+  it('falls back to the unknown-user label otherwise', () => {
+    expect(
+      accountLabelFor({
+        isSignedIn: true,
+        isAnonymous: false,
+        pendingVerificationEmail: null,
+      }),
+    ).toBe('Unknown user');
   });
 });

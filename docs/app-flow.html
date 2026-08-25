@@ -1,0 +1,1183 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Subby — How the app works</title>
+    <style>
+      :root {
+        --bg: #0a0f14;
+        --bg-raised: #101820;
+        --bg-higher: #16212c;
+        --line: #223140;
+        --text: #e6edf3;
+        --muted: #8b9bab;
+        --cyan: #22d3ee;
+        --cyan-dim: #164e5f;
+        --green: #34d399;
+        --amber: #fbbf24;
+        --red: #f87171;
+        --violet: #a78bfa;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          sans-serif;
+        padding: 48px 24px 96px;
+        line-height: 1.5;
+      }
+      .wrap {
+        max-width: 1080px;
+        margin: 0 auto;
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 56px;
+      }
+      header h1 {
+        font-size: 2rem;
+        letter-spacing: -0.02em;
+        background: linear-gradient(90deg, var(--cyan), #67e8f9, var(--cyan));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      header p {
+        color: var(--muted);
+        margin-top: 8px;
+        font-size: 0.95rem;
+      }
+
+      section {
+        margin-bottom: 72px;
+      }
+      h2 {
+        font-size: 1.15rem;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      h2 .num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        background: var(--cyan-dim);
+        color: var(--cyan);
+        border: 1px solid var(--cyan);
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 0.85rem;
+        margin-bottom: 24px;
+      }
+
+      /* ---- generic node ---- */
+      .node {
+        background: var(--bg-raised);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px 16px;
+        text-align: center;
+        position: relative;
+      }
+      .node b {
+        display: block;
+        font-size: 0.9rem;
+      }
+      .node span {
+        display: block;
+        font-size: 0.72rem;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .node.accent {
+        border-color: var(--cyan);
+        box-shadow: 0 0 18px rgba(34, 211, 238, 0.12);
+      }
+      .node.remote {
+        border-color: #2d4a63;
+        background: linear-gradient(160deg, var(--bg-raised), #0d1b28);
+      }
+
+      /* ---- connectors with flowing dots ---- */
+      .flow-v {
+        height: 44px;
+        width: 2px;
+        margin: 0 auto;
+        position: relative;
+        background: var(--line);
+        overflow: visible;
+      }
+      .flow-v::after {
+        content: '';
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--cyan);
+        box-shadow: 0 0 8px var(--cyan);
+        animation: drip 2.2s linear infinite;
+      }
+      @keyframes drip {
+        0% {
+          top: -6px;
+          opacity: 0;
+        }
+        12% {
+          opacity: 1;
+        }
+        88% {
+          opacity: 1;
+        }
+        100% {
+          top: calc(100% + 0px);
+          opacity: 0;
+        }
+      }
+      .flow-label {
+        font-size: 0.68rem;
+        color: var(--cyan);
+        background: rgba(34, 211, 238, 0.08);
+        border: 1px solid rgba(34, 211, 238, 0.25);
+        padding: 1px 8px;
+        border-radius: 999px;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        white-space: nowrap;
+        background-color: var(--bg);
+      }
+
+      /* ================= SECTION 1: navigation ================= */
+      .navmap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .tabs-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(150px, 190px));
+        gap: 16px;
+        width: 100%;
+        max-width: 900px;
+      }
+      .tab-col {
+        display: flex;
+        flex-direction: column;
+      }
+      .tab-col .flow-v {
+        height: 36px;
+      }
+      .tab-badge {
+        font-size: 0.62rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        text-align: center;
+        margin-bottom: 6px;
+      }
+      .node.modal {
+        border-style: dashed;
+        border-color: var(--violet);
+      }
+      .node.sheet {
+        border-style: dashed;
+        border-color: var(--amber);
+      }
+      .pulse-ring {
+        animation: ring 3s ease-out infinite;
+      }
+      @keyframes ring {
+        0% {
+          box-shadow: 0 0 0 0 rgba(167, 139, 250, 0.35);
+        }
+        70% {
+          box-shadow: 0 0 0 14px rgba(167, 139, 250, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(167, 139, 250, 0);
+        }
+      }
+
+      /* ================= SECTION 2: layers ================= */
+      .layer-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .layers {
+        display: grid;
+        grid-template-columns: 1fr 90px 1fr;
+        gap: 0 12px;
+        width: 100%;
+        max-width: 760px;
+        align-items: stretch;
+      }
+      .layer {
+        display: contents;
+      }
+      .layer-box {
+        grid-column: 1;
+        background: var(--bg-raised);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin: 0;
+      }
+      .layer-box b {
+        font-size: 0.92rem;
+      }
+      .layer-box .file {
+        color: var(--cyan);
+        font-family: ui-monospace, monospace;
+        font-size: 0.75rem;
+      }
+      .layer-box p {
+        color: var(--muted);
+        font-size: 0.76rem;
+        margin-top: 4px;
+      }
+      .side-note {
+        grid-column: 3;
+        align-self: center;
+        font-size: 0.72rem;
+        color: var(--muted);
+        border-left: 2px solid var(--line);
+        padding-left: 12px;
+      }
+      .arrow-cell {
+        grid-column: 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        min-height: 40px;
+      }
+      .arrow-cell::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 4px;
+        bottom: 4px;
+        width: 2px;
+        transform: translateX(-50%);
+        background: var(--line);
+      }
+      .arrow-dot {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+      .arrow-dot.down {
+        background: var(--cyan);
+        box-shadow: 0 0 8px var(--cyan);
+        animation: dripDown 2s linear infinite;
+      }
+      .arrow-dot.up {
+        background: var(--green);
+        box-shadow: 0 0 8px var(--green);
+        animation: dripUp 2s linear infinite;
+      }
+      @keyframes dripDown {
+        0% {
+          top: -4px;
+          opacity: 0;
+        }
+        15% {
+          opacity: 1;
+        }
+        85% {
+          opacity: 1;
+        }
+        100% {
+          top: 100%;
+          opacity: 0;
+        }
+      }
+      @keyframes dripUp {
+        0% {
+          top: 100%;
+          opacity: 0;
+        }
+        15% {
+          opacity: 1;
+        }
+        85% {
+          opacity: 1;
+        }
+        100% {
+          top: -4px;
+          opacity: 0;
+        }
+      }
+      .legend {
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+        margin-top: 20px;
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+      .legend i {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 6px;
+      }
+
+      /* ================= SECTION 3: mutation pipeline ================= */
+      .pipeline-stage {
+        background: var(--bg-raised);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 28px 24px 32px;
+      }
+      .pipe-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+      .step {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px 8px;
+        text-align: center;
+        font-size: 0.74rem;
+        background: var(--bg-higher);
+        transition: all 0.35s ease;
+        position: relative;
+        opacity: 0.55;
+      }
+      .step .n {
+        font-size: 0.6rem;
+        color: var(--muted);
+        letter-spacing: 0.1em;
+        display: block;
+        margin-bottom: 4px;
+      }
+      .step b {
+        font-weight: 600;
+      }
+      .step.active {
+        opacity: 1;
+        border-color: var(--cyan);
+        color: var(--cyan);
+        box-shadow: 0 0 16px rgba(34, 211, 238, 0.25);
+        transform: translateY(-3px);
+      }
+      .step.done {
+        opacity: 1;
+        border-color: var(--cyan-dim);
+        color: var(--text);
+      }
+      .step.decision.active {
+        border-color: var(--amber);
+        color: var(--amber);
+        box-shadow: 0 0 16px rgba(251, 191, 36, 0.25);
+      }
+      .branch-arrows {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+        gap: 10px;
+        margin: 6px 0 18px;
+      }
+      .branch-line {
+        text-align: center;
+        font-size: 0.68rem;
+        padding-top: 6px;
+        border-top: 2px dashed transparent;
+      }
+      .branch-line.on {
+        color: var(--green);
+        border-color: var(--green);
+      }
+      .branch-line.off {
+        color: var(--red);
+        border-color: var(--red);
+        visibility: hidden;
+      }
+      .lanes {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .lane {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px;
+        background: rgba(255, 255, 255, 0.015);
+        transition:
+          border-color 0.3s,
+          box-shadow 0.3s;
+      }
+      .lane.hot-online {
+        border-color: var(--green);
+        box-shadow: 0 0 20px rgba(52, 211, 153, 0.12);
+      }
+      .lane.hot-offline {
+        border-color: var(--red);
+        box-shadow: 0 0 20px rgba(248, 113, 113, 0.12);
+      }
+      .lane-title {
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+        color: var(--muted);
+      }
+      .lane.hot-online .lane-title {
+        color: var(--green);
+      }
+      .lane.hot-offline .lane-title {
+        color: var(--red);
+      }
+      .lane-step {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        margin-bottom: 8px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font-size: 0.78rem;
+        background: var(--bg-higher);
+        transition: all 0.3s ease;
+        opacity: 0.5;
+      }
+      .lane-step:last-child {
+        margin-bottom: 0;
+      }
+      .lane-step .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--line);
+        flex: none;
+        transition: all 0.3s;
+      }
+      .lane-step.active {
+        opacity: 1;
+        border-color: currentColor;
+      }
+      .lane-step.active .dot {
+        background: currentColor;
+        box-shadow: 0 0 8px currentColor;
+      }
+      .lane.online-lane {
+        color: var(--green);
+      }
+      .lane.offline-lane {
+        color: var(--red);
+      }
+      .lane.online-lane .lane-step.active {
+        color: var(--text);
+      }
+      .lane.offline-lane .lane-step.active {
+        color: var(--text);
+      }
+      .queue-visual {
+        display: flex;
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .queue-chip {
+        flex: 1;
+        text-align: center;
+        font-size: 0.65rem;
+        padding: 5px 4px;
+        border-radius: 6px;
+        border: 1px dashed var(--line);
+        color: var(--muted);
+        transition: all 0.3s;
+      }
+      .queue-chip.filled {
+        border-style: solid;
+        border-color: var(--amber);
+        color: var(--amber);
+      }
+      .status-bar {
+        margin-top: 18px;
+        text-align: center;
+        font-family: ui-monospace, monospace;
+        font-size: 0.78rem;
+        color: var(--cyan);
+        min-height: 1.4em;
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 14px;
+      }
+      .btn {
+        background: var(--bg-higher);
+        border: 1px solid var(--line);
+        color: var(--text);
+        padding: 6px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 0.78rem;
+        transition: all 0.2s;
+      }
+      .btn:hover {
+        border-color: var(--cyan);
+        color: var(--cyan);
+      }
+      .btn.primary {
+        background: var(--cyan-dim);
+        border-color: var(--cyan);
+        color: var(--cyan);
+      }
+
+      /* ================= SECTION 4: auth ================= */
+      .auth-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        max-width: 860px;
+        margin: 0 auto;
+      }
+      .auth-card {
+        background: var(--bg-raised);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 20px;
+      }
+      .auth-card h3 {
+        font-size: 0.9rem;
+        margin-bottom: 14px;
+        color: var(--cyan);
+      }
+      .auth-steps {
+        display: flex;
+        flex-direction: column;
+      }
+      .astep {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 9px 12px;
+        font-size: 0.8rem;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: var(--bg-higher);
+        position: relative;
+      }
+      .astep .k {
+        font-family: ui-monospace, monospace;
+        font-size: 0.62rem;
+        color: var(--muted);
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 2px 6px;
+      }
+      .aconn {
+        height: 20px;
+        width: 2px;
+        margin-left: 26px;
+        position: relative;
+        overflow: hidden;
+      }
+      .aconn::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--cyan);
+        box-shadow: 0 0 6px var(--cyan);
+        animation: dripDownV 1.8s linear infinite;
+      }
+      @keyframes dripDownV {
+        0% {
+          top: -8px;
+          opacity: 0;
+        }
+        20% {
+          opacity: 1;
+        }
+        80% {
+          opacity: 1;
+        }
+        100% {
+          top: 100%;
+          opacity: 0;
+        }
+      }
+      .note {
+        margin-top: 14px;
+        font-size: 0.72rem;
+        color: var(--muted);
+        border-left: 2px solid var(--cyan-dim);
+        padding-left: 10px;
+      }
+
+      footer {
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.75rem;
+        margin-top: 40px;
+      }
+      code {
+        font-family: ui-monospace, monospace;
+        color: var(--cyan);
+        font-size: 0.82em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Subby — How the app works</h1>
+        <p>
+          An animated walkthrough of the subscription dashboard's navigation,
+          data layers, sync pipeline and auth flows.
+        </p>
+      </header>
+
+      <!-- ============ 1. NAVIGATION ============ -->
+      <section>
+        <h2><span class="num">1</span> Navigation map</h2>
+        <p class="sub">
+          Expo Router · native tabs (<code>NativeTabs</code>) + a native
+          <code>formSheet</code> stack for add/edit.
+        </p>
+
+        <div class="navmap">
+          <div class="node accent">
+            <b>RootLayout</b>
+            <span
+              >_layout.tsx · theme provider · cross-fade on scheme flip</span
+            >
+          </div>
+          <div class="flow-v"><span class="flow-label">Slot</span></div>
+          <div class="tabs-row">
+            <div class="tab-col">
+              <div class="tab-badge">Tab</div>
+              <div class="node">
+                <b>Dashboard</b>
+                <span
+                  >index · monthly spend hero,<br />upcoming renewals,
+                  categories</span
+                >
+              </div>
+            </div>
+            <div class="tab-col">
+              <div class="tab-badge">Tab</div>
+              <div class="node">
+                <b>Subscriptions</b>
+                <span>searchable, sortable FlashList<br />of active subs</span>
+              </div>
+            </div>
+            <div class="tab-col">
+              <div class="tab-badge">Tab → modal</div>
+              <div class="node pulse-ring" style="border-color: var(--violet)">
+                <b>Add</b>
+                <span style="color: var(--violet)"
+                  >transparent tab that pushes<br />the Add/Edit formSheet on
+                  focus</span
+                >
+              </div>
+              <div class="flow-v"></div>
+              <div class="node sheet">
+                <b>Add / Edit sheet</b>
+                <span
+                  >subscription/add.tsx · dismiss<br />⤷ replace('/') back to
+                  Dashboard</span
+                >
+              </div>
+            </div>
+            <div class="tab-col">
+              <div class="tab-badge">Tab</div>
+              <div class="node">
+                <b>Settings</b>
+                <span
+                  >currency, budget, reminders,<br />theme, demo data,
+                  account</span
+                >
+              </div>
+            </div>
+          </div>
+          <div
+            style="
+              display: flex;
+              gap: 16px;
+              margin-top: 18px;
+              font-size: 0.72rem;
+              color: var(--muted);
+            "
+          >
+            <span
+              >Row press anywhere ⤳
+              <code style="font-family: inherit; color: var(--amber)"
+                >router.push('/subscription/[id]')</code
+              >
+              → Detail screen (formSheet)</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 2. LAYER CAKE ============ -->
+      <section>
+        <h2>
+          <span class="num">2</span> Data layers — reads flow up, writes flow
+          down
+        </h2>
+        <p class="sub">
+          Dependencies only point downward: features → store → db → SQLite. The
+          store is a <b>read-through cache</b>: after any write it re-reads
+          every row instead of patching arrays locally — the cache can never
+          drift from the database.
+        </p>
+
+        <div class="layer-stack">
+          <div class="layers">
+            <div class="layer">
+              <div class="layer-box">
+                <b>UI screens</b> <span class="file">src/features/*</span>
+                <p>
+                  Components subscribe via Zustand selectors — they never touch
+                  SQL directly.
+                </p>
+              </div>
+              <div class="side-note">
+                🟢 green = data returning<br />🔵 blue = calls going down
+              </div>
+
+              <div class="arrow-cell">
+                <div class="arrow-dot down"></div>
+                <div class="arrow-dot up" style="animation-delay: 1s"></div>
+              </div>
+              <div class="side-note">
+                <code>useActiveSubscriptions()</code><br /><code
+                  >insert / update / delete</code
+                >
+              </div>
+
+              <div class="layer-box">
+                <b>Zustand store</b>
+                <span class="file">src/store/useSubscriptionsStore</span>
+                <p>
+                  Mutation contract: call DB → re-read <i>all</i> rows →
+                  setState. Plus a persisted prefs store (currency / sort /
+                  filter).
+                </p>
+              </div>
+              <div class="arrow-cell">
+                <div class="arrow-dot down"></div>
+                <div class="arrow-dot up" style="animation-delay: 1s"></div>
+              </div>
+              <div class="side-note">
+                typed CRUD, snake_case ↔ domain mapping
+              </div>
+
+              <div class="layer-box">
+                <b>DB query layer</b>
+                <span class="file">src/db/queries.ts</span>
+                <p>
+                  The only place SQLite column names exist. Opens the DB and
+                  runs versioned migrations.
+                </p>
+              </div>
+              <div class="arrow-cell">
+                <div class="arrow-dot down"></div>
+                <div class="arrow-dot up" style="animation-delay: 1s"></div>
+              </div>
+              <div class="side-note">openDatabaseAsync() + runMigrations()</div>
+
+              <div class="layer-box" style="border-color: #2d4a63">
+                <b>SQLite</b> <span class="file">expo-sqlite · subby.db</span>
+                <p>
+                  Single subscriptions table, 3 indexes (archived, next_renewal,
+                  category), <code>__meta</code> migration table.
+                </p>
+              </div>
+
+              <div class="arrow-cell">
+                <div class="arrow-dot down"></div>
+                <div class="arrow-dot up" style="animation-delay: 0.5s"></div>
+              </div>
+              <div class="side-note">
+                sync coordinator bridges local ⇄ cloud
+              </div>
+
+              <div class="layer-box remote" style="border-style: dashed">
+                <b>Supabase ☁︎</b>
+                <span class="file">remote Postgres + auth</span>
+                <p>
+                  Per-user rows. Reached through the sync coordinator — never
+                  directly from the UI.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="legend">
+            <span
+              ><i style="background: var(--cyan)"></i>calls / writes
+              downward</span
+            >
+            <span
+              ><i style="background: var(--green)"></i>data / re-reads
+              upward</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 3. MUTATION PIPELINE ============ -->
+      <section>
+        <h2>
+          <span class="num">3</span> The mutation pipeline — one door for every
+          write
+        </h2>
+        <p class="sub">
+          Every create/edit/archive/prefs change funnels through
+          <code>applyMutation()</code> in <code>src/db/offline.ts</code>. Watch
+          it run:
+        </p>
+
+        <div class="pipeline-stage">
+          <div class="pipe-grid">
+            <div class="step" id="s0">
+              <span class="n">TAP</span><b>User saves</b>
+            </div>
+            <div class="step decision" id="s1">
+              <span class="n">STEP 1</span><b>Network?</b>
+            </div>
+            <div class="step" id="s2">
+              <span class="n">STEP 2</span><b>Execute op</b>
+            </div>
+            <div class="step" id="s3">
+              <span class="n">STEP 3</span><b>Notification side-effects</b>
+            </div>
+            <div class="step" id="s4">
+              <span class="n">STEP 4</span><b>Write cache snapshot</b>
+            </div>
+            <div class="step" id="s5">
+              <span class="n">STEP 5</span><b>Re-read all → UI</b>
+            </div>
+          </div>
+          <div class="branch-arrows">
+            <div></div>
+            <div class="branch-line on" id="bl-on">online ↓</div>
+            <div></div>
+            <div></div>
+            <div class="branch-line off" id="bl-off">offline ↓</div>
+            <div></div>
+          </div>
+          <div class="lanes">
+            <div class="lane online-lane" id="lane-online">
+              <div class="lane-title">● Online — direct write</div>
+              <div class="lane-step" id="o1">
+                <span class="dot"></span>Write row to Supabase
+              </div>
+              <div class="lane-step" id="o2">
+                <span class="dot"></span>Cancel / schedule renewal reminder
+                (sidecar table)
+              </div>
+              <div class="lane-step" id="o3">
+                <span class="dot"></span>Snapshot result into sync_cache
+              </div>
+              <div class="lane-step" id="o4">
+                <span class="dot"></span>Re-read ALL subscriptions → setState →
+                UI re-renders
+              </div>
+            </div>
+            <div class="lane offline-lane" id="lane-offline">
+              <div class="lane-title">● Offline — FIFO queue</div>
+              <div class="lane-step" id="f1">
+                <span class="dot"></span>Enqueue op (never applied to local
+                state — queue-invisible by design)
+              </div>
+              <div class="lane-step" id="f2">
+                <span class="dot"></span>Reads fall back to last-synced snapshot
+                in sync_cache
+              </div>
+              <div class="lane-step" id="f3">
+                <span class="dot"></span>On reconnect: flushPendingOps() replays
+                queue through the SAME pipeline
+              </div>
+              <div class="queue-visual">
+                <div class="queue-chip" id="q0">create</div>
+                <div class="queue-chip" id="q1">edit</div>
+                <div class="queue-chip" id="q2">archive</div>
+              </div>
+            </div>
+          </div>
+          <div class="status-bar" id="status">
+            ▸ press “Simulate save” to run the pipeline
+          </div>
+          <div class="controls">
+            <button class="btn primary" id="btn-run">
+              ▶ Simulate save (online)
+            </button>
+            <button class="btn" id="btn-off">⚡ Simulate save (offline)</button>
+            <button class="btn" id="btn-reset">Reset</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 4. AUTH FLOWS ============ -->
+      <section>
+        <h2><span class="num">4</span> Auth & password flows</h2>
+        <p class="sub">
+          A pure state machine (<code>src/features/auth/auth-flow.ts</code>)
+          decides which form the reset screen shows:
+          <code>entry | verify | recovery | change</code>.
+        </p>
+
+        <div class="auth-grid">
+          <div class="auth-card">
+            <h3>↺ Reset flow (signed out)</h3>
+            <div class="auth-steps">
+              <div class="astep">
+                <span class="k">entry</span> Forgot password → request code
+              </div>
+              <div class="aconn"></div>
+              <div class="astep">
+                <span class="k">recovery</span> Enter 6-digit code
+                <i style="color: var(--muted); font-style: normal"
+                  >(Mailpit locally) or paste magic link</i
+                >
+              </div>
+              <div class="aconn"></div>
+              <div class="astep">
+                <span class="k">session</span> Recovery session granted —
+                <code>recoveryPending</code>, skips current-password check
+              </div>
+              <div class="aconn"></div>
+              <div class="astep">
+                <span class="k">change</span> Set new password → signed in 🎉
+              </div>
+            </div>
+          </div>
+          <div class="auth-card">
+            <h3>✎ Change flow (signed in)</h3>
+            <div class="auth-steps">
+              <div class="astep">
+                <span class="k">verify</span> Verify current password
+              </div>
+              <div class="aconn"></div>
+              <div class="astep">
+                <span class="k">handoff</span> Redirect to
+                <code>?from=settings&amp;verified=1</code>
+              </div>
+              <div class="aconn"></div>
+              <div class="astep">
+                <span class="k">change</span> New password form → updated ✅
+              </div>
+            </div>
+            <div class="note">
+              The handoff is a URL contract because the app reloads mid-flow
+              inside Expo Go — state survives via route params, not memory.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        Subby · Expo SDK 57 · React Native · Zustand · expo-sqlite · Supabase ·
+        Reanimated 4<br />
+        Source of truth: docs/architecture.md · CONTEXT.md · src/db/offline.ts
+      </footer>
+    </div>
+
+    <script>
+      (() => {
+        const $ = (id) => document.getElementById(id);
+        const timers = [];
+        const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+
+        function clearAll() {
+          timers.forEach(clearTimeout);
+          timers.length = 0;
+          ['s0', 's1', 's2', 's3', 's4', 's5'].forEach((id) =>
+            $(id).classList.remove('active', 'done'),
+          );
+          $('bl-on').classList.remove('on');
+          $('bl-off').classList.add('off');
+          $('lane-online').classList.remove('hot-online');
+          $('lane-offline').classList.remove('hot-offline');
+          ['o1', 'o2', 'o3', 'o4', 'f1', 'f2', 'f3'].forEach((id) =>
+            $(id).classList.remove('active'),
+          );
+          ['q0', 'q1', 'q2'].forEach((id) => $(id).classList.remove('filled'));
+        }
+
+        function setStatus(html) {
+          $('status').innerHTML = html;
+        }
+
+        function run(online) {
+          clearAll();
+          const D = 700; // per-step delay
+          const step = (id, t) => later(() => $(id).classList.add('active'), t);
+
+          // Tap + decision
+          step('s0', 100);
+          later(() => {
+            $('s0').className = 'step done';
+          }, D);
+          step('s1', D);
+          setStatus(
+            online
+              ? '▸ applyMutation(): reachability check… online ✓'
+              : '▸ applyMutation(): reachability check… offline ✗',
+          );
+
+          if (online) {
+            later(() => {
+              $('s1').className = 'step done';
+              $('bl-on').classList.add('on');
+              $('lane-online').classList.add('hot-online');
+            }, D * 2);
+            step('s2', D * 2 + 200);
+            later(() => setStatus('▸ writing row to Supabase…'), D * 2 + 300);
+            later(() => {
+              $('s2').className = 'step done';
+              $('o1').classList.add('active');
+            }, D * 3);
+            step('s3', D * 3 + 200);
+            later(
+              () =>
+                setStatus(
+                  '▸ cancelling old renewal reminder, scheduling new one (notification_map sidecar)',
+                ),
+              D * 3 + 400,
+            );
+            later(() => {
+              $('s3').className = 'step done';
+              $('o2').classList.add('active');
+            }, D * 4);
+            step('s4', D * 4 + 200);
+            later(
+              () => setStatus('▸ snapshotting into sync_cache'),
+              D * 4 + 400,
+            );
+            later(() => {
+              $('s4').className = 'step done';
+              $('o3').classList.add('active');
+            }, D * 5);
+            step('s5', D * 5 + 200);
+            later(
+              () =>
+                setStatus(
+                  '▸ re-reading ALL rows → store.setState → UI re-renders ✅',
+                ),
+              D * 5 + 500,
+            );
+            later(() => {
+              $('s5').className = 'step done';
+              $('o4').classList.add('active');
+            }, D * 6);
+            later(
+              () =>
+                setStatus(
+                  '<span style="color:var(--green)">✔ synced — cache and database can never drift</span>',
+                ),
+              D * 6 + 400,
+            );
+          } else {
+            later(() => {
+              $('s1').className = 'step done';
+              $('bl-off').classList.remove('off');
+              $('lane-offline').classList.add('hot-offline');
+            }, D * 2);
+            // enqueue
+            later(
+              () => {
+                $('f1').classList.add('active');
+                setStatus(
+                  '▸ network unreachable → op enqueued (FIFO), NOT applied locally',
+                );
+              },
+              D * 2 + 200,
+            );
+            later(
+              () => {
+                $('q0').classList.add('filled');
+              },
+              D * 2 + 500,
+            );
+            later(() => {
+              $('q1').classList.add('filled');
+              setStatus('▸ more offline edits pile up behind it…');
+            }, D * 3);
+            later(
+              () => {
+                $('q2').classList.add('filled');
+              },
+              D * 3 + 400,
+            );
+            later(
+              () => {
+                $('f2').classList.add('active');
+                setStatus(
+                  '▸ meanwhile reads serve the last-synced snapshot from sync_cache',
+                );
+              },
+              D * 4 + 200,
+            );
+            later(
+              () => {
+                $('f3').classList.add('active');
+                setStatus(
+                  '▸ reconnect! flushPendingOps() replays each op through the SAME pipeline',
+                );
+              },
+              D * 5 + 400,
+            );
+            later(
+              () => {
+                ['q0', 'q1', 'q2'].forEach((id, i) =>
+                  later(() => $(id).classList.remove('filled'), i * 350),
+                );
+                setStatus(
+                  '<span style="color:var(--green)">✔ queue drained in order — online &amp; offline paths share one execution, so they can’t drift</span>',
+                );
+              },
+              D * 6 + 400,
+            );
+          }
+        }
+
+        $('btn-run').onclick = () => run(true);
+        $('btn-off').onclick = () => run(false);
+        $('btn-reset').onclick = () => {
+          clearAll();
+          setStatus('▸ press “Simulate save” to run the pipeline');
+        };
+
+        // auto-play once on load
+        setTimeout(() => run(true), 800);
+      })();
+    </script>
+  </body>
+</html>

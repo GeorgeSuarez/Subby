@@ -17,6 +17,10 @@ import { useRouter } from 'expo-router';
 import { Button, Card, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
+import {
+  accountLabelFor,
+  needsDeferredVerification,
+} from '@/features/auth/auth-helpers';
 import { useAuthStore } from '@/store/useAuthStore';
 import { notifyError, notifySuccess } from '@/utils/haptics';
 
@@ -24,14 +28,61 @@ export function AccountSection() {
   const { colors } = useTheme();
   const router = useRouter();
   const email = useAuthStore((s) => s.email);
+  const isSignedIn = useAuthStore((s) => s.isSignedIn);
+  const isAnonymous = useAuthStore((s) => s.isAnonymous);
+  const pendingVerificationEmail = useAuthStore(
+    (s) => s.pendingVerificationEmail,
+  );
   const signOut = useAuthStore((s) => s.signOut);
   const deleteAccount = useAuthStore((s) => s.deleteAccount);
   const [deleting, setDeleting] = useState(false);
 
-  const onSignOut = useCallback(() => {
+  const verificationState = {
+    isSignedIn,
+    isAnonymous,
+    pendingVerificationEmail,
+  };
+  const unverified = needsDeferredVerification(verificationState);
+
+  const proceedSignOut = useCallback(() => {
     signOut();
     void notifySuccess();
   }, [signOut]);
+
+  const onSignOut = useCallback(() => {
+    // Deferred-verification guard: GoTrue blocks password sign-in for
+    // unconfirmed emails, so signing out of a bridge account means the user
+    // cannot get back in until they confirm. Make that cost explicit.
+    if (
+      needsDeferredVerification({
+        isSignedIn,
+        isAnonymous,
+        pendingVerificationEmail,
+      })
+    ) {
+      Alert.alert(
+        'Verify your email first?',
+        `Until ${pendingVerificationEmail} is confirmed, you won't be able to sign back in.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Sign out anyway',
+            style: 'destructive',
+            onPress: proceedSignOut,
+          },
+          { text: 'Verify now', onPress: () => router.push('/verify-account') },
+        ],
+      );
+      return;
+    }
+    proceedSignOut();
+  }, [
+    isAnonymous,
+    isSignedIn,
+    pendingVerificationEmail,
+    proceedSignOut,
+    router,
+  ]);
 
   const onDeleteAccount = useCallback(() => {
     Alert.alert(
@@ -67,9 +118,29 @@ export function AccountSection() {
           Account
         </Text>
         <Text variant="caption" color="textSecondary">
-          Signed in with {email ?? 'your account'}.
+          Signed in with {accountLabelFor(verificationState)}.
         </Text>
       </Card.Header>
+
+      {unverified ? (
+        <View style={[styles.row, { borderColor: colors.border }]}>
+          <View style={styles.meta}>
+            <Text variant="body" weight="600" color="warning">
+              Email not verified
+            </Text>
+            <Text variant="caption" color="textSecondary" numberOfLines={1}>
+              Confirm {pendingVerificationEmail} to secure this account
+            </Text>
+          </View>
+          <Button
+            onPress={() => router.push('/verify-account')}
+            variant="primary"
+            size="sm"
+          >
+            Verify
+          </Button>
+        </View>
+      ) : null}
 
       <View style={[styles.row, { borderColor: colors.border }]}>
         <View style={styles.meta}>
@@ -77,10 +148,11 @@ export function AccountSection() {
             Signed in as
           </Text>
           <Text variant="caption" color="textSecondary">
-            {email ?? 'Unknown user'}
+            {accountLabelFor(verificationState)}
           </Text>
         </View>
         <Button onPress={onSignOut} variant="ghost" size="sm">
+          {' '}
           Sign out
         </Button>
       </View>

@@ -113,8 +113,8 @@ export function AuthScreen({ mode }: AuthScreenProps) {
         await signIn(email, draft.password);
       } else {
         await signUp(email, draft.password, authRedirectUrl());
-        // Email confirmation is enabled — no session yet. Send the user to
-        // the verify-email screen instead of loading them into the app.
+        // Confirmation enabled AND the anonymous bridge unavailable — fall
+        // back to the blocking verify screen (no session means no app).
         if (!useAuthStore.getState().isSignedIn) {
           router.replace('/auth/verify-email');
           return;
@@ -122,10 +122,23 @@ export function AuthScreen({ mode }: AuthScreenProps) {
       }
       // Rule: demo (seeded) data loads automatically, but only for the test
       // account, and only in development builds. `loadSeedData` re-checks the
-      // email and no-ops otherwise.
+      // email and no-ops otherwise. Runs whenever a session exists — a
+      // deferred sign-up seeds under its bridge uid, and the rows survive
+      // conversion since the uid never changes.
       if (ENABLE_DEMO_DATA && isTestAccountEmail(email)) {
         await loadSeedData(email);
         await useSubscriptionsStore.getState().hydrate();
+      }
+      // Deferred sign-up: the conversion email just auto-sent — show the
+      // "check your inbox" interstitial before Getting Started. (With
+      // confirmations off there is nothing pending; skip straight in.)
+      if (
+        mode === 'signUp' &&
+        useAuthStore.getState().pendingVerificationEmail !== null
+      ) {
+        void notifySuccess();
+        router.replace('/welcome');
+        return;
       }
       void notifySuccess();
       router.replace('/');
