@@ -8,8 +8,9 @@
  *
  * The wizard is a linear sequence of steps ending in a synthetic `done`
  * marker; `nextStep` returns null past the end so the screen can commit and
- * route to the tabs. Budget is optional: an empty field commits as 0
- * ("not set"), matching how `user_prefs.budget` treats it.
+ * route to the tabs. The final step pitches Subby Pro (budget is a Pro
+ * feature, so there is no budget step here) and routes to the paywall —
+ * skipping lands in the app where Settings → Subby Pro sells later.
  *
  * The show-gate (`shouldShowOnboarding`) is deliberately conservative: it
  * only fires for a signed-in account with zero synced subscriptions whose
@@ -19,21 +20,19 @@
 
 import type { CurrencyCode } from '@/types/subscription';
 
-export type OnboardingStep = 'welcome' | 'currency' | 'budget' | 'reminders';
+export type OnboardingStep = 'welcome' | 'currency' | 'reminders' | 'pro';
 
-/** Ordered interactive steps; `done` is reached via nextStep(reminders) === null. */
+/** Ordered interactive steps; `done` is reached via nextStep(pro) === null. */
 export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
   'welcome',
   'currency',
-  'budget',
   'reminders',
+  'pro',
 ] as const;
 
 /** The wizard draft — mirrors what each step edits, in raw form-field shape. */
 export interface OnboardingDraft {
   currency: CurrencyCode;
-  /** Raw text input; '' means "not set" (commits as budget 0). */
-  budget: string;
   remindersEnabled: boolean;
 }
 
@@ -53,36 +52,9 @@ export function prevStep(step: OnboardingStep): OnboardingStep | null {
   return ONBOARDING_STEPS[i - 1] ?? null;
 }
 
-/**
- * Validate the raw budget field. Empty/whitespace means "not set" → 0.
- * Anything else must parse to a finite, non-negative number.
- */
-export function validateBudget(
-  raw: string,
-): { ok: true; value: number } | { ok: false } {
-  const trimmed = raw.trim();
-  if (trimmed === '') return { ok: true, value: 0 };
-  const value = Number(trimmed);
-  // Number('') is 0 and Number('Infinity') is Infinity — both handled by
-  // the empty-string check above and the isFinite guard here.
-  if (!Number.isFinite(value) || value < 0) return { ok: false };
-  return { ok: true, value };
-}
-
-/**
- * Can the user leave this step? Only the budget step can block (invalid
- * input); every other step has a valid default or is a pure toggle.
- */
-export function canAdvance(
-  _step: OnboardingStep,
-  draft: OnboardingDraft,
-): boolean {
-  return validateBudget(draft.budget).ok;
-}
-
 /** Defaults for a brand-new account. */
 export function initialDraft(currency: CurrencyCode): OnboardingDraft {
-  return { currency, budget: '', remindersEnabled: true };
+  return { currency, remindersEnabled: true };
 }
 
 /** Inputs for the show-gate, all cheaply available at render time. */

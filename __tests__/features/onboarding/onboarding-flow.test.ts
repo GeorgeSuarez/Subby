@@ -1,20 +1,18 @@
 import {
   ONBOARDING_STEPS,
-  canAdvance,
   initialDraft,
   nextStep,
   prevStep,
   shouldShowOnboarding,
-  validateBudget,
 } from '@/features/onboarding/onboarding-flow';
 
 describe('ONBOARDING_STEPS', () => {
-  it('runs welcome → currency → budget → reminders in order', () => {
+  it('runs welcome → currency → reminders → pro in order (no budget — it is a Pro feature)', () => {
     expect(ONBOARDING_STEPS).toEqual([
       'welcome',
       'currency',
-      'budget',
       'reminders',
+      'pro',
     ]);
   });
 });
@@ -22,17 +20,17 @@ describe('ONBOARDING_STEPS', () => {
 describe('nextStep / prevStep', () => {
   it('walks forward through every step', () => {
     expect(nextStep('welcome')).toBe('currency');
-    expect(nextStep('currency')).toBe('budget');
-    expect(nextStep('budget')).toBe('reminders');
+    expect(nextStep('currency')).toBe('reminders');
+    expect(nextStep('reminders')).toBe('pro');
   });
 
-  it('reminders is the last interactive step', () => {
-    expect(nextStep('reminders')).toBeNull();
+  it('pro is the last interactive step', () => {
+    expect(nextStep('pro')).toBeNull();
   });
 
   it('walks backward through every step', () => {
-    expect(prevStep('reminders')).toBe('budget');
-    expect(prevStep('budget')).toBe('currency');
+    expect(prevStep('pro')).toBe('reminders');
+    expect(prevStep('reminders')).toBe('currency');
     expect(prevStep('currency')).toBe('welcome');
   });
 
@@ -41,59 +39,10 @@ describe('nextStep / prevStep', () => {
   });
 });
 
-describe('validateBudget', () => {
-  it('accepts an empty field as "not set" (0)', () => {
-    expect(validateBudget('')).toEqual({ ok: true, value: 0 });
-    expect(validateBudget('   ')).toEqual({ ok: true, value: 0 });
-  });
-
-  it('parses whole and decimal amounts', () => {
-    expect(validateBudget('25')).toEqual({ ok: true, value: 25 });
-    expect(validateBudget(' 12.5 ')).toEqual({ ok: true, value: 12.5 });
-    expect(validateBudget('0')).toEqual({ ok: true, value: 0 });
-  });
-
-  it('rejects non-numeric input', () => {
-    expect(validateBudget('abc').ok).toBe(false);
-    expect(validateBudget('1,2.3').ok).toBe(false);
-    expect(validateBudget('--5').ok).toBe(false);
-    expect(validateBudget('Infinity').ok).toBe(false);
-  });
-
-  it('rejects negative amounts', () => {
-    expect(validateBudget('-3').ok).toBe(false);
-  });
-
-  it('rejects non-finite numbers', () => {
-    expect(validateBudget('1e400').ok).toBe(false);
-  });
-});
-
-describe('canAdvance', () => {
-  const draft = initialDraft('USD');
-
-  it('welcome and reminders steps never block', () => {
-    expect(canAdvance('welcome', draft)).toBe(true);
-    expect(canAdvance('reminders', draft)).toBe(true);
-  });
-
-  it('currency step always advances (a default is preselected)', () => {
-    expect(canAdvance('currency', draft)).toBe(true);
-  });
-
-  it('budget step follows validateBudget', () => {
-    expect(canAdvance('budget', { ...draft, budget: '' })).toBe(true);
-    expect(canAdvance('budget', { ...draft, budget: '40' })).toBe(true);
-    expect(canAdvance('budget', { ...draft, budget: '-1' })).toBe(false);
-    expect(canAdvance('budget', { ...draft, budget: 'free' })).toBe(false);
-  });
-});
-
 describe('initialDraft', () => {
   it('seeds defaults for a brand-new account', () => {
     expect(initialDraft('USD')).toEqual({
       currency: 'USD',
-      budget: '',
       remindersEnabled: true,
     });
   });

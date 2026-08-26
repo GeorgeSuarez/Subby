@@ -19,7 +19,7 @@
  */
 
 import { useCallback, useState } from 'react';
-import { StyleSheet, Switch, TextInput, View } from 'react-native';
+import { StyleSheet, Switch, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -31,17 +31,18 @@ import { Surface } from '@/design/components/Surface';
 import { Text } from '@/design/components/Text';
 import { useTheme } from '@/design/theme';
 import { radius, spacing } from '@/design/tokens';
-import { CURRENCIES, currencyMeta } from '@/utils/constants';
+import { CURRENCIES } from '@/utils/constants';
 import { impactLight, notifySuccess, selection } from '@/utils/haptics';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useEntitlementStore } from '@/store/useEntitlementStore';
 import { useUIStore } from '@/store/useUIStore';
 import type { CurrencyCode } from '@/types/subscription';
+import { FeatureBullet } from '@/features/paywall/components/FeatureBullet';
 import {
-  canAdvance,
   initialDraft,
   nextStep,
   prevStep,
-  validateBudget,
+  ONBOARDING_STEPS,
   type OnboardingDraft,
   type OnboardingStep,
 } from './onboarding-flow';
@@ -56,13 +57,13 @@ const STEP_COPY = {
     title: 'Pick your currency',
     body: 'Amounts are shown in this currency across the app.',
   },
-  budget: {
-    title: 'Set a monthly budget',
-    body: 'Optional — Subby warns you when subscriptions pass this line.',
-  },
   reminders: {
     title: 'Renewal reminders',
     body: 'Get a notification before a subscription renews. You can change this anytime in Settings.',
+  },
+  pro: {
+    title: 'Subby Pro',
+    body: 'Go beyond the free tier — or skip for now and upgrade anytime from Settings.',
   },
 } satisfies Record<OnboardingStep, { title: string; body: string }>;
 
@@ -71,9 +72,38 @@ type StepIconName = React.ComponentProps<typeof Ionicons>['name'];
 const STEP_ICONS = {
   welcome: 'sparkles-outline',
   currency: 'cash-outline',
-  budget: 'speedometer-outline',
   reminders: 'notifications-outline',
+  pro: 'star-outline',
 } satisfies Record<OnboardingStep, StepIconName>;
+
+/** Same pitch as the paywall — one source of truth per bullet. */
+const PRO_BULLETS = [
+  {
+    icon: 'pie-chart-outline' as const,
+    title: 'Category insights',
+    desc: 'Breakdown + pie chart of spend by category',
+  },
+  {
+    icon: 'wallet-outline' as const,
+    title: 'Budget & forecast',
+    desc: 'Monthly budget progress & forecast',
+  },
+  {
+    icon: 'notifications-outline' as const,
+    title: 'Advanced reminders',
+    desc: '1 day / 3 days / 7 days before renewal',
+  },
+  {
+    icon: 'infinite-outline' as const,
+    title: 'Unlimited tracking',
+    desc: 'Track more than 5 subscriptions',
+  },
+  {
+    icon: 'gift-outline' as const,
+    title: 'Trials nudges',
+    desc: 'Push before trials convert',
+  },
+];
 
 export function OnboardingScreen() {
   const router = useRouter();
@@ -88,10 +118,10 @@ export function OnboardingScreen() {
 
   const completeOnboarding = useUIStore((s) => s.completeOnboarding);
   const userId = useAuthStore((s) => s.userId);
+  const isPro = useEntitlementStore((s) => s.isPro);
 
   const isLast = nextStep(step) === null;
   const hasBack = prevStep(step) !== null;
-  const canContinue = canAdvance(step, draft);
 
   /** Apply nothing — record completion and enter the app. */
   const skip = useCallback(() => {
@@ -101,7 +131,9 @@ export function OnboardingScreen() {
 
   /**
    * Advance one step; on the last step apply the draft through the existing
-   * pref setters (they own the Supabase sync), mark completion, route home.
+   * pref setters (they own the Supabase sync), mark completion, route home —
+   * through the paywall on the pro step so buying is one tap away. Skipping
+   * (top-right) lands in the app where Settings → Subby Pro sells later.
    */
   const continueFlow = useCallback(() => {
     const target = nextStep(step);
@@ -112,16 +144,17 @@ export function OnboardingScreen() {
     }
     const store = useUIStore.getState();
     if (store.currency !== draft.currency) store.setCurrency(draft.currency);
-    const budget = validateBudget(draft.budget);
-    if (budget.ok && budget.value !== store.budget) {
-      store.setBudget(budget.value);
-    }
     if (store.remindersEnabled !== draft.remindersEnabled) {
       store.setRemindersEnabled(draft.remindersEnabled);
     }
     if (userId !== null) completeOnboarding(userId);
+    if (!isPro) {
+      router.replace('/(tabs)');
+      router.push('/subscription/paywall');
+      return;
+    }
     void notifySuccess().then(() => router.replace('/(tabs)'));
-  }, [completeOnboarding, draft, router, step, userId]);
+  }, [completeOnboarding, draft, isPro, router, step, userId]);
 
   return (
     <Surface background="surface" style={styles.root}>
@@ -167,15 +200,6 @@ export function OnboardingScreen() {
           />
         ) : null}
 
-        {step === 'budget' ? (
-          <BudgetField
-            value={draft.budget}
-            currency={draft.currency}
-            invalid={!canContinue}
-            onChangeText={(budget) => setDraft((d) => ({ ...d, budget }))}
-          />
-        ) : null}
-
         {step === 'reminders' ? (
           <RemindersToggle
             value={draft.remindersEnabled}
@@ -183,6 +207,27 @@ export function OnboardingScreen() {
               setDraft((d) => ({ ...d, remindersEnabled }))
             }
           />
+        ) : null}
+
+        {step === 'pro' ? (
+          <View style={styles.proBullets}>
+            {isPro ? (
+              <Ionicons
+                name="checkmark-circle"
+                size={48}
+                color={colors.positive}
+              />
+            ) : (
+              PRO_BULLETS.map((b) => (
+                <FeatureBullet
+                  key={b.title}
+                  icon={b.icon}
+                  title={b.title}
+                  desc={b.desc}
+                />
+              ))
+            )}
+          </View>
         ) : null}
       </Animated.View>
 
@@ -206,10 +251,9 @@ export function OnboardingScreen() {
           variant="primary"
           size="lg"
           onPress={continueFlow}
-          disabled={!canContinue}
           style={styles.primaryCta}
         >
-          {isLast ? 'Finish' : 'Continue'}
+          {isLast ? (isPro ? 'Finish' : 'Upgrade to Pro') : 'Continue'}
         </Button>
       </View>
     </Surface>
@@ -264,51 +308,6 @@ function CurrencyPicker({
   );
 }
 
-function BudgetField({
-  value,
-  currency,
-  invalid,
-  onChangeText,
-}: {
-  value: string;
-  currency: CurrencyCode;
-  invalid: boolean;
-  onChangeText: (t: string) => void;
-}) {
-  const { colors } = useTheme();
-  return (
-    <View style={styles.fieldWrap}>
-      <View
-        style={[
-          styles.field,
-          {
-            backgroundColor: colors.surfaceHigher,
-            borderColor: invalid ? colors.negative : colors.border,
-          },
-        ]}
-      >
-        <Text variant="headline" color="textSecondary">
-          {currencyMeta(currency).symbol}
-        </Text>
-        <TextInput
-          value={value}
-          onChangeText={onChangeText}
-          keyboardType="decimal-pad"
-          placeholder="0"
-          placeholderTextColor={colors.textTertiary}
-          style={[styles.input, { color: colors.textPrimary }]}
-          accessibilityLabel="Monthly budget"
-        />
-      </View>
-      {invalid ? (
-        <Text variant="caption" color="negative">
-          Enter a valid non-negative amount
-        </Text>
-      ) : null}
-    </View>
-  );
-}
-
 function RemindersToggle({
   value,
   onChange,
@@ -345,13 +344,8 @@ function RemindersToggle({
   );
 }
 
-/** Step order for the progress indicator (mirrors onboarding-flow's steps). */
-const ONBOARDING_ORDER: readonly OnboardingStep[] = [
-  'welcome',
-  'currency',
-  'budget',
-  'reminders',
-] as const;
+/** Step order for the progress indicator — straight from the machine. */
+const ONBOARDING_ORDER = ONBOARDING_STEPS;
 
 const styles = StyleSheet.create({
   root: {
@@ -404,26 +398,10 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginTop: spacing.lg,
   },
-  fieldWrap: {
+  proBullets: {
+    alignSelf: 'stretch',
+    gap: spacing.md,
     marginTop: spacing.lg,
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  field: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    minWidth: 200,
-  },
-  input: {
-    fontSize: 24,
-    fontWeight: '600',
-    padding: 0,
-    minWidth: 100,
   },
   toggleCard: {
     flexDirection: 'row',
