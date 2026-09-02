@@ -1,0 +1,78 @@
+# Demo: Paywall tour — showcase Pro benefits and 3 plans.
+# Precondition: dashboard at top (run demo-warmup first).
+# Record under: xcrun simctl io booted recordVideo demo-paywall.mp4
+#   then maestro test demo-warmup.yaml demo-paywall-tour.yaml (continuous recording)
+# Shows: Settings → View plans → Monthly / Yearly (hero, trial badge) / Lifetime → Close.
+appId: host.exp.Exponent
+---
+# Start on dashboard; hop to Settings.
+- tapOn: "Settings"
+- extendedWaitUntil:
+    visible: "Upgrade to Pro"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 600
+
+# Open paywall via the ProSection CTA.
+- tapOn: "View plans"
+- extendedWaitUntil:
+    visible: "Unlock Subby Pro"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 800
+
+# Hold on hero + bullets (Category insights, Budget …).
+- waitForAnimationToEnd:
+    timeout: 1200
+
+# Browse the 3-way toggle — Yearly is pre-selected (Best value badge).
+- extendedWaitUntil:
+    visible: ".*Monthly.*"
+    timeout: 10000
+- tapOn:
+    text: ".*Monthly.*"
+- waitForAnimationToEnd:
+    timeout: 700
+- extendedWaitUntil:
+    visible: ".*Lifetime.*"
+    timeout: 10000
+- tapOn:
+    text: ".*Lifetime.*"
+- waitForAnimationToEnd:
+    timeout: 700
+- extendedWaitUntil:
+    visible: ".*Yearly.*"
+    timeout: 10000
+- tapOn:
+    text: ".*Yearly.*"
+- waitForAnimationToEnd:
+    timeout: 700
+
+# Legal line + CTA visible at bottom — small pause, then scroll back up so Close is visible.
+- swipe:
+    start: 50%, 75%
+    end: 50%, 45%
+    duration: 500
+- waitForAnimationToEnd:
+    timeout: 800
+- swipe:
+    start: 50%, 30%
+    end: 50%, 70%
+    duration: 500
+- waitForAnimationToEnd:
+    timeout: 700
+
+# Close paywall and return.
+- extendedWaitUntil:
+    visible: "Close"
+    timeout: 10000
+- tapOn: "Close"
+- extendedWaitUntil:
+    visible: "Upgrade to Pro"
+    timeout: 15000
+- tapOn: "Dashboard"
+- extendedWaitUntil:
+    visible: "Monthly spend"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 800

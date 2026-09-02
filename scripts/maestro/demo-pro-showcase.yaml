@@ -1,0 +1,115 @@
+# Demo: Pro showcase — dashboard with Pro unlocked (use after demo-warmup-pro).
+# Precondition: signed in as pro@subby.app at dashboard top (run demo-warmup-pro first).
+# Shows: hero → quick stats → renewals → trials → By category pie (unlocked, no Pro gate)
+#        → Settings Pro Active card → Back to dashboard.
+# Record under: xcrun simctl io booted recordVideo demo-pro.mp4
+appId: host.exp.Exponent
+---
+# Hero — same as free, but Pro banner is not shown (or shows savings). Hold briefly.
+- extendedWaitUntil:
+    visible: "Monthly spend"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 1000
+- assertVisible:
+    text: ".*Billed yearly.*"
+- waitForAnimationToEnd:
+    timeout: 800
+
+# Quick stats — Monthly/Yearly, Active/Biggest (same data, but Pro unlocks unlimited).
+- scrollUntilVisible:
+    element: "Quick stats"
+    direction: DOWN
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 700
+- assertVisible: "Biggest"
+- waitForAnimationToEnd:
+    timeout: 700
+
+# Upcoming renewals — scroll to the card.
+- scrollUntilVisible:
+    element:
+      text: ".*Upcoming renewals.*"
+    direction: DOWN
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 700
+- scrollUntilVisible:
+    element:
+      text: ".*View all.*"
+    direction: DOWN
+    timeout: 12000
+    visibilityPercentage: 50
+    centerElement: true
+- waitForAnimationToEnd:
+    timeout: 700
+
+# Free trials + By category — Pro: pie is unlocked, no "Pro feature" gate.
+- scrollUntilVisible:
+    element: "Free trials"
+    direction: DOWN
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 600
+- scrollUntilVisible:
+    element: "By category"
+    direction: DOWN
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 800
+# Pro: pie chart + breakdown rows are visible; the free "Unlock with Pro" gate is gone.
+- assertVisible: "By category"
+- assertVisible:
+    text: ".*News.*"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 900
+# Assert that the Pro gate is NOT visible (negative check — Pro unlock hides it).
+- assertNotVisible: "Pro feature"
+- waitForAnimationToEnd:
+    timeout: 600
+
+# Scroll back to hero for a clean cut before switching to Settings.
+- repeat:
+    times: 4
+    commands:
+      - swipe:
+          start: 50%, 30%
+          end: 50%, 75%
+          duration: 350
+- extendedWaitUntil:
+    visible: "Monthly spend"
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 700
+
+# Settings — Pro Active card (star, Active badge, Manage/Restore) instead of Upgrade to Pro.
+- tapOn: "Settings"
+- extendedWaitUntil:
+    visible: "Subby Pro"
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 800
+- assertVisible: "Active"
+- assertVisible: "Manage"
+- waitForAnimationToEnd:
+    timeout: 900
+# Small scroll to show the rest of Pro settings remain (budget unlocked, etc.)
+- swipe:
+    start: 50%, 65%
+    end: 50%, 40%
+    duration: 500
+- waitForAnimationToEnd:
+    timeout: 700
+- assertVisible: "Currency"
+- waitForAnimationToEnd:
+    timeout: 700
+
+# Return to dashboard cleanly.
+- tapOn: "Dashboard"
+- extendedWaitUntil:
+    visible: "Monthly spend"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 700

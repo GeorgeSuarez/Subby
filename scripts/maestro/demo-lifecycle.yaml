@@ -1,0 +1,117 @@
+# Demo: Subscription lifecycle — sort, search, swipe, filter, and row menu.
+# Precondition: dashboard at top (run demo-warmup first).
+# Shows: Sort by Cost/Name/Renewal reordering, live Search, swipe-to-Archive reveal,
+#        native long-press menu (Edit/Archive/Delete/Cancel), and Archived filter.
+# Record under: xcrun simctl io booted recordVideo demo-lifecycle.mp4
+# Non-destructive: Archive is not tapped — just revealed — so the list returns clean.
+appId: host.exp.Exponent
+---
+- tapOn: "Subscriptions"
+- extendedWaitUntil:
+    visible: "Search subscriptions"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 700
+
+# Sort cycling — each tap reorders the FlashList with animation.
+- tapOn: "Cost"
+- waitForAnimationToEnd:
+    timeout: 800
+- tapOn: "Name"
+- waitForAnimationToEnd:
+    timeout: 800
+- tapOn: "Renewal"
+- waitForAnimationToEnd:
+    timeout: 800
+
+# Bring search into stable position after reorders.
+- swipe:
+    start: 50%, 30%
+    end: 50%, 55%
+    duration: 400
+- waitForAnimationToEnd:
+    timeout: 500
+
+# Live search — type "net" one char at a time so filtering is visible.
+- tapOn:
+    point: 50%, 11%
+- eraseText: 50
+- inputText: "n"
+- waitForAnimationToEnd:
+    timeout: 200
+- inputText: "e"
+- waitForAnimationToEnd:
+    timeout: 200
+- inputText: "t"
+- extendedWaitUntil:
+    visible: "1 shown"
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 900
+
+# Clear search — back to 4 shown.
+- eraseText: 50
+- hideKeyboard
+- waitForAnimationToEnd:
+    timeout: 700
+- assertVisible: "4 shown"
+
+# Swipe-to-reveal on the top row (Shows the trailing "Archive" action).
+- swipe:
+    start: 90%, 34%
+    end: 45%, 34%
+    duration: 400
+- waitForAnimationToEnd:
+    timeout: 800
+- assertVisible: "Archive"
+- waitForAnimationToEnd:
+    timeout: 700
+# Close the swipe row — swipe back.
+- swipe:
+    start: 20%, 34%
+    end: 80%, 34%
+    duration: 350
+- waitForAnimationToEnd:
+    timeout: 600
+
+# Filter chips — Active (default) → tap Archived → tap All → back to Active.
+- tapOn: "Archived"
+- waitForAnimationToEnd:
+    timeout: 700
+# Archived list may be empty with the 4-row demo seed — just hold the empty-state frame.
+- swipe:
+    start: 50%, 50%
+    end: 50%, 45%
+    duration: 300
+- waitForAnimationToEnd:
+    timeout: 600
+- tapOn: "All"
+- waitForAnimationToEnd:
+    timeout: 700
+- assertVisible: "4 shown"
+- tapOn: "Active"
+- waitForAnimationToEnd:
+    timeout: 700
+- assertVisible: "4 shown"
+
+# Long-press menu — native Alert (Edit / Archive / Delete / Cancel). Tap Cancel to dismiss.
+- longPressOn:
+    text: ".*Netflix.*"
+- extendedWaitUntil:
+    visible: "Archive"
+    timeout: 10000
+- assertVisible: "Edit"
+- assertVisible: "Delete"
+- waitForAnimationToEnd:
+    timeout: 600
+- tapOn: "Cancel"
+- waitForAnimationToEnd:
+    timeout: 700
+
+# Clean exit to dashboard.
+- tapOn: "Dashboard"
+- extendedWaitUntil:
+    visible: "Monthly spend"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 700

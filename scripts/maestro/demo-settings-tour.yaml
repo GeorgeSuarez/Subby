@@ -1,0 +1,70 @@
+# Demo: Settings tour — theme, currency, budget, reminders, account, demo data.
+# Precondition: dashboard at top (run demo-warmup first).
+# Record under: xcrun simctl io booted recordVideo demo-settings.mp4
+# Non-destructive: theme cycles Light→Dark→System and returns to System before exit.
+appId: host.exp.Exponent
+---
+- tapOn: "Settings"
+- extendedWaitUntil:
+    visible: "Theme"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 700
+
+# Theme row — tap through chips (System is selected by default).
+- tapOn: "Light"
+- waitForAnimationToEnd:
+    timeout: 800
+- tapOn: "Dark"
+- waitForAnimationToEnd:
+    timeout: 800
+- tapOn: "System"
+- waitForAnimationToEnd:
+    timeout: 800
+
+# Scroll to Currency / Budget / Notifications.
+- swipe:
+    start: 50%, 70%
+    end: 50%, 35%
+    duration: 600
+- waitForAnimationToEnd:
+    timeout: 700
+- assertVisible: "Currency"
+- assertVisible: "Budget"
+- waitForAnimationToEnd:
+    timeout: 500
+
+# Small nudge to reveal the renewal toggle state.
+- swipe:
+    start: 50%, 60%
+    end: 50%, 45%
+    duration: 400
+- waitForAnimationToEnd:
+    timeout: 700
+- assertVisible: "Renewal reminders"
+
+# Scroll to Account / Demo data — end of the list is the most demo-worthy footer.
+- swipe:
+    start: 50%, 70%
+    end: 50%, 25%
+    duration: 700
+- waitForAnimationToEnd:
+    timeout: 800
+- assertVisible: "Demo data"
+- assertVisible: "4 demo subscriptions loaded"
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# Return to dashboard cleanly.
+- swipe:
+    start: 50%, 25%
+    end: 50%, 75%
+    duration: 600
+- waitForAnimationToEnd:
+    timeout: 600
+- tapOn: "Dashboard"
+- extendedWaitUntil:
+    visible: "Monthly spend"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 700

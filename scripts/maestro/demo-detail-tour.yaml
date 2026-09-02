@@ -1,0 +1,95 @@
+# Demo: Subscription detail — Effective cost, countdown, notes, and Edit.
+# Precondition: dashboard at top (run demo-warmup first).
+# Shows: list → detail (hero $25/yr $300, Next renewal 13 days, Notes, Added/Updated)
+#        → Edit modal (Cancel) → back to list.
+# Record under: xcrun simctl io booted recordVideo demo-detail.mp4
+appId: host.exp.Exponent
+---
+- tapOn: "Subscriptions"
+- extendedWaitUntil:
+    visible: "Search subscriptions"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 700
+# Open the featured row (top of the Renewal-sorted list). Text match is URL-safe.
+- tapOn:
+    text: ".*New York Times.*"
+- extendedWaitUntil:
+    visible: "Effective cost"
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 900
+
+# Hold on hero — $25 per month + Monthly renews monthly.
+- assertVisible: "per month"
+- assertVisible: "News"
+- waitForAnimationToEnd:
+    timeout: 800
+
+# Scroll to countdown, cost breakdown, and notes.
+- swipe:
+    start: 50%, 70%
+    end: 50%, 40%
+    duration: 550
+- waitForAnimationToEnd:
+    timeout: 700
+- assertVisible: "Next renewal"
+- assertVisible: "In 2 weeks"
+- waitForAnimationToEnd:
+    timeout: 500
+- swipe:
+    start: 50%, 60%
+    end: 50%, 35%
+    duration: 550
+- waitForAnimationToEnd:
+    timeout: 700
+- assertVisible: "Effective cost"
+- assertVisible: "All-access digital subscription."
+- waitForAnimationToEnd:
+    timeout: 900
+
+# Reveal the action bar.
+- swipe:
+    start: 50%, 60%
+    end: 50%, 28%
+    duration: 550
+- waitForAnimationToEnd:
+    timeout: 700
+- assertVisible: "Edit subscription"
+- assertVisible: "Archive"
+- assertVisible: "Delete"
+- waitForAnimationToEnd:
+    timeout: 800
+
+# Tap Edit → show the add/edit form in edit mode, then Cancel back to detail.
+- tapOn: "Edit subscription"
+- extendedWaitUntil:
+    visible: "Edit subscription"
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 900
+- assertVisible: "New York Times"
+- assertVisible: "Amount"
+- waitForAnimationToEnd:
+    timeout: 700
+- tapOn: "Cancel"
+- extendedWaitUntil:
+    visible: "Effective cost"
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 700
+
+# Back to the list (formSheet grabber — use a point tap on the top-left back arrow).
+- tapOn:
+    point: 28, 82
+- extendedWaitUntil:
+    visible: "Search subscriptions"
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 700
+- tapOn: "Dashboard"
+- extendedWaitUntil:
+    visible: "Monthly spend"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 700

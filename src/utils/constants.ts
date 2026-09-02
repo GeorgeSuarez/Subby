@@ -107,6 +107,9 @@ export const DEFAULT_CURRENCY: CurrencyCode = 'USD';
  */
 export const TEST_ACCOUNT_EMAIL = 'test@subby.app';
 
+/** Pro demo account — same password, has Pro unlocked via user_entitlements. */
+export const PRO_DEMO_EMAIL = 'pro@subby.app';
+
 /**
  * Fixed password for the test account (mock auth has no real backend, so this
  * is a plain constant, not a hashed credential). `validateDraft` enforces it
@@ -116,7 +119,9 @@ export const TEST_ACCOUNT_PASSWORD = 'subby123';
 
 /** Rule: is this the test account? Case-insensitive on a trimmed value. */
 export function isTestAccountEmail(email: string | null | undefined): boolean {
-  return email != null && email.trim().toLowerCase() === TEST_ACCOUNT_EMAIL;
+  if (email == null) return false;
+  const normalized = email.trim().toLowerCase();
+  return normalized === TEST_ACCOUNT_EMAIL || normalized === PRO_DEMO_EMAIL;
 }
 
 export function currencyMeta(code: CurrencyCode): CurrencyMeta {

@@ -1,0 +1,111 @@
+# Demo: Onboarding tour — first-run wizard (welcome → currency → reminders → Pro).
+# Precondition: dashboard at top (run demo-warmup first). Deep-links to onboarding so it shows
+# even for the demo account that already completed onboarding.
+# Record under: xcrun simctl io booted recordVideo demo-onboarding.mp4 — keeps the main app state intact.
+appId: host.exp.Exponent
+---
+# Ensure we start from dashboard top (dismiss any leftover paywall/onboarding).
+- runFlow:
+    when:
+      visible: "Skip"
+    commands:
+      - tapOn: "Skip"
+- runFlow:
+    when:
+      visible: "Close"
+    commands:
+      - tapOn: "Close"
+- runFlow:
+    when:
+      visible: "Dashboard"
+    commands:
+      - tapOn: "Dashboard"
+- extendedWaitUntil:
+    visible: "Monthly spend"
+    timeout: 15000
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 600
+
+# Deep-link to onboarding — fresh mount at welcome.
+- openLink: "exp://127.0.0.1:8081/--/onboarding"
+- extendedWaitUntil:
+    visible: "Welcome to Subby"
+    timeout: 20000
+- waitForAnimationToEnd:
+    timeout: 900
+# Hold on welcome copy + Skip / Continue affordances.
+- assertVisible: "Skip"
+- assertVisible: "Continue"
+- waitForAnimationToEnd:
+    timeout: 1200
+
+# Step 2: currency.
+- tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Pick your currency"
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 900
+- assertVisible: "$ USD"
+- assertVisible: "€ EUR"
+- waitForAnimationToEnd:
+    timeout: 900
+# Tap a different currency to show selection animation, then return to USD.
+- tapOn: "€ EUR"
+- waitForAnimationToEnd:
+    timeout: 700
+- tapOn: "$ USD"
+- waitForAnimationToEnd:
+    timeout: 700
+- tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Renewal reminders"
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 900
+- assertVisible:
+    text: ".*Get a notification.*"
+- waitForAnimationToEnd:
+    timeout: 900
+
+# Continue to Pro pitch.
+- tapOn: "Continue"
+- extendedWaitUntil:
+    visible: "Subby Pro"
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 900
+- assertVisible: "Category insights"
+- waitForAnimationToEnd:
+    timeout: 900
+# Final Continue pushes the paywall (or dashboard if Pro). Close it if it appears.
+- tapOn: "Continue"
+- runFlow:
+    when:
+      visible: "Unlock Subby Pro"
+    commands:
+      - waitForAnimationToEnd:
+          timeout: 900
+      - tapOn: "Close"
+- runFlow:
+    when:
+      visible: "Welcome to Subby"
+    commands:
+      - tapOn: "Skip"
+- extendedWaitUntil:
+    visible: "Monthly spend"
+    timeout: 30000
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 800
+# Ensure we land back on dashboard regardless of which path won.
+- runFlow:
+    when:
+      visible: "Dashboard"
+    commands:
+      - tapOn: "Dashboard"
+- extendedWaitUntil:
+    visible: "Monthly spend"
+    timeout: 15000
+    optional: true

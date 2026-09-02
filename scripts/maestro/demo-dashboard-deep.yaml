@@ -1,0 +1,93 @@
+# Demo: Dashboard deep dive — hero → quick stats → renewals → trials → category.
+# Precondition: dashboard at top (run demo-warmup first). More deliberate than
+# demo-dashboard.yaml: holds on each card so zoom+captions have time to read.
+# Record under: xcrun simctl io booted recordVideo demo-dashboard-deep.mp4
+appId: host.exp.Exponent
+---
+# Hero — monthly spend, yearly total, insight, and day/dot progress.
+# Ensure we start at the very top (robust for chaining recordings).
+- scrollUntilVisible:
+    element: "Monthly spend"
+    direction: UP
+    timeout: 8000
+    optional: true
+- extendedWaitUntil:
+    visible: "Monthly spend"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 1200
+- assertVisible:
+    text: ".*Billed yearly.*"
+- waitForAnimationToEnd:
+    timeout: 900
+
+# Quick stats row — Monthly/Yearly and Active/Biggest.
+- scrollUntilVisible:
+    element: "Quick stats"
+    direction: DOWN
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 800
+- assertVisible: "Biggest"
+- waitForAnimationToEnd:
+    timeout: 900
+
+# Upcoming renewals — 4 rows + View all 4.
+- scrollUntilVisible:
+    element:
+      text: ".*Upcoming renewals.*"
+    direction: DOWN
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 800
+- extendedWaitUntil:
+    visible: "View all 4"
+    timeout: 8000
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 800
+
+# Free trials + By category (pie + Pro gate). Hold long enough for the pie to paint.
+- scrollUntilVisible:
+    element: "Free trials"
+    direction: DOWN
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 600
+- scrollUntilVisible:
+    element: "By category"
+    direction: DOWN
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 700
+- assertVisible: "Pro feature"
+- waitForAnimationToEnd:
+    timeout: 1000
+
+# Tease the Pro gate — open paywall via deep link (more reliable than tiny button) then Close to return.
+- openLink: "exp://127.0.0.1:8081/--/subscription/paywall"
+- extendedWaitUntil:
+    visible: "Unlock Subby Pro"
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 1000
+- tapOn: "Close"
+- extendedWaitUntil:
+    visible: "By category"
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 700
+
+# Scroll back to hero for a clean outro.
+- repeat:
+    times: 4
+    commands:
+      - swipe:
+          start: 50%, 30%
+          end: 50%, 70%
+          duration: 300
+- extendedWaitUntil:
+    visible: "Monthly spend"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 900

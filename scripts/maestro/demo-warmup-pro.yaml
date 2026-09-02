@@ -1,0 +1,84 @@
+# Warmup for Pro demo account — cold-launch, ensure pro@subby.app (Pro) is signed in.
+# Handles: already signed in as test → sign out → sign in as pro, or fresh → sign in as pro.
+# First pro sign-in auto-seeds demo data (isTestAccountEmail includes pro@) and shows onboarding → Skip.
+# Leaves the app at the top of the dashboard with Pro entitlements loaded.
+appId: host.exp.Exponent
+---
+- killApp
+- openLink: "exp://127.0.0.1:8081"
+- runFlow:
+    when:
+      visible: "Source code explorer"
+    commands:
+      - tapOn: "Close"
+# Dismiss any onboarding that may appear on cold launch (test's stale Welcome).
+- runFlow:
+    when:
+      visible: "Welcome to Subby"
+    commands:
+      - tapOn: "Skip"
+- runFlow:
+    when:
+      visible: "Not Now"
+    commands:
+      - tapOn: "Not Now"
+# If signed in as test (dashboard visible), sign out to switch to Pro.
+- runFlow:
+    when:
+      visible: "Monthly spend"
+    commands:
+      - tapOn: "Settings"
+      - scrollUntilVisible:
+          element:
+            text: ".*Sign out.*"
+          direction: DOWN
+          timeout: 15000
+      - tapOn:
+          text: ".*Sign out.*"
+      - extendedWaitUntil:
+          visible: "Sign in"
+          timeout: 30000
+# Now at Sign in — sign in as Pro.
+- runFlow:
+    when:
+      visible: "Sign in"
+    commands:
+      - tapOn: "you@example.com"
+      - eraseText
+      - inputText: "pro@subby.app"
+      - tapOn: "Your password"
+      - eraseText: 100
+      - inputText: "subby123"
+      - pressKey: Enter
+- runFlow:
+    when:
+      visible: "Not Now"
+    commands:
+      - tapOn: "Not Now"
+# Pro is a new account — first sign-in shows onboarding. Skip it.
+- runFlow:
+    when:
+      visible: "Welcome to Subby"
+    commands:
+      - tapOn: "Skip"
+- runFlow:
+    when:
+      visible: "Not Now"
+    commands:
+      - tapOn: "Not Now"
+- extendedWaitUntil:
+    visible: "Monthly spend"
+    timeout: 120000
+- waitForAnimationToEnd:
+    timeout: 800
+# Ensure we start at scroll position 0 — no accidental pull-to-refresh in the recording.
+- swipe:
+    start: 50%, 75%
+    end: 50%, 20%
+    duration: 300
+- swipe:
+    start: 50%, 20%
+    end: 50%, 75%
+    duration: 300
+- waitForAnimationToEnd:
+    timeout: 600
