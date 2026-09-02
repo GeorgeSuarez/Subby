@@ -136,7 +136,7 @@ describe('peakMonthInsight', () => {
           name: 'iCloud+',
           amount: 120,
           cycle: 'yearly',
-          nextRenewal: inDays(20),
+          nextRenewal: inDays(40),
         }),
       ],
       USD,
