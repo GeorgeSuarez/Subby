@@ -170,7 +170,7 @@ export function OnboardingScreen() {
       {/* Keyed remount per step — FadeInDown slides each screen in. */}
       <Animated.View
         key={step}
-        entering={FadeInDown.duration(280)}
+        entering={FadeInDown.duration(160)} // quieter for Quiet Ledger
         style={styles.content}
       >
         <View

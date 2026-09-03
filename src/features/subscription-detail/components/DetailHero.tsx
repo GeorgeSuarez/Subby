@@ -26,7 +26,7 @@ export interface DetailHeroProps {
 }
 
 export function DetailHero({ sub }: DetailHeroProps) {
-  const { colors, shadow } = useTheme();
+  const { colors } = useTheme();
   const cat = categoryMeta(sub.category);
   const cycle = cycleMeta(sub.cycle);
 
@@ -43,7 +43,6 @@ export function DetailHero({ sub }: DetailHeroProps) {
             backgroundColor: colors.surfaceHigher,
             borderColor: colors.border,
             borderRadius: radius.xl,
-            boxShadow: shadow('glowAccent'),
           },
         ]}
       >

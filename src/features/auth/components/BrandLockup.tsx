@@ -21,7 +21,7 @@ import { radius, spacing } from '@/design/tokens';
 const GLYPH = require('@/assets/images/ledger-stack-splash.png');
 
 export function BrandLockup() {
-  const { colors, shadow } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <View style={styles.container}>
@@ -30,7 +30,6 @@ export function BrandLockup() {
           styles.ring,
           {
             borderColor: colors.border,
-            boxShadow: shadow('glowAccent'),
           },
         ]}
       >

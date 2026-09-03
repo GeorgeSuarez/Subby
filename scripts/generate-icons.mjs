@@ -2,9 +2,10 @@
  * Generate Subby app icons, splash glyph, adaptive icons, favicon, and the
  * selected Ledger Stack logo preview.
  *
- * Brand direction: recurring subscription rows on a quiet dark canvas. The
- * three staggered bars represent the user's recurring expenses; the dots make
- * each bar read as an individual service or billing record.
+ * Brand direction: Quiet Ledger — recurring subscription rows on warm paper.
+ * Light-first: paper canvas (#FDFCF9→#F0EBE3) with deep ink-teal mark
+ * (#0E4A5C). The three staggered bars represent the user's recurring
+ * expenses; the dots make each bar read as an individual service or billing record.
  *
  * Run: node scripts/generate-icons.mjs
  *
@@ -22,9 +23,11 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import sharp from 'sharp';
 
-const DARK = '#0B0F14';
-const CYAN = '#22D3EE';
-const CYAN_LIGHT = '#67E8F9';
+// Quiet Ledger palette — light-first paper hero, deep ink-teal accent (no neon).
+const PAPER = '#FDFCF9';
+const PAPER_DEEP = '#F0EBE3';
+const ACCENT_DEEP = '#0E4A5C';
+const ACCENT = '#22A0BF';
 const ICON_DIR = 'assets/images';
 const OPTIONS_DIR = 'assets/logo-options';
 
@@ -33,12 +36,12 @@ function iconBackground({ width = 1024, height = 1024 } = {}) {
   return `
     <defs>
       <linearGradient id="background" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#18232D"/>
-        <stop offset="100%" stop-color="${DARK}"/>
+        <stop offset="0%" stop-color="${PAPER}"/>
+        <stop offset="100%" stop-color="${PAPER_DEEP}"/>
       </linearGradient>
       <linearGradient id="mark" x1="0.08" y1="0" x2="0.92" y2="1">
-        <stop offset="0%" stop-color="${CYAN_LIGHT}"/>
-        <stop offset="100%" stop-color="${CYAN}"/>
+        <stop offset="0%" stop-color="${ACCENT}"/>
+        <stop offset="100%" stop-color="${ACCENT_DEEP}"/>
       </linearGradient>
     </defs>
     <rect width="${width}" height="${height}" rx="${radius}" fill="url(#background)"/>
@@ -46,7 +49,7 @@ function iconBackground({ width = 1024, height = 1024 } = {}) {
 }
 
 /** Three staggered recurring-expense rows with a cadence dot on each row. */
-function ledgerMarkSVG({ fill = 'url(#mark)', dots = DARK } = {}) {
+function ledgerMarkSVG({ fill = 'url(#mark)', dots = PAPER } = {}) {
   return `
     <g fill="${fill}">
       <rect x="118" y="142" width="276" height="66" rx="33"/>
@@ -61,7 +64,7 @@ function ledgerMarkSVG({ fill = 'url(#mark)', dots = DARK } = {}) {
   `;
 }
 
-/** Selected app icon: the Ledger Stack mark on the Subby dark canvas. */
+/** Selected app icon: the Ledger Stack mark on warm paper (light-first). */
 function appIconSVG() {
   return `
     <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
@@ -79,8 +82,8 @@ function glyphSVG() {
     <svg width="200" height="200" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="mark" x1="0.08" y1="0" x2="0.92" y2="1">
-          <stop offset="0%" stop-color="${CYAN_LIGHT}"/>
-          <stop offset="100%" stop-color="${CYAN}"/>
+          <stop offset="0%" stop-color="${ACCENT}"/>
+          <stop offset="100%" stop-color="${ACCENT_DEEP}"/>
         </linearGradient>
       </defs>
       ${ledgerMarkSVG()}
@@ -88,14 +91,14 @@ function glyphSVG() {
   `;
 }
 
-/** Android adaptive background — quiet dark gradient behind the foreground. */
+/** Android adaptive background — warm paper behind the foreground (light-first). */
 function adaptiveBackgroundSVG() {
   return `
     <svg width="432" height="432" viewBox="0 0 432 432" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="background" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#18232D"/>
-          <stop offset="100%" stop-color="${DARK}"/>
+          <stop offset="0%" stop-color="${PAPER}"/>
+          <stop offset="100%" stop-color="${PAPER_DEEP}"/>
         </linearGradient>
       </defs>
       <rect width="432" height="432" fill="url(#background)"/>
@@ -109,8 +112,8 @@ function adaptiveForegroundSVG() {
     <svg width="432" height="432" viewBox="0 0 432 432" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="mark" x1="0.08" y1="0" x2="0.92" y2="1">
-          <stop offset="0%" stop-color="${CYAN_LIGHT}"/>
-          <stop offset="100%" stop-color="${CYAN}"/>
+          <stop offset="0%" stop-color="${ACCENT}"/>
+          <stop offset="100%" stop-color="${ACCENT_DEEP}"/>
         </linearGradient>
       </defs>
       <g transform="scale(0.844)">

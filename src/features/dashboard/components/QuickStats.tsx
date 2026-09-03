@@ -47,8 +47,8 @@ export function QuickStats() {
             <AnimatedNumber
               value={monthly}
               format={(n) => formatCurrency(n, currency)}
-              delayMs={240}
-              duration={600}
+              delayMs={100}
+              duration={420}
             />
           }
         />
@@ -59,8 +59,8 @@ export function QuickStats() {
             <AnimatedNumber
               value={year}
               format={(n) => formatCurrency(n, currency)}
-              delayMs={320}
-              duration={600}
+              delayMs={160}
+              duration={420}
             />
           }
         />
@@ -73,8 +73,8 @@ export function QuickStats() {
               <AnimatedNumber
                 value={biggestMonthly}
                 format={(n) => formatCurrency(n, currency)}
-                delayMs={400}
-                duration={600}
+                delayMs={220}
+                duration={420}
               />
             ) : (
               '—'
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderCurve: 'continuous',
     borderRadius: radius.md,
-    padding: spacing.md,
+    padding: spacing.sm + 2, // tighter for Quiet Ledger (12→10)
     gap: spacing.xs,
   },
   tileHeader: {

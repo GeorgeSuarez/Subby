@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.lg,
-    gap: spacing.lg,
+    gap: spacing.md, // tighter for Quiet Ledger (+ hairline dividers between sections)
     // Extra bottom padding so the last card clears the floating Add FAB.
     paddingBottom: spacing['3xl'] + layout.fabSize,
   },
@@ -164,10 +164,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    backgroundColor: 'rgba(34, 211, 238, 0.12)',
+    backgroundColor: 'rgba(14, 74, 92, 0.08)',
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: 'rgba(34, 211, 238, 0.22)',
+    borderColor: 'rgba(14, 74, 92, 0.14)',
     alignSelf: 'center',
   },
   empty: {

@@ -24,6 +24,7 @@
  */
 
 import { useEffect, useMemo } from 'react';
+import { useFonts } from 'expo-font';
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -49,7 +50,19 @@ import {
 // Keep the splash visible until our first data hydration resolves.
 SplashScreen.preventAutoHideAsync();
 
+// Quiet Ledger display serif — Fraunces soft editorial (35KB regular + 35KB semibold, latin subset).
+// Surprise pick: warm, rounded, portfolio-distinctive vs Instrument/Newsreader. Falls back to System until ready.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const frauncesRegular = require('../../assets/fonts/Fraunces-Regular.ttf');
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const frauncesSemiBold = require('../../assets/fonts/Fraunces-SemiBold.ttf');
+
 export default function RootLayout() {
+  const [fontsLoaded, fontError] = useFonts({
+    'Fraunces-Regular': frauncesRegular,
+    'Fraunces-SemiBold': frauncesSemiBold,
+  });
+  const fontsReady = fontsLoaded || !!fontError;
   const colorMode = useColorMode();
   const hydrate = useSubscriptionsStore((s) => s.hydrate);
   const resetCache = useSubscriptionsStore((s) => s.resetCache);
@@ -130,8 +143,9 @@ export default function RootLayout() {
 
   // Drop the previous account's cache immediately, then load this account's
   // view and restore the auth session. Runs on mount and whenever the
-  // signed-in account changes; the splash stays until both settle.
+  // signed-in account changes; the splash stays until both settle *and* fonts are loaded.
   useEffect(() => {
+    if (!fontsReady) return;
     resetCache();
     let cancelled = false;
     (async () => {
@@ -152,6 +166,7 @@ export default function RootLayout() {
       cancelled = true;
     };
   }, [
+    fontsReady,
     resetCache,
     hydrate,
     hydratePrefs,
@@ -173,8 +188,8 @@ export default function RootLayout() {
       ...base,
       colors: {
         ...base.colors,
-        background: isDark ? '#0B0F14' : '#F7F9FC',
-        card: isDark ? '#131920' : '#FFFFFF',
+        background: isDark ? '#0F1113' : '#FDFCF9',
+        card: isDark ? '#1A1E20' : '#FFFFFF',
       },
     };
   }, [isDark]);
@@ -187,8 +202,8 @@ export default function RootLayout() {
             Reanimated's FadeIn entrance drives the cross-fade. */}
         <Animated.View
           key={colorMode}
-          entering={FadeIn.duration(280)}
-          style={{ flex: 1, backgroundColor: isDark ? '#0B0F14' : '#F7F9FC' }}
+          entering={FadeIn.duration(160)}
+          style={{ flex: 1, backgroundColor: isDark ? '#0F1113' : '#FDFCF9' }}
         >
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Protected guard={isSignedIn}>

@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.lg,
-    gap: spacing.lg,
+    gap: spacing.md, // tighter for Quiet Ledger
     paddingBottom: spacing['3xl'],
   },
 });

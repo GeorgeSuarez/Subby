@@ -33,9 +33,9 @@ describe('normalizeSystem', () => {
 });
 
 describe('resolveScheme', () => {
-  // Default behavior: undefined pref + null system → dark (dark-first identity).
-  it('falls back to dark when pref and system are both unknown', () => {
-    expect(resolveScheme(undefined, null)).toBe('dark');
+  // Default behavior: undefined pref + null system → light (Quiet Ledger, light-first).
+  it('falls back to light when pref and system are both unknown', () => {
+    expect(resolveScheme(undefined, null)).toBe('light');
   });
 
   it("respects explicit 'light' preference over a dark system", () => {
@@ -49,7 +49,7 @@ describe('resolveScheme', () => {
   it("'system' pref follows the system", () => {
     expect(resolveScheme('system', 'light')).toBe('light');
     expect(resolveScheme('system', 'dark')).toBe('dark');
-    expect(resolveScheme('system', null)).toBe('dark'); // dark-first when system unknown
+    expect(resolveScheme('system', null)).toBe('light'); // light-first when system unknown
   });
 });
 
@@ -75,18 +75,18 @@ describe('resolveTheme', () => {
       system: 'light',
       expectScheme: 'light',
     },
-    // System = unspecified or null is treated as dark (dark-first identity).
+    // System = unspecified or null is treated as light (Quiet Ledger, light-first).
     {
-      name: 'undefined pref + unspecified system → dark (dark-first)',
+      name: 'undefined pref + unspecified system → light (light-first)',
       pref: undefined,
       system: 'unspecified',
-      expectScheme: 'dark',
+      expectScheme: 'light',
     },
     {
-      name: 'undefined pref + null system → dark (dark-first)',
+      name: 'undefined pref + null system → light (light-first)',
       pref: undefined,
       system: null,
-      expectScheme: 'dark',
+      expectScheme: 'light',
     },
 
     // Explicit 'system' preference behaves like undefined fallback.

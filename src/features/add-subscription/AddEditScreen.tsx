@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
-    gap: spacing.lg,
+    gap: spacing.md, // tighter for Quiet Ledger
     paddingBottom: spacing['3xl'],
   },
   header: {
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   stack: {
-    gap: spacing.lg,
+    gap: spacing.md, // tighter for Quiet Ledger
   },
   dateRow: {
     flexDirection: 'row',

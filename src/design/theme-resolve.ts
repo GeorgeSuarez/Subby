@@ -50,8 +50,8 @@ export function resolveScheme(
 ): ResolvedScheme {
   const effective = pref ?? DEFAULT_PREFERENCE;
   if (effective === 'system') {
-    // Dark-first identity: when system is unknown or unspecified, default to dark.
-    return system === 'light' ? 'light' : 'dark';
+    // Quiet Ledger — light-first: warm paper is the hero when system is unknown.
+    return system === 'dark' ? 'dark' : 'light';
   }
   return effective;
 }

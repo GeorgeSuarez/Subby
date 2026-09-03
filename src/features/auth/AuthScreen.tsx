@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   form: {
-    gap: spacing.lg,
+    gap: spacing.md, // tighter for Quiet Ledger
   },
   fieldGroup: {
     gap: spacing.xs,

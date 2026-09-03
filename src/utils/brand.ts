@@ -17,7 +17,7 @@ const BRAND_BY_NAME = {
   peacock: '#6933FF',
   figma: '#F24E1E',
   'new york times': '#F5F5F0',
-  'nytimes': '#F5F5F0',
+  nytimes: '#F5F5F0',
   'new york': '#F5F5F0',
   'disney+': '#113CCF',
   disney: '#113CCF',
@@ -39,7 +39,7 @@ const CATEGORY_COLOR = {
   lifestyle: '#EC4899',
   education: '#06B6D4',
   utilities: '#6B7280',
-  other: '#1B232E',
+  other: '#23282B',
 } satisfies Record<CategorySlug, string>;
 
 /** Resolve a background hex for a subscription. */
@@ -61,7 +61,8 @@ export function brandBackground(name: string, category: CategorySlug): string {
 /** White icon on dark bg, dark icon on light bg. */
 export function brandIconColor(bg: string): string {
   // light backgrounds: NYT off-white, news fallback
-  if (bg.toLowerCase() === '#f5f5f0' || bg.toLowerCase() === '#e5e5e5') return '#0B0F14';
+  if (bg.toLowerCase() === '#f5f5f0' || bg.toLowerCase() === '#e5e5e5')
+    return '#1C1A17';
   // simple luminance check for custom colors
   const hex = bg.replace('#', '');
   if (hex.length !== 6) return '#FFFFFF';
@@ -69,5 +70,5 @@ export function brandIconColor(bg: string): string {
   const g = parseInt(hex.slice(2, 4), 16);
   const b = parseInt(hex.slice(4, 6), 16);
   const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return lum > 0.6 ? '#0B0F14' : '#FFFFFF';
+  return lum > 0.6 ? '#1C1A17' : '#FFFFFF';
 }

@@ -32,7 +32,7 @@ export function InsightStrip({ insight }: { insight: Insight }) {
   const accent = insight.kind === 'trial' ? colors.warning : colors.accent;
 
   return (
-    <Card padding={spacing.lg} elevation="low">
+    <Card padding={spacing.md} elevation="low">
       <View style={styles.row}>
         <Ionicons name={ICONS[insight.kind]} size={18} color={accent} />
         <Text

@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
-    gap: spacing.lg,
+    gap: spacing.md, // tighter for Quiet Ledger
     paddingBottom: spacing['3xl'],
   },
   notFound: {

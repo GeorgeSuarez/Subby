@@ -12,9 +12,8 @@
  *   - iOS: SF Symbols (built in, no asset files required)
  *   - Android: Material drawable names (resolved by `react-native-screens`)
  *
- * The dark-first palette colors the tab bar via the design tokens defined in
- * Step 2 — accent `#22D3EE` is used for the selected tint so the active tab
- * reads on the dark surface.
+ * Quiet Ledger palette colors the tab bar via design tokens — deep ink-teal
+ * accent for selected tint, warm paper/ink surfaces for background.
  */
 
 import { NativeTabs } from 'expo-router/unstable-native-tabs';

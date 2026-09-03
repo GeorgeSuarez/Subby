@@ -1,10 +1,9 @@
 /**
- * RenewalsList — upcoming renewals as a timeline for the dashboard.
+ * RenewalsList — upcoming renewals for the dashboard.
  *
- * Shows the top N renewals (within the next 30 days) on a vertical hairline,
- * sorted by soonest. The leading dot encodes urgency: critical (today) is
- * negative, the soonest upcoming renewal glows accent, calm renewals sit
- * quiet. Long-press opens the native quick-actions sheet.
+ * Shows the top N renewals (within the next 30 days), sorted by soonest.
+ * Each row leads with the subscription's brand icon tile; urgency reads in
+ * the trailing countdown text only. Long-press opens the native quick-actions sheet.
  *
  * Skill rule `react-state-minimize`: the upcoming list is derived during
  * render from the active-subscriptions selector via `renewalsWithin`.
@@ -19,9 +18,10 @@ import { useCallback } from 'react';
 import { Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { Card, Text } from '@/design/components';
+import { Avatar, Card, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
-import { radius, spacing } from '@/design/tokens';
+import { spacing } from '@/design/tokens';
+import { brandBackground, brandIconColor } from '@/utils/brand';
 import {
   useActiveSubscriptions,
   useSubscriptionsStore,
@@ -39,7 +39,7 @@ import {
   formatMonthDay,
   formatRenewalIn,
 } from '@/utils/format';
-import { impactMedium } from '@/utils/haptics';
+import { impactLight } from '@/utils/haptics';
 import {
   confirmDelete,
   openRowActions,
@@ -53,7 +53,7 @@ const RENEWAL_WINDOW_DAYS = 30;
 export function RenewalsList() {
   const subs = useActiveSubscriptions();
   const router = useRouter();
-  const { colors, shadow } = useTheme();
+  const { colors } = useTheme();
   const archive = useSubscriptionsStore((s) => s.archive);
   const remove = useSubscriptionsStore((s) => s.remove);
 
@@ -97,7 +97,7 @@ export function RenewalsList() {
     (id: string) => {
       const target = subs.find((s) => s.id === id);
       if (!target) return;
-      void impactMedium();
+      void impactLight(); // quieter for Quiet Ledger
       openRowActions({
         name: target.name,
         archived: target.archived,
@@ -125,12 +125,12 @@ export function RenewalsList() {
             </Text>
           </View>
         ) : (
-          <View style={styles.timeline}>
-            <View style={[styles.rail, { backgroundColor: colors.border }]} />
-            {upcoming.map((s, i) => {
+          <View>
+            {upcoming.map((s) => {
               const nextISO = nextRenewalAfter(s);
               const days = daysUntilRenewal(s);
               const tone = renewalUrgencyTone(days);
+              const bg = brandBackground(s.name, s.category);
               return (
                 <Pressable
                   key={s.id}
@@ -143,11 +143,11 @@ export function RenewalsList() {
                     pressed ? { opacity: 0.6 } : null,
                   ]}
                 >
-                  <View
-                    style={[
-                      styles.dot,
-                      dotStyle(tone, i === 0, colors, shadow),
-                    ]}
+                  <Avatar
+                    icon={s.icon}
+                    backgroundColor={bg}
+                    iconColor={brandIconColor(bg)}
+                    size="sm"
                   />
                   <View style={styles.rowBody}>
                     <Text
@@ -202,37 +202,6 @@ export function RenewalsList() {
 
 // --- Sub-components ---------------------------------------------------------
 
-/** Named owner contract for the timeline dot's dynamic style. */
-type DotStyle = {
-  backgroundColor: string;
-  boxShadow?: string;
-  borderWidth?: number;
-  borderColor?: string;
-};
-
-/** Timeline dot colors — critical reads negative, the soonest glows accent. */
-function dotStyle(
-  tone: RenewalUrgency,
-  isSoonest: boolean,
-  colors: ReturnType<typeof useTheme>['colors'],
-  shadow: ReturnType<typeof useTheme>['shadow'],
-): DotStyle {
-  if (tone === 'critical') {
-    return { backgroundColor: colors.negative };
-  }
-  if (isSoonest) {
-    return { backgroundColor: colors.accent, boxShadow: shadow('glowAccent') };
-  }
-  if (tone === 'soon') {
-    return { backgroundColor: colors.accentMuted };
-  }
-  return {
-    backgroundColor: colors.surfaceHigher,
-    borderWidth: 1,
-    borderColor: colors.border,
-  };
-}
-
 /** Map an urgency band to a text color token (pure; color is presentation). */
 function toneTextColor(
   tone: RenewalUrgency,
@@ -279,30 +248,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
   },
-  timeline: {
-    position: 'relative',
-  },
-  rail: {
-    position: 'absolute',
-    left: 5,
-    top: spacing.sm,
-    bottom: spacing.sm,
-    width: 2,
-    borderRadius: radius.pill,
-  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    minHeight: 64,
-  },
-  dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    borderCurve: 'continuous',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md, // tighter for Quiet Ledger (16→12)
+    paddingVertical: spacing.xs + 2, // 4→6 tighter
+    minHeight: 56,
   },
   rowBody: {
     flex: 1,

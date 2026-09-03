@@ -172,10 +172,10 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    minHeight: 64,
+    gap: spacing.sm, // tighter for Quiet Ledger
+    paddingHorizontal: spacing.md, // 16→12
+    paddingVertical: spacing.xs + 2, // 8→6
+    minHeight: 56, // 64→56
   },
   body: {
     flex: 1,

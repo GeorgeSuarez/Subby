@@ -53,7 +53,7 @@ export function SignUpEmailSentScreen() {
   return (
     <Surface background="surface" style={styles.root}>
       <Animated.View
-        entering={FadeInDown.duration(280)}
+        entering={FadeInDown.duration(160)} // quieter for Quiet Ledger
         style={[styles.content, { paddingTop: insets.top + spacing['3xl'] }]}
       >
         <View

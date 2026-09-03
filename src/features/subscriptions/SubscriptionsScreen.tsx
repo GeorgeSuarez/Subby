@@ -49,7 +49,7 @@ import {
   formatRenewalIn,
 } from '@/utils/format';
 import { toast } from '@/store/useToastStore';
-import { selection, impactMedium } from '@/utils/haptics';
+import { selection, impactLight } from '@/utils/haptics';
 import { brandBackground, brandIconColor } from '@/utils/brand';
 import type { Subscription } from '@/types/subscription';
 
@@ -115,7 +115,7 @@ export function SubscriptionsScreen() {
     (id: string) => {
       const target = subs.find((s) => s.id === id);
       if (!target) return;
-      void impactMedium();
+      void impactLight(); // quieter for Quiet Ledger
       openRowActions({
         name: target.name,
         archived: target.archived,
@@ -132,7 +132,7 @@ export function SubscriptionsScreen() {
     (id: string) => {
       const target = subs.find((s) => s.id === id);
       if (!target) return;
-      void impactMedium();
+      void impactLight(); // quieter for Quiet Ledger
       void runArchive(id, !target.archived);
     },
     [subs, runArchive],
@@ -245,7 +245,9 @@ export function SubscriptionsScreen() {
         ListHeaderComponent={header}
         ListFooterComponent={footer}
         renderItem={({ item }) => {
-          const bg = item.archived ? 'surfaceHigher' : brandBackground(item.name, item.category);
+          const bg = item.archived
+            ? 'surfaceHigher'
+            : brandBackground(item.name, item.category);
           const fg = item.archived ? undefined : brandIconColor(bg);
           return (
             <SwipeableRow
@@ -302,7 +304,7 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: spacing.lg,
-    gap: spacing.md,
+    gap: spacing.sm, // tighter for Quiet Ledger
     // Pad bottom so the last sort-row chip clears the first row beneath it.
     paddingBottom: spacing.sm,
   },

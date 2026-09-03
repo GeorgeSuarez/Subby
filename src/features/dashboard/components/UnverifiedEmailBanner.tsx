@@ -44,7 +44,9 @@ export function UnverifiedEmailBanner() {
   }
 
   return (
-    <Animated.View entering={FadeInDown.duration(280)}>
+    <Animated.View entering={FadeInDown.duration(160)}>
+      {' '}
+      // quieter for Quiet Ledger
       <Pressable
         onPress={() => router.push('/verify-account')}
         style={({ pressed }) => [

@@ -57,7 +57,7 @@ export function EmptyState({
   return (
     <View style={styles.container}>
       <Animated.View
-        entering={ZoomIn.springify().damping(14).stiffness(180).delay(120)}
+        entering={ZoomIn.springify().damping(18).stiffness(200).delay(100)} // quieter for Quiet Ledger
         style={[
           styles.decoration,
           {
@@ -78,11 +78,11 @@ export function EmptyState({
       </Animated.View>
 
       <Animated.View
-        entering={FadeInDown.duration(280)
+        entering={FadeInDown.duration(160)
           .springify()
-          .damping(16)
+          .damping(18)
           .stiffness(200)
-          .delay(180)}
+          .delay(120)} // quieter for Quiet Ledger
         style={styles.copy}
       >
         <Text variant="title" color="textPrimary" align="center">
@@ -97,7 +97,9 @@ export function EmptyState({
       </Animated.View>
 
       {actionLabel && onAction ? (
-        <Animated.View entering={FadeInDown.duration(260).delay(260)}>
+        <Animated.View entering={FadeInDown.duration(160).delay(160)}>
+          {' '}
+          // quieter for Quiet Ledger
           <Button onPress={onAction} variant="primary" size="lg">
             {actionLabel}
           </Button>

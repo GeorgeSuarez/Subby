@@ -32,7 +32,7 @@ import { toast } from '@/store/useToastStore';
 import { activeTrials, expiredTrials, type RenewalTone } from '@/utils/billing';
 import type { CategorySlug } from '@/types/subscription';
 import { formatMonthDay } from '@/utils/format';
-import { impactMedium } from '@/utils/haptics';
+import { impactLight } from '@/utils/haptics';
 import { brandBackground, brandIconColor } from '@/utils/brand';
 import {
   confirmDelete,
@@ -94,7 +94,7 @@ export function TrialsCard() {
     (id: string) => {
       const target = subs.find((s) => s.id === id);
       if (!target) return;
-      void impactMedium();
+      void impactLight(); // quieter for Quiet Ledger
       openRowActions({
         name: target.name,
         archived: target.archived,
@@ -142,7 +142,10 @@ export function TrialsCard() {
         {active.map((t) => {
           const orig = subs.find((s) => s.id === t.id);
           // SAFETY: orig.category is CategorySlug when orig exists; fallback 'other' is a valid CategorySlug.
-          const bg = brandBackground(t.name, (orig?.category ?? 'other') as CategorySlug);
+          const bg = brandBackground(
+            t.name,
+            (orig?.category ?? 'other') as CategorySlug,
+          );
           return (
             <ListRow
               key={t.id}
@@ -168,7 +171,10 @@ export function TrialsCard() {
             {ended.map((t) => {
               const orig = subs.find((s) => s.id === t.id);
               // SAFETY: orig.category is CategorySlug when orig exists; fallback 'other' is a valid CategorySlug.
-              const bg = brandBackground(t.name, (orig?.category ?? 'other') as CategorySlug);
+              const bg = brandBackground(
+                t.name,
+                (orig?.category ?? 'other') as CategorySlug,
+              );
               return (
                 <ListRow
                   key={t.id}
@@ -235,7 +241,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md, // tighter for Quiet Ledger
   },
   empty: {
     padding: spacing.lg,

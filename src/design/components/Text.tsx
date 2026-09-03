@@ -14,6 +14,7 @@ import { StyleSheet, Text as RNText } from 'react-native';
 
 import { useTheme } from '@/design/theme';
 import {
+  fontFamily,
   fontWeight,
   lineHeight,
   typeScale,
@@ -36,16 +37,21 @@ export type TextProps = Omit<ComponentProps<typeof RNText>, 'color'> & {
   numberOfLines?: number;
 };
 
+// Quiet Ledger: Newsreader serif for display/stat/title, system for body/caption/headline.
+// System fallback is automatic if the font hasn't loaded yet.
 const variantStyle = StyleSheet.create({
   display: {
     fontSize: typeScale.display,
     lineHeight: lineHeight.display,
     fontWeight: fontWeight.semibold,
+    fontFamily: fontFamily.displaySemibold,
+    fontVariant: ['tabular-nums'],
   },
   title: {
     fontSize: typeScale.title,
     lineHeight: lineHeight.title,
     fontWeight: fontWeight.semibold,
+    fontFamily: fontFamily.displaySemibold,
   },
   headline: {
     fontSize: typeScale.headline,
@@ -65,7 +71,9 @@ const variantStyle = StyleSheet.create({
   stat: {
     fontSize: typeScale.stat,
     lineHeight: lineHeight.stat,
-    fontWeight: fontWeight.bold,
+    fontWeight: fontWeight.semibold,
+    fontFamily: fontFamily.displaySemibold,
+    fontVariant: ['tabular-nums'],
   },
 });
 

@@ -35,7 +35,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(
           styles.container,
           multiline ? styles.containerMultiline : null,
           {
-            backgroundColor: colors.surfaceHigher,
+            backgroundColor: colors.surfaceElevated, // paper subtle for Quiet Ledger
             borderColor: focused ? colors.accent : colors.border,
           },
           focused ? { boxShadow: '0 0 0 1px ' + colors.accent } : null,

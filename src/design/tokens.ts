@@ -45,72 +45,72 @@ export type Palette = {
 
 export type ColorName = keyof Palette;
 
-/** Brand palette: the dark-first "cool + cyan" identity. */
+/** Quiet Ledger — dark palette: warm ink lineage of paper (light is hero). */
 export const darkPalette: Palette = {
-  // Surfaces — cool, slightly blue-tinted blacks
-  surface: '#0B0F14',
-  surfaceElevated: '#131920',
-  surfaceHigher: '#1B232E',
-  surfaceOverlay: 'rgba(11, 15, 20, 0.72)',
+  // Surfaces — warm ink
+  surface: '#0F1113',
+  surfaceElevated: '#1A1E20',
+  surfaceHigher: '#23282B',
+  surfaceOverlay: 'rgba(15, 17, 19, 0.72)',
 
   // Borders
-  border: '#1F2A36',
-  borderSubtle: '#16202B',
+  border: '#2A3033',
+  borderSubtle: '#1E2326',
 
-  // Text
-  textPrimary: '#F4F7FB',
-  textSecondary: '#93A1B5',
-  textTertiary: '#5E6B7E',
-  textOnAccent: '#03110F',
-
-  // Accent — electric cyan
-  accent: '#22D3EE',
-  accentMuted: '#0E7490',
-  accentSoft: 'rgba(34, 211, 238, 0.12)',
-  accentSoftStrong: 'rgba(34, 211, 238, 0.22)',
-
-  // Semantic
-  positive: '#34D399',
-  positiveSoft: 'rgba(52, 211, 153, 0.14)',
-  negative: '#F87171',
-  negativeSoft: 'rgba(248, 113, 113, 0.14)',
-  warning: '#FBBF24',
-  warningSoft: 'rgba(251, 191, 36, 0.14)',
-
-  // Misc
-  scrim: 'rgba(0, 0, 0, 0.6)',
-  hairline: 'rgba(255, 255, 255, 0.06)',
-} as const;
-
-/** Light palette: shares names with `darkPalette` for easy swapping. */
-export const lightPalette: Palette = {
-  surface: '#F7F9FC',
-  surfaceElevated: '#FFFFFF',
-  surfaceHigher: '#FFFFFF',
-  surfaceOverlay: 'rgba(255, 255, 255, 0.84)',
-
-  border: '#E5E9EF',
-  borderSubtle: '#EEF1F6',
-
-  textPrimary: '#0B0F14',
-  textSecondary: '#5E6B7E',
-  textTertiary: '#93A1B5',
+  // Text — warm paper on ink
+  textPrimary: '#F5F1EB',
+  textSecondary: '#A8A29E',
+  textTertiary: '#78716C',
   textOnAccent: '#FFFFFF',
 
-  accent: '#0891B2',
-  accentMuted: '#0E7490',
-  accentSoft: 'rgba(8, 145, 178, 0.08)',
-  accentSoftStrong: 'rgba(8, 145, 178, 0.16)',
+  // Accent — deep ink-teal (trust over neon)
+  accent: '#22A0BF',
+  accentMuted: '#0E4A5C',
+  accentSoft: 'rgba(34, 160, 191, 0.12)',
+  accentSoftStrong: 'rgba(34, 160, 191, 0.20)',
 
-  positive: '#059669',
-  positiveSoft: 'rgba(5, 150, 105, 0.10)',
-  negative: '#DC2626',
-  negativeSoft: 'rgba(220, 38, 38, 0.10)',
-  warning: '#D97706',
-  warningSoft: 'rgba(217, 119, 6, 0.10)',
+  // Semantic — desaturated for paper calm
+  positive: '#2FB88A',
+  positiveSoft: 'rgba(47, 184, 138, 0.14)',
+  negative: '#F07178',
+  negativeSoft: 'rgba(240, 113, 120, 0.14)',
+  warning: '#E8A838',
+  warningSoft: 'rgba(232, 168, 56, 0.14)',
 
-  scrim: 'rgba(11, 15, 20, 0.48)',
-  hairline: 'rgba(11, 15, 20, 0.06)',
+  // Misc
+  scrim: 'rgba(0, 0, 0, 0.60)',
+  hairline: 'rgba(245, 241, 235, 0.06)',
+} as const;
+
+/** Quiet Ledger — light palette: warm paper hero. */
+export const lightPalette: Palette = {
+  surface: '#FDFCF9',
+  surfaceElevated: '#FFFFFF',
+  surfaceHigher: '#FFFFFF',
+  surfaceOverlay: 'rgba(253, 252, 249, 0.84)',
+
+  border: '#E8E2D9',
+  borderSubtle: '#F0EBE3',
+
+  textPrimary: '#1C1A17',
+  textSecondary: '#78716C',
+  textTertiary: '#A8A29E',
+  textOnAccent: '#FFFFFF',
+
+  accent: '#0E4A5C',
+  accentMuted: '#15566B',
+  accentSoft: 'rgba(14, 74, 92, 0.08)',
+  accentSoftStrong: 'rgba(14, 74, 92, 0.14)',
+
+  positive: '#0D7A5A',
+  positiveSoft: 'rgba(13, 122, 90, 0.10)',
+  negative: '#BE123C',
+  negativeSoft: 'rgba(190, 18, 60, 0.08)',
+  warning: '#92400E',
+  warningSoft: 'rgba(146, 64, 14, 0.08)',
+
+  scrim: 'rgba(28, 26, 23, 0.40)',
+  hairline: 'rgba(28, 26, 23, 0.06)',
 } as const;
 
 /** Spacing scale (in dp). */
@@ -164,7 +164,16 @@ export const typeScale = {
 export type TypeScale = keyof typeof typeScale;
 export type TypeSize = (typeof typeScale)[TypeScale];
 
-/** Font weights (system font, no custom fonts for v1). */
+/** Display font — Quiet Ledger serif for display/stat/title only. Body/caption stay system. */
+export const fontFamily = {
+  display: 'Fraunces-Regular',
+  displaySemibold: 'Fraunces-SemiBold',
+  system: 'System',
+} as const;
+
+export type FontFamily = (typeof fontFamily)[keyof typeof fontFamily];
+
+/** Font weights (system + serif). */
 export const fontWeight = {
   regular: '400',
   medium: '500',
@@ -190,21 +199,21 @@ export const lineHeight = {
  * Dark theme shadows use pure black; light theme shadows are subtler.
  */
 export const darkShadows = {
-  sm: '0 1px 2px rgba(0, 0, 0, 0.24)',
-  md: '0 4px 12px rgba(0, 0, 0, 0.36)',
-  lg: '0 8px 24px rgba(0, 0, 0, 0.44)',
-  xl: '0 18px 48px rgba(0, 0, 0, 0.52)',
-  glowAccent: '0 0 20px rgba(34, 211, 238, 0.35)',
-  glowPositive: '0 0 16px rgba(52, 211, 153, 0.28)',
+  sm: '0 1px 2px rgba(0, 0, 0, 0.28)',
+  md: '0 4px 12px rgba(0, 0, 0, 0.32)',
+  lg: '0 8px 24px rgba(0, 0, 0, 0.38)',
+  xl: '0 18px 48px rgba(0, 0, 0, 0.46)',
+  glowAccent: '0 0 16px rgba(34, 160, 191, 0.22)',
+  glowPositive: '0 0 14px rgba(47, 184, 138, 0.20)',
 } as const;
 
 export const lightShadows = {
-  sm: '0 1px 2px rgba(11, 15, 20, 0.06)',
-  md: '0 4px 12px rgba(11, 15, 20, 0.08)',
-  lg: '0 8px 24px rgba(11, 15, 20, 0.10)',
-  xl: '0 18px 48px rgba(11, 15, 20, 0.12)',
-  glowAccent: '0 0 16px rgba(8, 145, 178, 0.28)',
-  glowPositive: '0 0 16px rgba(5, 150, 105, 0.22)',
+  sm: '0 1px 2px rgba(28, 26, 23, 0.06)',
+  md: '0 4px 12px rgba(28, 26, 23, 0.07)',
+  lg: '0 8px 24px rgba(28, 26, 23, 0.08)',
+  xl: '0 18px 48px rgba(28, 26, 23, 0.10)',
+  glowAccent: '0 0 14px rgba(14, 74, 92, 0.18)',
+  glowPositive: '0 0 14px rgba(13, 122, 90, 0.16)',
 } as const;
 
 /** Names of shadow presets shared by both `darkShadows` and `lightShadows`. */
@@ -226,10 +235,10 @@ export const layout = {
   fabSize: 56,
 } as const;
 
-/** Animation presets (used with Reanimated `withTiming`/`withSpring`). */
+/** Animation presets — quieter for Quiet Ledger (less bounce, faster). */
 export const motion = {
-  timingFast: 120,
-  timingBase: 200,
-  timingSlow: 320,
-  spring: { damping: 14, stiffness: 180, mass: 0.9 },
+  timingFast: 100,
+  timingBase: 160,
+  timingSlow: 280,
+  spring: { damping: 18, stiffness: 200, mass: 0.9 },
 } as const;

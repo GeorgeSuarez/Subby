@@ -16,14 +16,12 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 import { Card, Text } from '@/design/components';
-import { useTheme } from '@/design/theme';
-import { radius, spacing } from '@/design/tokens';
+import { spacing } from '@/design/tokens';
 import {
   useActiveSubscriptions,
   useIsLoadingSubscriptions,
 } from '@/store/useSubscriptionsStore';
 import {
-  billingCyclePosition,
   renewalsThisMonth,
   totalMonthlySpend,
   totalYearlySpend,
@@ -38,14 +36,12 @@ export function DashboardHero() {
   const isLoading = useIsLoadingSubscriptions();
   const currency = useCurrency();
   const budget = useBudget();
-  const { colors, shadow } = useTheme();
 
   // Derived during render (skill `react-state-minimize`).
   const hero = pickHeroState(subs, budget);
   const monthly = totalMonthlySpend(subs);
   const yearly = totalYearlySpend(subs);
   const monthCharges = renewalsThisMonth(subs);
-  const cycle = billingCyclePosition();
 
   // One discrimination on hero.kind (grill Q6/Q11): the headline, tap
   // target, and accessibility label travel together so states can't
@@ -94,39 +90,10 @@ export function DashboardHero() {
             ),
           };
 
-  const content = (
-    <View style={styles.body}>
-      {meta.headline}
-
-      {hero.kind === 'default' ? (
-        <View style={styles.cycleRow}>
-          <View
-            style={[
-              styles.cycleTrack,
-              { backgroundColor: colors.surfaceHigher },
-            ]}
-          >
-            <View
-              style={[
-                styles.cycleDot,
-                {
-                  backgroundColor: colors.accent,
-                  boxShadow: shadow('glowAccent'),
-                  left: `${Math.min(0.98, Math.max(0.02, cycle.fraction)) * 100}%`,
-                },
-              ]}
-            />
-          </View>
-          <Text variant="caption" color="textTertiary">
-            {`Day ${cycle.day} / ${cycle.daysInMonth}`}
-          </Text>
-        </View>
-      ) : null}
-    </View>
-  );
+  const content = <View style={styles.body}>{meta.headline}</View>;
 
   const card = (
-    <Card padding={spacing.xl} elevation="high">
+    <Card padding={spacing.xl} elevation="low">
       {content}
     </Card>
   );
@@ -287,25 +254,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  cycleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  cycleTrack: {
-    flex: 1,
-    height: 3,
-    borderRadius: radius.pill,
-    borderCurve: 'continuous',
-  },
-  cycleDot: {
-    position: 'absolute',
-    top: -2.5,
-    marginLeft: -4,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    borderCurve: 'continuous',
   },
 });
