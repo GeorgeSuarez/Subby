@@ -1,5 +1,5 @@
 /**
- * DashboardScreen — composes the HeroSpend, RenewalsList, and QuickStats cards.
+ * DashboardScreen — composes the DashboardHero, RenewalsList, and QuickStats cards.
  *
  * Skill rule `react-state-minimize`: every aggregate is derived during render
  * from the subscriptions store; this screen owns no subscription state.
@@ -17,7 +17,7 @@
  */
 
 import { useCallback, type ComponentProps } from 'react';
-import { RefreshControl, ScrollView, StyleSheet } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 
 import { EmptyState } from '@/design/components';
@@ -34,18 +34,18 @@ import { useCompletedOnboardingUserIds } from '@/store/useUIStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { toast } from '@/store/useToastStore';
 import { notifyWarning } from '@/utils/haptics';
-import { HeroSpend } from '@/features/dashboard/components/HeroSpend';
+import { Text } from '@/design/components';
+import { DashboardHero } from '@/features/dashboard/components/DashboardHero';
 import { QuickStats } from '@/features/dashboard/components/QuickStats';
-import { CategoryBreakdown } from '@/features/dashboard/components/CategoryBreakdown';
 import { RenewalsList } from '@/features/dashboard/components/RenewalsList';
 import { TrialsCard } from '@/features/dashboard/components/TrialsCard';
 import { InsightStrip } from '@/features/dashboard/components/InsightStrip';
 import { AddFab } from '@/features/dashboard/components/AddFab';
 import { UnverifiedEmailBanner } from '@/features/dashboard/components/UnverifiedEmailBanner';
-import { pickInsight } from '@/features/dashboard/insights';
+import { pickInsightExcept } from '@/features/dashboard/insights';
+import { pickHeroState } from '@/features/dashboard/heroState';
 import { shouldShowOnboarding } from '@/features/onboarding';
-import { useCurrency } from '@/store/useUIStore';
-import { ProGate } from '@/features/paywall/components/ProGate';
+import { useCurrency, useBudget } from '@/store/useUIStore';
 
 type ScrollViewProps = ComponentProps<typeof ScrollView>;
 
@@ -57,6 +57,7 @@ export function DashboardScreen() {
   const hasHydrated = useHasHydrated();
   const hydrate = useSubscriptionsStore((s) => s.hydrate);
   const currency = useCurrency();
+  const budget = useBudget();
 
   // First-run gate — evaluated only after hydration settles so a cold start
   // never flashes an existing account into the wizard while rows are loading.
@@ -76,7 +77,13 @@ export function DashboardScreen() {
   }
 
   // First-applicable dashboard insight — null hides the strip entirely.
-  const insight = pickInsight(subs, currency);
+  // The hero already names an urgent trial, so the strip skips that topic.
+  const hero = pickHeroState(subs, budget);
+  const insight = pickInsightExcept(
+    subs,
+    currency,
+    hero.kind === 'trial' ? 'trial' : null,
+  );
 
   // Empty-state CTA — single stable callback (skill `list-performance-callbacks`).
   const onAdd = useCallback(() => {
@@ -124,14 +131,16 @@ export function DashboardScreen() {
     <Surface background="surface" style={styles.root}>
       <ScrollView {...scrollProps}>
         <UnverifiedEmailBanner />
+        <View style={styles.devBanner}>
+          <Text variant="caption" weight="700" color="accent">
+            DEV BUILD — data resets on reinstall
+          </Text>
+        </View>
         {insight ? <InsightStrip insight={insight} /> : null}
-        <HeroSpend />
+        <DashboardHero />
         <QuickStats />
         <RenewalsList />
         <TrialsCard />
-        <ProGate feature="pieChart">
-          <CategoryBreakdown />
-        </ProGate>
       </ScrollView>
       {/* Primary add affordance — floats above the tab bar. The empty state
           has its own centered CTA, so the FAB only shows with content. */}
@@ -149,6 +158,17 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     // Extra bottom padding so the last card clears the floating Add FAB.
     paddingBottom: spacing['3xl'] + layout.fabSize,
+  },
+  devBanner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    backgroundColor: 'rgba(34, 211, 238, 0.12)',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(34, 211, 238, 0.22)',
+    alignSelf: 'center',
   },
   empty: {
     flex: 1,

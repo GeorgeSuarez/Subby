@@ -4,8 +4,8 @@
     "servers": {
       "maestro": {
         "type": "local",
-        "command": ["maestro", "mcp", "--working-dir", "."],
-      },
-    },
-  },
+        "command": ["maestro", "mcp", "--working-dir", "."]
+      }
+    }
+  }
 }

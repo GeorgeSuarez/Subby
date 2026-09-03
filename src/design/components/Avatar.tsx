@@ -27,11 +27,11 @@ export interface AvatarProps {
   source?: string;
   /** Ionicons glyph name shown when no image is provided. */
   icon?: string;
-  /** Background color token used behind the icon placeholder. */
-  backgroundColor?: keyof Palette;
+  /** Background — palette token or raw hex (e.g. brand color "#E50914"). */
+  backgroundColor?: keyof Palette | (string & {});
   size?: AvatarSize;
-  /** Override the icon color token. Defaults to 'onAccent' when bg is accent, otherwise accent. */
-  iconColor?: keyof Palette;
+  /** Override the icon color — palette token or raw hex. */
+  iconColor?: keyof Palette | (string & {});
   rounded?: boolean;
 }
 
@@ -49,10 +49,14 @@ export const Avatar = forwardRef<View, AvatarProps>(function Avatar(
   const { colors } = useTheme();
   const dim = pixelsBySize[size];
   const r = rounded ? radius.pill : radius.md;
-  const resolvedIconColor =
-    colors[
-      iconColor ?? (backgroundColor === 'accent' ? 'textOnAccent' : 'accent')
-    ];
+  const resolve = (c?: string, fallback?: string) => {
+    if (!c) return undefined;
+    if (c.startsWith('#')) return c;
+    return (colors as Record<string, string>)[c] ?? fallback;
+  };
+  const bg = resolve(backgroundColor, colors.surfaceHigher) ?? colors.surfaceHigher;
+  const defaultIcon = backgroundColor === 'accent' ? colors.textOnAccent : colors.accent;
+  const resolvedIconColor = resolve(iconColor, defaultIcon) ?? defaultIcon;
 
   return (
     <View
@@ -62,7 +66,7 @@ export const Avatar = forwardRef<View, AvatarProps>(function Avatar(
         {
           width: dim,
           height: dim,
-          backgroundColor: colors[backgroundColor],
+          backgroundColor: bg,
           borderRadius: r,
         },
       ]}

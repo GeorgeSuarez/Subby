@@ -48,8 +48,10 @@ export interface ListRowProps extends Omit<
   avatarSource?: string;
   /** Ionicons glyph name when no avatar URL is supplied. */
   icon?: string;
-  /** Background token override (e.g. accent tile). */
-  avatarBackground?: 'surfaceHigher' | 'accent' | 'accentMuted';
+  /** Background — palette token or raw hex (brand color). */
+  avatarBackground?: string;
+  /** Icon color override — palette token or raw hex. */
+  avatarIconColor?: string;
   style?: StyleProp<ViewStyle>;
   /** Optional leading badge chip rendered before the title. */
   leading?: ReactNode;
@@ -76,6 +78,7 @@ function ListRowInner({
   avatarSource,
   icon = 'Cube',
   avatarBackground = 'surfaceHigher',
+  avatarIconColor,
   leading,
   id,
   onPressWithId,
@@ -111,6 +114,7 @@ function ListRowInner({
         source={avatarSource}
         icon={icon}
         backgroundColor={avatarBackground}
+        iconColor={avatarIconColor}
         size="md"
       />
 

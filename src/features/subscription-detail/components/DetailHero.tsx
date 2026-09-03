@@ -18,6 +18,7 @@ import { useTheme } from '@/design/theme';
 import { layout, radius, spacing } from '@/design/tokens';
 import { cycleMeta, categoryMeta } from '@/utils/constants';
 import { formatCurrency, formatCycle, cycleSuffix } from '@/utils/format';
+import { brandBackground } from '@/utils/brand';
 import type { Subscription } from '@/types/subscription';
 
 export interface DetailHeroProps {
@@ -29,7 +30,8 @@ export function DetailHero({ sub }: DetailHeroProps) {
   const cat = categoryMeta(sub.category);
   const cycle = cycleMeta(sub.cycle);
 
-  const tint = sub.color ? sub.color : colors.accent;
+  const brandBg = brandBackground(sub.name, sub.category);
+  const tint = sub.color ? sub.color : brandBg;
   const badgeTone: BadgeTone = sub.archived ? 'warning' : 'accent';
 
   return (

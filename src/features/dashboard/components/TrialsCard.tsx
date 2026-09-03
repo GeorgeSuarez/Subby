@@ -32,6 +32,7 @@ import { toast } from '@/store/useToastStore';
 import { activeTrials, expiredTrials, type RenewalTone } from '@/utils/billing';
 import { formatMonthDay } from '@/utils/format';
 import { impactMedium } from '@/utils/haptics';
+import { brandBackground, brandIconColor } from '@/utils/brand';
 import {
   confirmDelete,
   openRowActions,
@@ -137,40 +138,50 @@ export function TrialsCard() {
           </View>
         )}
 
-        {active.map((t) => (
-          <ListRow
-            key={t.id}
-            id={t.id}
-            title={t.name}
-            subtitle={`Free trial · ends ${formatMonthDay(t.endISO)}`}
-            trailingSubtitle={t.label}
-            trailingSubtitleColor={toneTextColor(t.tone)}
-            icon={t.icon}
-            avatarBackground="surfaceHigher"
-            onPressWithId={onRowPress}
-            onLongPressWithId={onRowLongPress}
-          />
-        ))}
+        {active.map((t) => {
+          const orig = subs.find((s) => s.id === t.id);
+          const bg = brandBackground(t.name, (orig?.category ?? 'other') as any);
+          return (
+            <ListRow
+              key={t.id}
+              id={t.id}
+              title={t.name}
+              subtitle={`Free trial · ends ${formatMonthDay(t.endISO)}`}
+              trailingSubtitle={t.label}
+              trailingSubtitleColor={toneTextColor(t.tone)}
+              icon={t.icon}
+              avatarBackground={bg}
+              avatarIconColor={brandIconColor(bg)}
+              onPressWithId={onRowPress}
+              onLongPressWithId={onRowLongPress}
+            />
+          );
+        })}
 
         {ended.length > 0 ? (
           <View style={styles.section}>
             <Text variant="caption" color="textTertiary" weight="600">
               Ended
             </Text>
-            {ended.map((t) => (
-              <ListRow
-                key={t.id}
-                id={t.id}
-                title={t.name}
-                subtitle={`Free trial · ended ${formatMonthDay(t.endISO)}`}
-                trailingSubtitle={endedLabel(t.days)}
-                trailingSubtitleColor="negative"
-                icon={t.icon}
-                avatarBackground="surfaceHigher"
-                onPressWithId={onRowPress}
-                onLongPressWithId={onRowLongPress}
-              />
-            ))}
+            {ended.map((t) => {
+              const orig = subs.find((s) => s.id === t.id);
+              const bg = brandBackground(t.name, (orig?.category ?? 'other') as any);
+              return (
+                <ListRow
+                  key={t.id}
+                  id={t.id}
+                  title={t.name}
+                  subtitle={`Free trial · ended ${formatMonthDay(t.endISO)}`}
+                  trailingSubtitle={endedLabel(t.days)}
+                  trailingSubtitleColor="negative"
+                  icon={t.icon}
+                  avatarBackground={bg}
+                  avatarIconColor={brandIconColor(bg)}
+                  onPressWithId={onRowPress}
+                  onLongPressWithId={onRowLongPress}
+                />
+              );
+            })}
           </View>
         ) : null}
       </Card.Body>

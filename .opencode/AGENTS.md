@@ -11,8 +11,10 @@ Run these from the project root before considering any task complete:
 | ---------------------- | ---------------------------------- |
 | Install deps           | `npm install`                      |
 | Start dev ( Expo )     | `npm run start`                    |
+| Start dev-client Metro | `npm run start:dev-client`         |
 | Start iOS              | `npm run ios`                      |
 | Start Android          | `npm run android`                  |
+| Run dev build (Droid)  | `npm run android:dev`              |
 | Lint                   | `npm run lint`                     |
 | Lint + autofix         | `npm run lint:fix`                 |
 | Format                 | `npm run format`                   |
@@ -155,7 +157,12 @@ Run these from the project root before considering any task complete:
 
 - `eas.json` defines three profiles: **development** (internal simulator/APK for
   dev), **preview** (internal TestFlight/APK for QA), **production** (App Store
-  - Play Store submission).
+  - Play Store submission). All profiles share the `com.subby.app` ID by
+    design (no side-by-side dev/prod installs).
+- Dev builds (local `expo run:*` and the `development` EAS profile) need
+  `expo-dev-client` (installed). `npm run ios` / `npm run android:dev` build
+  the local dev client; `npm run start:dev-client` serves Metro for it.
+  `npm run android` targets Expo Go, not the dev build.
 - `app.json` configures the Subby bundle identifier `com.subby.app` and the
   iOS `.icon` asset catalog (`assets/expo.icon`) for the new Apple Icon
   Composer format (dark gradient fill + cyan Ledger Stack layer).

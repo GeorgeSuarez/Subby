@@ -1,5 +1,5 @@
 /**
- * Dashboard hero state — pure, dependency-free adaptive hero selection.
+ * Dashboard hero state — pure adaptive hero selection.
  *
  * Priority chain (grill Q6): a trial ending within 3 days outranks everything
  * (it expires), then an over-budget or projected-over money state, then the
@@ -9,6 +9,8 @@
  * Skill rules:
  *  - `react-state-minimize`: everything is derived during render.
  *  - No React / RN imports so this module is fully Jest-testable in Node.
+ *    It derives from `@/utils/billing` helpers (not dependency-free, but
+ *    free of UI framework imports).
  */
 
 import {
@@ -31,7 +33,7 @@ export type HeroState =
       /** Monthly-equivalent price once the trial converts. */
       priceAfter: number;
       /** Additional urgent trials beyond the named one. */
-      more: number;
+      moreCount: number;
     }
   | {
       kind: 'budget';
@@ -62,27 +64,22 @@ export function pickHeroState(
       kind: 'trial',
       trial: first,
       priceAfter: sub ? monthlyEquivalent(sub) : 0,
-      more: urgent.length - 1,
+      moreCount: urgent.length - 1,
     };
   }
 
   if (Number.isFinite(budget) && budget > 0) {
     const monthly = totalMonthlySpend(subs);
     const projection = projectedMonthEndSpend(subs);
-    if (monthly > budget) {
+    // Already over spends the budget; otherwise the projection may still
+    // land over — one shape, two triggers.
+    const over = monthly > budget;
+    const overAmount = (over ? monthly : projection.projected) - budget;
+    if (overAmount > 0) {
       return {
         kind: 'budget',
-        over: true,
-        overAmount: monthly - budget,
-        budget,
-        projected: projection.projected,
-      };
-    }
-    if (projection.projected > budget) {
-      return {
-        kind: 'budget',
-        over: false,
-        overAmount: projection.projected - budget,
+        over,
+        overAmount,
         budget,
         projected: projection.projected,
       };

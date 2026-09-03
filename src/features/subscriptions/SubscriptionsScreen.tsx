@@ -50,6 +50,7 @@ import {
 } from '@/utils/format';
 import { toast } from '@/store/useToastStore';
 import { selection, impactMedium } from '@/utils/haptics';
+import { brandBackground, brandIconColor } from '@/utils/brand';
 import type { Subscription } from '@/types/subscription';
 
 type FlashListProps = ComponentProps<typeof FlashList<Subscription>>;
@@ -240,25 +241,31 @@ export function SubscriptionsScreen() {
         keyExtractor={(item) => item.id}
         maintainVisibleContentPosition={{ disabled: true }}
         contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.listContent}
         ListHeaderComponent={header}
         ListFooterComponent={footer}
-        renderItem={({ item }) => (
-          <SwipeableRow
-            id={item.id}
-            archived={item.archived}
-            onAction={onSwipeAction}
-            onPressWithId={onRowPress}
-            onLongPressWithId={onRowLongPress}
-            title={item.name}
-            subtitle={rowSubtitle(item)}
-            trailingTitle={formatCurrency(item.amount, item.currency)}
-            trailingSubtitle={rowTrailingSubtitle(item, activeIdSet)}
-            icon={item.icon}
-            avatarBackground="surfaceHigher"
-            disabled={item.archived}
-            style={item.archived ? styles.archivedRow : undefined}
-          />
-        )}
+        renderItem={({ item }) => {
+          const bg = item.archived ? 'surfaceHigher' : brandBackground(item.name, item.category);
+          const fg = item.archived ? undefined : brandIconColor(bg as string);
+          return (
+            <SwipeableRow
+              id={item.id}
+              archived={item.archived}
+              onAction={onSwipeAction}
+              onPressWithId={onRowPress}
+              onLongPressWithId={onRowLongPress}
+              title={item.name}
+              subtitle={rowSubtitle(item)}
+              trailingTitle={formatCurrency(item.amount, item.currency)}
+              trailingSubtitle={rowTrailingSubtitle(item, activeIdSet)}
+              icon={item.icon}
+              avatarBackground={bg}
+              avatarIconColor={fg}
+              disabled={item.archived}
+              style={item.archived ? styles.archivedRow : undefined}
+            />
+          );
+        }}
       />
     </Surface>
   );
@@ -321,5 +328,8 @@ const styles = StyleSheet.create({
   },
   archivedRow: {
     opacity: 0.5,
+  },
+  listContent: {
+    paddingBottom: spacing['3xl'],
   },
 });

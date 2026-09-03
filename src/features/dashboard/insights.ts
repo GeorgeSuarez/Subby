@@ -46,14 +46,32 @@ export function pickInsight(
   subs: readonly Subscription[],
   currency: CurrencyCode,
 ): Insight | null {
-  return (
-    trialInsight(subs) ??
-    savingsInsight(subs, currency) ??
-    biggestInsight(subs, currency) ??
-    categoryInsight(subs) ??
-    peakMonthInsight(subs, currency) ??
-    currencyInsight(subs)
-  );
+  return pickInsightExcept(subs, currency, null);
+}
+
+/**
+ * Pick the first applicable insight whose kind isn't `except`. The dashboard
+ * passes the hero's topic (e.g. `'trial'` when the hero names a trial) so
+ * the strip never repeats what the hero already says.
+ */
+export function pickInsightExcept(
+  subs: readonly Subscription[],
+  currency: CurrencyCode,
+  except: InsightKind | null,
+): Insight | null {
+  const builders: Array<() => Insight | null> = [
+    () => trialInsight(subs),
+    () => savingsInsight(subs, currency),
+    () => biggestInsight(subs, currency),
+    () => categoryInsight(subs),
+    () => peakMonthInsight(subs, currency),
+    () => currencyInsight(subs),
+  ];
+  for (const build of builders) {
+    const insight = build();
+    if (insight && insight.kind !== except) return insight;
+  }
+  return null;
 }
 
 /** A free trial ending within 3 days. */

@@ -46,7 +46,7 @@ describe('pickHeroState', () => {
     expect(state.kind).toBe('trial');
     if (state.kind !== 'trial') return;
     expect(state.trial.name).toBe('Linear');
-    expect(state.more).toBe(1);
+    expect(state.moreCount).toBe(1);
     expect(state.priceAfter).toBe(12);
   });
 

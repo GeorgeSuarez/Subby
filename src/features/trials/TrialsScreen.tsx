@@ -1,7 +1,7 @@
 /**
  * TrialsScreen — every active free trial, soonest-ending first.
  *
- * Pushed from the dashboard's HeroSpend trial chip. Each row opens the
+ * Pushed from the dashboard's TrialsCard ("View all"). Each row opens the
  * subscription's detail screen.
  *
  * Skill rules:
