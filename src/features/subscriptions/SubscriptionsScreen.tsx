@@ -246,7 +246,7 @@ export function SubscriptionsScreen() {
         ListFooterComponent={footer}
         renderItem={({ item }) => {
           const bg = item.archived ? 'surfaceHigher' : brandBackground(item.name, item.category);
-          const fg = item.archived ? undefined : brandIconColor(bg as string);
+          const fg = item.archived ? undefined : brandIconColor(bg);
           return (
             <SwipeableRow
               id={item.id}

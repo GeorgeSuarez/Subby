@@ -52,6 +52,7 @@ export const Avatar = forwardRef<View, AvatarProps>(function Avatar(
   const resolve = (c?: string, fallback?: string) => {
     if (!c) return undefined;
     if (c.startsWith('#')) return c;
+    // SAFETY: colors is Palette (string record) — indexing by arbitrary token falls back to undefined when not a palette key.
     return (colors as Record<string, string>)[c] ?? fallback;
   };
   const bg = resolve(backgroundColor, colors.surfaceHigher) ?? colors.surfaceHigher;

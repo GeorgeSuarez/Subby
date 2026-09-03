@@ -30,6 +30,7 @@ import {
 } from '@/store/useSubscriptionsStore';
 import { toast } from '@/store/useToastStore';
 import { activeTrials, expiredTrials, type RenewalTone } from '@/utils/billing';
+import type { CategorySlug } from '@/types/subscription';
 import { formatMonthDay } from '@/utils/format';
 import { impactMedium } from '@/utils/haptics';
 import { brandBackground, brandIconColor } from '@/utils/brand';
@@ -140,7 +141,8 @@ export function TrialsCard() {
 
         {active.map((t) => {
           const orig = subs.find((s) => s.id === t.id);
-          const bg = brandBackground(t.name, (orig?.category ?? 'other') as any);
+          // SAFETY: orig.category is CategorySlug when orig exists; fallback 'other' is a valid CategorySlug.
+          const bg = brandBackground(t.name, (orig?.category ?? 'other') as CategorySlug);
           return (
             <ListRow
               key={t.id}
@@ -165,7 +167,8 @@ export function TrialsCard() {
             </Text>
             {ended.map((t) => {
               const orig = subs.find((s) => s.id === t.id);
-              const bg = brandBackground(t.name, (orig?.category ?? 'other') as any);
+              // SAFETY: orig.category is CategorySlug when orig exists; fallback 'other' is a valid CategorySlug.
+              const bg = brandBackground(t.name, (orig?.category ?? 'other') as CategorySlug);
               return (
                 <ListRow
                   key={t.id}

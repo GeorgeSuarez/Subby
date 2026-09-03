@@ -8,7 +8,7 @@
 import type { CategorySlug } from '@/types/subscription';
 
 // Exact brand hexes for demo seeds + common services
-const BRAND_BY_NAME: Record<string, string> = {
+const BRAND_BY_NAME = {
   netflix: '#E50914',
   spotify: '#1DB954',
   github: '#24292E',
@@ -24,10 +24,10 @@ const BRAND_BY_NAME: Record<string, string> = {
   youtube: '#FF0000',
   hbo: '#7A00E6',
   max: '#7A00E6',
-};
+} satisfies Record<string, string>;
 
 // Fallback per category when name is unknown
-const CATEGORY_COLOR: Record<CategorySlug, string> = {
+const CATEGORY_COLOR = {
   streaming: '#E50914',
   music: '#1DB954',
   cloud: '#007AFF',
@@ -40,15 +40,21 @@ const CATEGORY_COLOR: Record<CategorySlug, string> = {
   education: '#06B6D4',
   utilities: '#6B7280',
   other: '#1B232E',
-};
+} satisfies Record<CategorySlug, string>;
 
 /** Resolve a background hex for a subscription. */
 export function brandBackground(name: string, category: CategorySlug): string {
   const key = name.trim().toLowerCase();
-  if (BRAND_BY_NAME[key]) return BRAND_BY_NAME[key]!;
+  // SAFETY: BRAND_BY_NAME is validated via satisfies Record<string,string>; string key may be missing → undefined fallback.
+  // oxlint-disable-next-line anti-slop/no-known-value-widening -- arbitrary brand lookup, fallback to category
+  const hit = (BRAND_BY_NAME as Record<string, string>)[key];
+  if (hit) return hit;
   // try without + / spaces for fuzzy match
   const short = key.replace(/\+/g, '').trim();
-  if (BRAND_BY_NAME[short]) return BRAND_BY_NAME[short]!;
+  // SAFETY: same as above — brand map lookup by arbitrary string.
+  // oxlint-disable-next-line anti-slop/no-known-value-widening -- arbitrary brand lookup, fallback to category
+  const hitShort = (BRAND_BY_NAME as Record<string, string>)[short];
+  if (hitShort) return hitShort;
   return CATEGORY_COLOR[category] ?? CATEGORY_COLOR.other;
 }
 
