@@ -19,5 +19,5 @@ appId: com.subby.app
     timeout: 120000
 - openLink: subby://reset-password
 - extendedWaitUntil:
-    visible: 'Reset your password|Choose a new password'
+    visible: 'Verify your password'
     timeout: 30000

@@ -15,6 +15,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Button, Card, Text } from '@/design/components';
@@ -32,6 +33,7 @@ const TERMS_URL = 'https://subby.app/terms';
 
 export function PaywallScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const isPro = useEntitlementStore((s) => s.isPro);
   const {
@@ -50,7 +52,8 @@ export function PaywallScreen() {
 
   const onClose = () => {
     if (router.canGoBack()) router.back();
-    else router.replace('/');
+    // No '/' route exists — land on the tabs, never a dead end.
+    else router.replace('/(tabs)');
   };
 
   const onPurchase = async () => {
@@ -84,7 +87,11 @@ export function PaywallScreen() {
     <Surface background="surface" style={styles.root}>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          // Keep the close button clear of the status bar (no header here).
+          { paddingTop: insets.top + spacing.sm },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <Pressable

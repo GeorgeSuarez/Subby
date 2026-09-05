@@ -98,8 +98,6 @@ export function EmptyState({
 
       {actionLabel && onAction ? (
         <Animated.View entering={FadeInDown.duration(160).delay(160)}>
-          {' '}
-          // quieter for Quiet Ledger
           <Button onPress={onAction} variant="primary" size="lg">
             {actionLabel}
           </Button>

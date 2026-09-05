@@ -80,7 +80,6 @@ export function DashboardHero() {
         : {
             headline: (
               <DefaultHeadline
-                count={subs.length}
                 monthly={monthly}
                 yearly={yearly}
                 monthCharges={monthCharges.count}
@@ -123,14 +122,12 @@ type HeroMeta = {
 // --- Headlines --------------------------------------------------------------
 
 function DefaultHeadline({
-  count,
   monthly,
   yearly,
   monthCharges,
   currency,
   isLoading,
 }: {
-  count: number;
   monthly: number;
   yearly: number;
   monthCharges: number;
@@ -142,9 +139,6 @@ function DefaultHeadline({
       <View style={styles.labelRow}>
         <Text variant="caption" color="textSecondary">
           Monthly spend
-        </Text>
-        <Text variant="caption" color="textTertiary" weight="500">
-          / {count} active
         </Text>
       </View>
       {isLoading ? (

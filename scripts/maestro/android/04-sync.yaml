@@ -3,6 +3,9 @@
 appId: com.subby.app
 ---
 - launchApp: com.subby.app
+- extendedWaitUntil:
+    visible: 'Monthly spend'
+    timeout: 60000
 - openLink: subby://subscriptions
 - extendedWaitUntil:
     visible: '.*Netflix.*|Retry|Sync now'
@@ -12,6 +15,7 @@ appId: com.subby.app
       visible: 'Retry|Sync now'
     commands:
       - tapOn: 'Retry|Sync now'
+- tapOn: 'Archived'
 - extendedWaitUntil:
     visible: '.*Spotify.*'
     timeout: 30000

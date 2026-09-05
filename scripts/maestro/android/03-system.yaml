@@ -3,6 +3,9 @@
 appId: com.subby.app
 ---
 - launchApp: com.subby.app
+- extendedWaitUntil:
+    visible: 'Monthly spend'
+    timeout: 60000
 - openLink: subby://subscription/add
 - extendedWaitUntil:
     visible: 'New subscription'

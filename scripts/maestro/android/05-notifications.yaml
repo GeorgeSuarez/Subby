@@ -4,6 +4,9 @@
 appId: com.subby.app
 ---
 - launchApp: com.subby.app
+- extendedWaitUntil:
+    visible: 'Monthly spend'
+    timeout: 60000
 - openLink: subby://subscription/add
 - extendedWaitUntil:
     visible: 'New subscription'
@@ -18,6 +21,10 @@ appId: com.subby.app
       visible: 'Allow'
     commands:
       - tapOn: 'Allow'
+- swipe:
+    start: '50%, 70%'
+    end: '50%, 25%'
+    duration: 500
 - tapOn:
     id: 'add-submit'
 - extendedWaitUntil:
