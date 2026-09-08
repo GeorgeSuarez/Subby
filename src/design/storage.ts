@@ -24,7 +24,7 @@ import type { StateStorage } from 'zustand/middleware';
 const memory = new Map<string, string>();
 
 /** In-memory fallback (also the pre-persistence v1 adapter). */
-export const memoryStorage: StateStorage = {
+const memoryStorage: StateStorage = {
   getItem: (name) => memory.get(name) ?? null,
   setItem: (name, value) => {
     memory.set(name, value);
@@ -76,36 +76,20 @@ function getSqliteStorage(): Promise<StateStorage | null> {
 /** True in browsers / react-native-web; false on Hermes and in node-Jest. */
 const isWeb = 'localStorage' in globalThis;
 
+/** Resolve the active backend: web → sqlite → memory. */
+async function backend(): Promise<StateStorage> {
+  if (isWeb) return webStorage;
+  return (await getSqliteStorage()) ?? memoryStorage;
+}
+
 /** Shared storage instance for all persisted Zustand stores. */
 export const persistentStorage: StateStorage = {
-  getItem: async (name) => {
-    if (isWeb) return webStorage.getItem(name);
-    const sqlite = await getSqliteStorage();
-    return sqlite ? sqlite.getItem(name) : memoryStorage.getItem(name);
-  },
+  getItem: async (name) => (await backend()).getItem(name),
   setItem: async (name, value) => {
-    if (isWeb) {
-      webStorage.setItem(name, value);
-      return;
-    }
-    const sqlite = await getSqliteStorage();
-    if (sqlite) {
-      await sqlite.setItem(name, value);
-    } else {
-      memoryStorage.setItem(name, value);
-    }
+    await (await backend()).setItem(name, value);
   },
   removeItem: async (name) => {
-    if (isWeb) {
-      webStorage.removeItem(name);
-      return;
-    }
-    const sqlite = await getSqliteStorage();
-    if (sqlite) {
-      await sqlite.removeItem(name);
-    } else {
-      memoryStorage.removeItem(name);
-    }
+    await (await backend()).removeItem(name);
   },
 };
 
