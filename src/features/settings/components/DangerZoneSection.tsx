@@ -16,7 +16,7 @@
 import { useCallback } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
-import { Button, Card, Text } from '@/design/components';
+import { Button, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -73,17 +73,17 @@ export function DangerZoneSection() {
   if (!ENABLE_DEMO_DATA || !isTestAccount) return null;
 
   return (
-    <Card padding={spacing.lg} elevation="flat">
-      <Card.Header>
+    <View>
+      <View style={styles.header}>
         <Text variant="headline" weight="600" color="negative">
           Danger zone
         </Text>
         <Text variant="caption" color="textSecondary">
           Destructive actions below cannot be undone.
         </Text>
-      </Card.Header>
+      </View>
 
-      <View style={[styles.row, { borderColor: colors.border }]}>
+      <View style={[styles.row, { borderBottomColor: colors.hairline }]}>
         <View style={styles.meta}>
           <Text variant="body" weight="600" color="textPrimary">
             Wipe all subscriptions
@@ -96,19 +96,22 @@ export function DangerZoneSection() {
           Wipe
         </Button>
       </View>
-    </Card>
+    </View>
   );
 }
 
 // Local View import kept inline to avoid name collisions in this file.
 const styles = StyleSheet.create({
+  header: {
+    gap: spacing.xs,
+    paddingBottom: spacing.md,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderWidth: 1,
-    borderCurve: 'continuous',
-    padding: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
     gap: spacing.sm,
   },
   meta: {

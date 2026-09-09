@@ -17,7 +17,7 @@
 import { useCallback, useEffect } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
-import { Button, Card, Text } from '@/design/components';
+import { Button, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
 import { loadSeedData, removeSeedData } from '@/db/seed';
@@ -78,8 +78,8 @@ export function DemoDataSection() {
   if (!ENABLE_DEMO_DATA || !info?.isAllowed) return null;
 
   return (
-    <Card padding={spacing.lg} elevation="flat">
-      <Card.Header>
+    <View>
+      <View style={styles.header}>
         <Text variant="headline" weight="600">
           Demo data
         </Text>
@@ -87,9 +87,9 @@ export function DemoDataSection() {
           Test account: {TEST_ACCOUNT_EMAIL} / {TEST_ACCOUNT_PASSWORD} — demo
           controls are exclusive to it.
         </Text>
-      </Card.Header>
+      </View>
 
-      <View style={[styles.row, { borderColor: colors.border }]}>
+      <View style={[styles.row, { borderBottomColor: colors.hairline }]}>
         <View style={styles.meta}>
           <Text variant="body" weight="600" color="textPrimary">
             {info.loaded
@@ -112,18 +112,21 @@ export function DemoDataSection() {
           </Button>
         )}
       </View>
-    </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  header: {
+    gap: spacing.xs,
+    paddingBottom: spacing.md,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderWidth: 1,
-    borderCurve: 'continuous',
-    padding: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
     gap: spacing.sm,
   },
   meta: {

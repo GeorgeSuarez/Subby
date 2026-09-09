@@ -16,7 +16,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { useRouter } from 'expo-router';
 
-import { Button, Card, Text } from '@/design/components';
+import { Button, Text } from '@/design/components';
 import { spacing } from '@/design/tokens';
 import { AmountInput } from '@/features/add-subscription/components/AmountInput';
 import { useBudget, useCurrency, useUIStore } from '@/store/useUIStore';
@@ -45,15 +45,15 @@ export function BudgetSection() {
 
   if (!canUseBudget) {
     return (
-      <Card padding={spacing.lg} elevation="flat">
-        <Card.Header>
-          <Text variant="headline" weight="600">
-            Budget
+      <View>
+        <View style={styles.header}>
+          <Text variant="headline" color="textPrimary">
+            Set a monthly budget to help optimze your spending habits.
           </Text>
           <Text variant="caption" color="textSecondary">
-            Set a monthly budget and see forecast.
+            Adds a progress bar in your dashboard to help visualize your budget.
           </Text>
-        </Card.Header>
+        </View>
         <Button
           onPress={() => router.push('/subscription/paywall')}
           variant="primary"
@@ -61,13 +61,13 @@ export function BudgetSection() {
         >
           Unlock with Pro
         </Button>
-      </Card>
+      </View>
     );
   }
 
   return (
-    <Card padding={spacing.lg} elevation="flat">
-      <Card.Header>
+    <View>
+      <View style={styles.header}>
         <Text variant="headline" weight="600">
           Budget
         </Text>
@@ -76,7 +76,7 @@ export function BudgetSection() {
             ? `Dashboard shows progress against ${formatCurrency(budget, currency)}/mo`
             : 'No budget set — the dashboard hero stays clean.'}
         </Text>
-      </Card.Header>
+      </View>
 
       <View style={styles.row}>
         <View style={styles.input}>
@@ -92,11 +92,16 @@ export function BudgetSection() {
           </Button>
         ) : null}
       </View>
-    </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  header: {
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingTop: spacing.lg,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',

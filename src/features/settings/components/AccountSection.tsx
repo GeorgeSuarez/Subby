@@ -14,7 +14,7 @@ import { useCallback, useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { Button, Card, Text } from '@/design/components';
+import { Button, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
 import {
@@ -111,15 +111,9 @@ export function AccountSection() {
   }, [deleteAccount]);
 
   return (
-    <Card padding={spacing.lg} elevation="flat">
-      <Card.Header>
-        <Text variant="headline" weight="600">
-          Account
-        </Text>
-      </Card.Header>
-
+    <View>
       {unverified ? (
-        <View style={[styles.row, { borderColor: colors.border }]}>
+        <View style={[styles.row, { borderBottomColor: colors.hairline }]}>
           <View style={styles.meta}>
             <Text variant="body" weight="600" color="warning">
               Email not verified
@@ -138,7 +132,7 @@ export function AccountSection() {
         </View>
       ) : null}
 
-      <View style={[styles.row, { borderColor: colors.border }]}>
+      <View style={[styles.row, { borderBottomColor: colors.hairline }]}>
         <View style={styles.meta}>
           <Text variant="body" weight="600" color="textPrimary">
             Signed in as
@@ -153,7 +147,7 @@ export function AccountSection() {
         </Button>
       </View>
 
-      <View style={[styles.row, { borderColor: colors.border }]}>
+      <View style={[styles.row, { borderBottomColor: colors.hairline }]}>
         <View style={styles.meta}>
           <Text variant="body" weight="600" color="textPrimary">
             Reset password
@@ -168,7 +162,7 @@ export function AccountSection() {
         </Button>
       </View>
 
-      <View style={[styles.row, { borderColor: colors.border }]}>
+      <View style={[styles.row, { borderBottomColor: colors.hairline }]}>
         <View style={styles.meta}>
           <Text variant="body" weight="600" color="negative">
             Delete account
@@ -183,18 +177,21 @@ export function AccountSection() {
           {deleting ? 'Deleting…' : 'Delete'}
         </Button>
       </View>
-    </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  header: {
+    gap: spacing.xs,
+    paddingBottom: spacing.md,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderWidth: 1,
-    borderCurve: 'continuous',
-    padding: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
     gap: spacing.sm,
   },
   meta: {

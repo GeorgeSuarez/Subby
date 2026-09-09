@@ -14,7 +14,7 @@ import { StyleSheet, Switch, View } from 'react-native';
 
 import { useRouter } from 'expo-router';
 
-import { Button, Card, Text } from '@/design/components';
+import { Button, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
 import { useRemindersEnabled, useUIStore } from '@/store/useUIStore';
@@ -28,14 +28,8 @@ export function RemindersSection() {
   const router = useRouter();
 
   return (
-    <Card padding={spacing.lg} elevation="flat">
-      <Card.Header>
-        <Text variant="headline" weight="600">
-          Notifications
-        </Text>
-      </Card.Header>
-
-      <View style={[styles.row, { borderColor: colors.border }]}>
+    <View>
+      <View style={[styles.row, { borderBottomColor: colors.hairline }]}>
         <View style={styles.meta}>
           <Text variant="body" weight="600" color="textPrimary">
             Renewal reminders
@@ -70,18 +64,21 @@ export function RemindersSection() {
           </Button>
         </View>
       ) : null}
-    </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  header: {
+    gap: spacing.xs,
+    paddingBottom: spacing.md,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderWidth: 1,
-    borderCurve: 'continuous',
-    padding: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
     gap: spacing.sm,
   },
   meta: {

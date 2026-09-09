@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/design/components';
 import { useTheme, useThemeStore } from '@/design/theme';
 import { type ThemePreference } from '@/design/theme-resolve';
-import { radius, spacing } from '@/design/tokens';
+import { spacing } from '@/design/tokens';
 import { selection } from '@/utils/haptics';
 
 const OPTIONS: readonly { value: ThemePreference; label: string }[] = [
@@ -34,56 +34,50 @@ export function ThemeSection() {
 
   return (
     <View style={styles.list}>
-        {OPTIONS.map((opt) => {
-          const selected = opt.value === resolved;
-          return (
-            <Pressable
-              key={opt.value}
-              accessibilityRole="button"
-              accessibilityLabel={`${opt.label} theme`}
-              accessibilityState={{ selected }}
-              onPress={() => {
-                void selection();
-                setPreference(opt.value);
-              }}
-              style={({ pressed }) => [
-                styles.row,
-                {
-                  borderColor: selected ? colors.accent : colors.border,
-                },
-                pressed ? { opacity: 0.6 } : null,
-              ]}
+      {OPTIONS.map((opt) => {
+        const selected = opt.value === resolved;
+        return (
+          <Pressable
+            key={opt.value}
+            accessibilityRole="button"
+            accessibilityLabel={`${opt.label} theme`}
+            accessibilityState={{ selected }}
+            onPress={() => {
+              void selection();
+              setPreference(opt.value);
+            }}
+            style={({ pressed }) => [
+              styles.row,
+              pressed ? { opacity: 0.6 } : null,
+            ]}
+          >
+            <Text
+              variant="body"
+              weight={selected ? '600' : '400'}
+              color={selected ? 'accent' : 'textPrimary'}
+              style={styles.label}
             >
-              <Text
-                variant="body"
-                weight={selected ? '600' : '400'}
-                color={selected ? 'accent' : 'textPrimary'}
-                style={styles.label}
-              >
-                {opt.label}
-              </Text>
-              {selected ? (
-                <Ionicons name="checkmark" size={20} color={colors.accent} />
-              ) : null}
-            </Pressable>
-          );
-        })}
+              {opt.label}
+            </Text>
+            {selected ? (
+              <Ionicons name="checkmark" size={20} color={colors.accent} />
+            ) : null}
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   list: {
-    gap: spacing.xs,
+    gap: spacing.lg,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    borderWidth: 1,
-    borderCurve: 'continuous',
-    borderRadius: radius.md,
     gap: spacing.sm,
   },
   label: {

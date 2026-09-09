@@ -14,7 +14,7 @@
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Card, Sheet, Text } from '@/design/components';
+import { Sheet, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
 import { CURRENCIES, currencyMeta } from '@/utils/constants';
@@ -39,19 +39,13 @@ export function CurrencySection() {
 
   return (
     <>
-      <Card padding={spacing.lg} elevation="low">
-        <Card.Header>
-          <Text variant="headline" weight="600" color="textPrimary">
-            Currency
-          </Text>
-        </Card.Header>
-
+      <View>
         <Pressable
           accessibilityRole="button"
           onPress={() => setOpen(true)}
           style={({ pressed }) => [
             styles.row,
-            { borderColor: colors.border },
+            { borderBottomColor: colors.hairline },
             pressed ? { opacity: 0.6 } : null,
           ]}
         >
@@ -62,7 +56,7 @@ export function CurrencySection() {
             Tap to change
           </Text>
         </Pressable>
-      </Card>
+      </View>
 
       <Sheet visible={open} onDismiss={() => setOpen(false)}>
         <View style={styles.sheetHeader}>
@@ -124,13 +118,16 @@ function fractionDigitsLabel(d: number): string {
 }
 
 const styles = StyleSheet.create({
+  header: {
+    gap: spacing.xs,
+    paddingBottom: spacing.md,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderWidth: 1,
-    borderCurve: 'continuous',
-    padding: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
     gap: spacing.sm,
   },
   sheetHeader: {

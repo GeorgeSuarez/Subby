@@ -1,5 +1,5 @@
 /**
- * ProSection — upgrade card / manage subscription.
+ * ProSection — upgrade block / manage subscription.
  *
  * When not Pro: benefits + CTA to paywall. When Pro: show active state
  * with Manage (App Store / Play Store) and Restore.
@@ -9,7 +9,7 @@ import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Badge, Button, Card, Text } from '@/design/components';
+import { Badge, Button, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
 import { useEntitlementStore } from '@/store/useEntitlementStore';
@@ -57,11 +57,7 @@ export function ProSection() {
 
   if (isPro) {
     return (
-      <Card
-        padding={spacing.lg}
-        elevation="low"
-        style={[styles.card, { borderColor: colors.positive }]}
-      >
+      <View>
         <View style={styles.row}>
           <View style={[styles.icon, { backgroundColor: colors.positiveSoft }]}>
             <Ionicons name="star" size={20} color={colors.positive} />
@@ -92,12 +88,12 @@ export function ProSection() {
             {restoring ? 'Restoring…' : 'Restore'}
           </Button>
         </View>
-      </Card>
+      </View>
     );
   }
 
   return (
-    <Card padding={spacing.lg} elevation="low">
+    <View>
       <View style={styles.row}>
         <View style={[styles.icon, { backgroundColor: colors.accentSoft }]}>
           <Ionicons name="star-outline" size={20} color={colors.accent} />
@@ -117,15 +113,11 @@ export function ProSection() {
           Restore Purchases
         </Text>
       </Pressable>
-    </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderWidth: 1,
-    borderCurve: 'continuous',
-  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
