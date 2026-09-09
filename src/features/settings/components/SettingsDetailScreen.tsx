@@ -38,6 +38,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+    flexGrow: 1,
     padding: spacing.lg,
     gap: spacing.md,
     paddingBottom: spacing['3xl'],

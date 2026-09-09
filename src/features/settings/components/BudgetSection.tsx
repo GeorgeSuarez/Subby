@@ -45,12 +45,12 @@ export function BudgetSection() {
 
   if (!canUseBudget) {
     return (
-      <View>
+      <View style={styles.locked}>
         <View style={styles.header}>
-          <Text variant="headline" color="textPrimary">
+          <Text variant="headline" color="textPrimary" align="center">
             Set a monthly budget to help optimze your spending habits.
           </Text>
-          <Text variant="caption" color="textSecondary">
+          <Text variant="caption" color="textSecondary" align="center">
             Adds a progress bar in your dashboard to help visualize your budget.
           </Text>
         </View>
@@ -97,6 +97,12 @@ export function BudgetSection() {
 }
 
 const styles = StyleSheet.create({
+  locked: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.lg,
+  },
   header: {
     alignItems: 'center',
     gap: spacing.sm,
