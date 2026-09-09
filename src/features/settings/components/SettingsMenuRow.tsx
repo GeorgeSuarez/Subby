@@ -79,6 +79,8 @@ const styles = StyleSheet.create({
     height: 1,
   },
   row: {
+    flex: 1,
+    minHeight: 88, // rows share the viewport; floor keeps two-line rows tappable
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.md,
