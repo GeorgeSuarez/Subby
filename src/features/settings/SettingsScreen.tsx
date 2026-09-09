@@ -42,7 +42,7 @@ function renderMenuItem(item: SettingsMenuItem) {
       label={item.label}
       description={item.description}
       onPress={item.onPress}
-      showDivider={item.id !== 'pro'}
+      showDivider={item.id !== 'account'}
     />
   );
 }
@@ -64,61 +64,64 @@ export function SettingsScreen() {
 
   const items: SettingsMenuItem[] = [
     {
-      id: 'pro',
-      label: 'Subby Pro',
-      description: 'Upgrade, manage, restore',
-      onPress: () => router.push('/settings/pro'),
+      id: 'account',
+      label: 'Account',
+      description:
+        'See your account information, sign out of your account, or verify your account.',
+      onPress: () => router.push('/settings/account'),
     },
     {
       id: 'theme',
       label: 'Theme',
-      description: 'System, light, or dark',
+      description: 'Change the theme of Subby',
       onPress: () => router.push('/settings/theme'),
     },
+
     {
       id: 'currency',
       label: 'Currency',
-      description: 'Default for all amounts',
+      description: 'Set a currency preference',
       onPress: () => router.push('/settings/currency'),
     },
     {
       id: 'budget',
       label: 'Budget',
-      description: 'Monthly cap for the dashboard',
+      description: 'Set a monthly budget to optimize your spending',
       onPress: () => router.push('/settings/budget'),
     },
     {
       id: 'notifications',
       label: 'Notifications',
-      description: 'Renewal-reminder alerts',
+      description:
+        'Configure how you want to be notified about your subscription renewals',
       onPress: () => router.push('/settings/notifications'),
     },
     {
-      id: 'account',
-      label: 'Account',
-      description: 'Session, verify, sign out',
-      onPress: () => router.push('/settings/account'),
+      id: 'pro',
+      label: 'Subby Pro',
+      description: 'Manage your Subby Pro subscription',
+      onPress: () => router.push('/settings/pro'),
     },
     ...(showDeveloper
       ? [
           {
-            id: 'demo-data',
-            label: 'Demo data',
-            description: 'Seed data, test account',
-            onPress: () => router.push('/settings/demo-data'),
+            id: 'danger-zone',
+            label: 'Danger Zone',
+            description: 'Wipe all subscriptions for testing purposes.',
+            onPress: () => router.push('/settings/danger-zone'),
           },
           {
-            id: 'danger-zone',
-            label: 'Danger zone',
-            description: 'Wipe all subscription data',
-            onPress: () => router.push('/settings/danger-zone'),
+            id: 'demo-data',
+            label: 'Demo data',
+            description: 'Seed data for testing purposes.',
+            onPress: () => router.push('/settings/demo-data'),
           },
         ]
       : []),
     {
       id: 'about',
       label: 'About',
-      description: 'Name, version, build',
+      description: 'See more information about Subby.',
       onPress: () => router.push('/settings/about'),
     },
   ];
