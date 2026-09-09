@@ -1,12 +1,12 @@
 /**
- * ProSection — upgrade block / manage subscription.
+ * ProSection — two states, nothing else.
  *
- * When not Pro: benefits + CTA to paywall. When Pro: show active state
- * with Manage (App Store / Play Store) and Restore.
+ * No subscription: full plans UX (details + plan options + purchase),
+ * shared with the paywall modal via `ProPlans`. Active subscription:
+ * status with Manage (App Store / Play Store) and Restore.
  */
 
-import { Linking, Pressable, StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Linking, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Badge, Button, Text } from '@/design/components';
@@ -14,24 +14,18 @@ import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
 import { useEntitlementStore } from '@/store/useEntitlementStore';
 import { restorePurchases } from '@/lib/purchases';
+import { ProPlans } from '@/features/paywall/components/ProPlans';
 import { useCallback, useState } from 'react';
 
 export function ProSection() {
-  const router = useRouter();
   const { colors } = useTheme();
   const isPro = useEntitlementStore((s) => s.isPro);
   const productId = useEntitlementStore((s) => s.productId);
   const hydrate = useEntitlementStore((s) => s.hydrate);
   const [restoring, setRestoring] = useState(false);
 
-  const onGoPro = useCallback(
-    () => router.push('/subscription/paywall'),
-    [router],
-  );
-
   const onManage = useCallback(() => {
     // iOS: App Store subscriptions, Android: Play subscriptions.
-    // Opening store URLs works cross-platform; fallback to paywall.
     const url = 'https://apps.apple.com/account/subscriptions';
     void Linking.openURL(url);
   }, []);
@@ -40,16 +34,9 @@ export function ProSection() {
     setRestoring(true);
     try {
       await restorePurchases();
-      // Try to verify any available purchases (handled also via listener in _layout)
-      const { getAvailablePurchases } = await import('@/lib/purchases');
-      const avail = await getAvailablePurchases();
-      if (avail.length > 0) {
-        // Trigger server verification for each — _layout listener will handle most,
-        // but we also hydrate from Supabase row.
-        await hydrate();
-      } else {
-        await hydrate();
-      }
+      // Re-read the Supabase row (the _layout purchase listener
+      // handles most verifications live).
+      await hydrate();
     } finally {
       setRestoring(false);
     }
@@ -92,29 +79,7 @@ export function ProSection() {
     );
   }
 
-  return (
-    <View>
-      <View style={styles.row}>
-        <View style={[styles.icon, { backgroundColor: colors.accentSoft }]}>
-          <Ionicons name="star-outline" size={20} color={colors.accent} />
-        </View>
-        <View style={styles.meta}>
-          <Text variant="body" weight="700" color="textPrimary">
-            Upgrade to Pro
-          </Text>
-        </View>
-      </View>
-      <View style={styles.bullets}></View>
-      <Button onPress={onGoPro} variant="primary" size="sm" style={styles.cta}>
-        View plans
-      </Button>
-      <Pressable onPress={onRestore} style={styles.restore}>
-        <Text variant="caption" color="textTertiary">
-          Restore Purchases
-        </Text>
-      </Pressable>
-    </View>
-  );
+  return <ProPlans />;
 }
 
 const styles = StyleSheet.create({
@@ -139,16 +104,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-  },
-  bullets: {
-    paddingTop: spacing.sm,
-  },
-  cta: {
-    marginTop: spacing.sm,
-  },
-  restore: {
-    alignSelf: 'center',
-    paddingTop: spacing.sm,
   },
   actions: {
     flexDirection: 'row',
