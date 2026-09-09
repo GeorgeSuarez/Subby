@@ -33,9 +33,6 @@ export function RemindersSection() {
         <Text variant="headline" weight="600">
           Notifications
         </Text>
-        <Text variant="caption" color="textSecondary">
-          Remind me a day before each renewal.
-        </Text>
       </Card.Header>
 
       <View style={[styles.row, { borderColor: colors.border }]}>
@@ -62,7 +59,7 @@ export function RemindersSection() {
       {!canUseReminders ? (
         <View style={styles.proNote}>
           <Text variant="caption" color="textSecondary">
-            Pro unlocks 1d / 3d / 7d advance reminders.
+            Pro unlocks more advanced reminders
           </Text>
           <Button
             onPress={() => router.push('/subscription/paywall')}

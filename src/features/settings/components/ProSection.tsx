@@ -106,17 +106,9 @@ export function ProSection() {
           <Text variant="body" weight="700" color="textPrimary">
             Upgrade to Pro
           </Text>
-          <Text variant="caption" color="textSecondary">
-            Category insights · Budget & forecast · Advanced reminders ·
-            Unlimited tracking
-          </Text>
         </View>
       </View>
-      <View style={styles.bullets}>
-        <Text variant="caption" color="textSecondary">
-          • $2.99/mo · $19.99/yr (7-day free trial) · $49.99 lifetime
-        </Text>
-      </View>
+      <View style={styles.bullets}></View>
       <Button onPress={onGoPro} variant="primary" size="sm" style={styles.cta}>
         View plans
       </Button>
@@ -148,8 +140,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   meta: {
-    flex: 1,
-    gap: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   titleRow: {
     flexDirection: 'row',

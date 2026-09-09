@@ -51,7 +51,7 @@ export function BudgetSection() {
             Budget
           </Text>
           <Text variant="caption" color="textSecondary">
-            Pro — set a monthly budget and see forecast.
+            Set a monthly budget and see forecast.
           </Text>
         </Card.Header>
         <Button

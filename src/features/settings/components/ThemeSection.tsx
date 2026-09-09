@@ -11,7 +11,7 @@
 import { useCallback } from 'react';
 
 import { Card, SegmentedControl, Text } from '@/design/components';
-import { useColorMode, useThemeStore } from '@/design/theme';
+import { useThemeStore } from '@/design/theme';
 import { type ThemePreference } from '@/design/theme-resolve';
 import { spacing } from '@/design/tokens';
 import { selection } from '@/utils/haptics';
@@ -19,7 +19,6 @@ import { selection } from '@/utils/haptics';
 const PREFERENCES: readonly ThemePreference[] = ['system', 'light', 'dark'];
 
 export function ThemeSection() {
-  const colorMode = useColorMode();
   const preference = useThemeStore((s) => s.preference);
   const setPreference = useThemeStore((s) => s.setPreference);
 
@@ -37,9 +36,6 @@ export function ThemeSection() {
       <Card.Header>
         <Text variant="headline" weight="600" color="textPrimary">
           Theme
-        </Text>
-        <Text variant="caption" color="textSecondary">
-          Active scheme: {colorMode}
         </Text>
       </Card.Header>
 

@@ -44,9 +44,6 @@ export function CurrencySection() {
           <Text variant="headline" weight="600" color="textPrimary">
             Currency
           </Text>
-          <Text variant="caption" color="textSecondary">
-            Default for new subscriptions
-          </Text>
         </Card.Header>
 
         <Pressable

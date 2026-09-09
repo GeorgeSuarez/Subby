@@ -116,9 +116,6 @@ export function AccountSection() {
         <Text variant="headline" weight="600">
           Account
         </Text>
-        <Text variant="caption" color="textSecondary">
-          Signed in with {accountLabelFor(verificationState)}.
-        </Text>
       </Card.Header>
 
       {unverified ? (
@@ -161,9 +158,6 @@ export function AccountSection() {
           <Text variant="body" weight="600" color="textPrimary">
             Reset password
           </Text>
-          <Text variant="caption" color="textSecondary">
-            Verify your current password and set a new one
-          </Text>
         </View>
         <Button
           onPress={() => router.push('/verify-password')}
@@ -178,9 +172,6 @@ export function AccountSection() {
         <View style={styles.meta}>
           <Text variant="body" weight="600" color="negative">
             Delete account
-          </Text>
-          <Text variant="caption" color="textSecondary">
-            Permanently remove your account and all data
           </Text>
         </View>
         <Button
