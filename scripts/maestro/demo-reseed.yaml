@@ -6,6 +6,10 @@ appId: host.exp.Exponent
 ---
 - tapOn: 'Settings'
 - extendedWaitUntil:
+    visible: 'Account'
+    timeout: 30000
+- tapOn: 'Account'
+- extendedWaitUntil:
     visible: 'Sign out'
     timeout: 30000
 - tapOn: 'Sign out'

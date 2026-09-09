@@ -16,9 +16,10 @@ appId: host.exp.Exponent
     when:
       visible: 'Theme'
     commands:
-      - swipe:
-          start: '50%,70%'
-          end: '50%,50%'
+      - extendedWaitUntil:
+          visible: 'Account'
+          timeout: 30000
+      - tapOn: 'Account'
       - extendedWaitUntil:
           visible: 'Sign out'
           timeout: 30000

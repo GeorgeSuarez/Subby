@@ -17,7 +17,7 @@
  */
 
 import { useCallback, type ComponentProps } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet } from 'react-native';
 import { Redirect, useRouter } from 'expo-router';
 
 import { EmptyState } from '@/design/components';
@@ -130,12 +130,10 @@ export function DashboardScreen() {
   return (
     <Surface background="surface" style={styles.root}>
       <ScrollView {...scrollProps}>
+        <Text variant="title" weight="700" accessibilityRole="header">
+          Dashboard
+        </Text>
         <UnverifiedEmailBanner />
-        <View style={styles.devBanner}>
-          <Text variant="caption" weight="700" color="accent">
-            DEV BUILD — data resets on reinstall
-          </Text>
-        </View>
         {insight ? <InsightStrip insight={insight} /> : null}
         <DashboardHero />
         <QuickStats />
@@ -158,17 +156,6 @@ const styles = StyleSheet.create({
     gap: spacing.md, // tighter for Quiet Ledger (+ hairline dividers between sections)
     // Extra bottom padding so the last card clears the floating Add FAB.
     paddingBottom: spacing['3xl'] + layout.fabSize,
-  },
-  devBanner: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    backgroundColor: 'rgba(14, 74, 92, 0.08)',
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(14, 74, 92, 0.14)',
-    alignSelf: 'center',
   },
   empty: {
     flex: 1,

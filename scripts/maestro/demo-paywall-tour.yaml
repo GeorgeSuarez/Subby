@@ -2,18 +2,24 @@
 # Precondition: dashboard at top (run demo-warmup first).
 # Record under: xcrun simctl io booted recordVideo demo-paywall.mp4
 #   then maestro test demo-warmup.yaml demo-paywall-tour.yaml (continuous recording)
-# Shows: Settings → View plans → Monthly / Yearly (hero, trial badge) / Lifetime → Close.
+# Shows: Settings → Subby Pro → View plans → Monthly / Yearly (hero, trial badge) / Lifetime → Close.
 appId: host.exp.Exponent
 ---
-# Start on dashboard; hop to Settings.
+# Start on dashboard; hop to Settings, then into the Pro screen.
 - tapOn: "Settings"
 - extendedWaitUntil:
-    visible: "Upgrade to Pro"
+    visible: "Subby Pro"
     timeout: 30000
 - waitForAnimationToEnd:
     timeout: 600
+- tapOn: "Subby Pro"
+- extendedWaitUntil:
+    visible: "View plans"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 800
 
-# Open paywall via the ProSection CTA.
+# Open paywall via the Pro screen CTA.
 - tapOn: "View plans"
 - extendedWaitUntil:
     visible: "Unlock Subby Pro"

@@ -28,11 +28,7 @@ appId: host.exp.Exponent
       visible: "Monthly spend"
     commands:
       - tapOn: "Settings"
-      - scrollUntilVisible:
-          element:
-            text: ".*Sign out.*"
-          direction: DOWN
-          timeout: 15000
+      - tapOn: "Account"
       - tapOn:
           text: ".*Sign out.*"
       - extendedWaitUntil:

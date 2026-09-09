@@ -16,11 +16,10 @@
  *  - `react-state-minimize`: hydration is keyed on mount only; the store
  *    owns all subsequent state. The gate is derived from the auth store's
  *    `isSignedIn` — no local copies.
- *  - `animation-gpu-properties`: theme transitions use Reanimated `entering`
+ *  - `animation-gpu-properties`: initial mount uses Reanimated `entering`
  *    FadeIn — opacity only, GPU-accelerated, no layout/paint per frame (§3.1).
- *  - `state-ground-truth`: the resolved color mode is the ground truth; the
- *    wrapper gets `key={colorMode}` so a scheme change triggers a remount of
- *    the surface, which Reanimated cross-fades.
+ *    No `key={colorMode}` remount: remounting resets the navigator (theme
+ *    screen would drop to the settings stack's initial route, Subby Pro).
  */
 
 import { useEffect, useMemo } from 'react';
@@ -198,10 +197,10 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={navigationTheme}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
-        {/* key change forces a remount when the resolved scheme flips;
-            Reanimated's FadeIn entrance drives the cross-fade. */}
+        {/* No key on colorMode: a remount would reset the navigator —
+            picking a theme would drop to the settings stack's initial
+            route (Subby Pro). Theme applies via ThemeProvider + colors. */}
         <Animated.View
-          key={colorMode}
           entering={FadeIn.duration(160)}
           style={{ flex: 1, backgroundColor: isDark ? '#0F1113' : '#FDFCF9' }}
         >
@@ -211,6 +210,8 @@ export default function RootLayout() {
               {/* The add/edit modal group sits behind the same gate so a
                   signed-out user can't deep link into it. */}
               <Stack.Screen name="subscription" />
+              {/* Settings drill-down screens — pushed from the settings tab hub. */}
+              <Stack.Screen name="settings" />
               {/* Active-trials list — pushed from the dashboard's trial card.
                   'minimal' hides the "(tabs)" label behind the back chevron. */}
               <Stack.Screen

@@ -11,7 +11,11 @@ appId: host.exp.Exponent
 - waitForAnimationToEnd:
     timeout: 700
 
-# Theme row — tap through chips (System is selected by default).
+# Theme screen — tap through chips (System is selected by default).
+- tapOn: "Theme"
+- extendedWaitUntil:
+    visible: "Light"
+    timeout: 10000
 - tapOn: "Light"
 - waitForAnimationToEnd:
     timeout: 800
@@ -22,11 +26,14 @@ appId: host.exp.Exponent
 - waitForAnimationToEnd:
     timeout: 800
 
-# Scroll to Currency / Budget / Notifications.
+# Back to the hub (iOS edge-swipe pop) — Currency / Budget rows.
 - swipe:
-    start: 50%, 70%
-    end: 50%, 35%
-    duration: 600
+    start: '2%,50%'
+    end: '50%,50%'
+    duration: 400
+- extendedWaitUntil:
+    visible: "Currency"
+    timeout: 15000
 - waitForAnimationToEnd:
     timeout: 700
 - assertVisible: "Currency"
@@ -34,32 +41,35 @@ appId: host.exp.Exponent
 - waitForAnimationToEnd:
     timeout: 500
 
-# Small nudge to reveal the renewal toggle state.
-- swipe:
-    start: 50%, 60%
-    end: 50%, 45%
-    duration: 400
+# Notifications screen — renewal toggle state.
+- tapOn: "Notifications"
+- extendedWaitUntil:
+    visible: "Renewal reminders"
+    timeout: 15000
 - waitForAnimationToEnd:
     timeout: 700
 - assertVisible: "Renewal reminders"
 
-# Scroll to Account / Demo data — end of the list is the most demo-worthy footer.
+# Back to the hub, then into Demo data — end of the menu is the most demo-worthy footer.
 - swipe:
-    start: 50%, 70%
-    end: 50%, 25%
-    duration: 700
-- waitForAnimationToEnd:
-    timeout: 800
-- assertVisible: "Demo data"
-- assertVisible: "4 demo subscriptions loaded"
+    start: '2%,50%'
+    end: '50%,50%'
+    duration: 400
+- extendedWaitUntil:
+    visible: "Demo data"
+    timeout: 15000
+- tapOn: "Demo data"
+- extendedWaitUntil:
+    visible: "4 demo subscriptions loaded"
+    timeout: 15000
 - waitForAnimationToEnd:
     timeout: 1000
 
-# Return to dashboard cleanly.
+# Back to the hub, then return to dashboard cleanly.
 - swipe:
-    start: 50%, 25%
-    end: 50%, 75%
-    duration: 600
+    start: '2%,50%'
+    end: '50%,50%'
+    duration: 400
 - waitForAnimationToEnd:
     timeout: 600
 - tapOn: "Dashboard"

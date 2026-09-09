@@ -1,5 +1,8 @@
 export { SettingsScreen as default } from '@/features/settings/SettingsScreen';
 export { SettingsScreen } from '@/features/settings/SettingsScreen';
+export { SettingsDetailScreen } from '@/features/settings/components/SettingsDetailScreen';
+export { SettingsMenuRow } from '@/features/settings/components/SettingsMenuRow';
+export { ProSection } from '@/features/settings/components/ProSection';
 export { ThemeSection } from '@/features/settings/components/ThemeSection';
 export { CurrencySection } from '@/features/settings/components/CurrencySection';
 export { BudgetSection } from '@/features/settings/components/BudgetSection';

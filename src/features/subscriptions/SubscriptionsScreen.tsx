@@ -214,6 +214,9 @@ export function SubscriptionsScreen() {
   // stays out of the recycling cell pool (skill `list-performance-item-expensive`).
   const header = (
     <View style={styles.header}>
+      <Text variant="title" weight="700" accessibilityRole="header">
+        Subscriptions
+      </Text>
       {isOffline || pendingCount > 0 || syncError ? (
         <View
           style={[
