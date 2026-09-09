@@ -42,10 +42,26 @@ describe('categoryMeta', () => {
 });
 
 describe('CYCLES', () => {
-  it('maps cycle to months', () => {
-    expect(cycleMeta('monthly').months).toBe(1);
-    expect(cycleMeta('quarterly').months).toBe(3);
-    expect(cycleMeta('yearly').months).toBe(12);
+  it('normalizes costs through bills-per-year', () => {
+    expect(cycleMeta('weekly').billsPerYear).toBe(52);
+    expect(cycleMeta('monthly').billsPerYear).toBe(12);
+    expect(cycleMeta('quarterly').billsPerYear).toBe(4);
+    expect(cycleMeta('semiannual').billsPerYear).toBe(2);
+    expect(cycleMeta('yearly').billsPerYear).toBe(1);
+  });
+
+  it('steps weekly by days and the rest by calendar months', () => {
+    expect(cycleMeta('weekly').step).toEqual({ kind: 'days', days: 7 });
+    expect(cycleMeta('monthly').step).toEqual({ kind: 'months', months: 1 });
+    expect(cycleMeta('quarterly').step).toEqual({
+      kind: 'months',
+      months: 3,
+    });
+    expect(cycleMeta('semiannual').step).toEqual({
+      kind: 'months',
+      months: 6,
+    });
+    expect(cycleMeta('yearly').step).toEqual({ kind: 'months', months: 12 });
   });
 });
 

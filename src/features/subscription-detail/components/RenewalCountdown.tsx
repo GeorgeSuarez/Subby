@@ -1,5 +1,5 @@
 /**
- * RenewalCountdown — large "days until" + badge + renewal date.
+ * RenewalCountdown — large renewal date + countdown label.
  *
  * Skill rules:
  *  - `react-state-minimize`: derives a {@link RenewalStatus} from the
@@ -7,12 +7,12 @@
  *  - `rendering-no-falsy-and`: ternaries only.
  *  - `ui-styling`: tokens only; CSS box-shadow string.
  *  - Tone comes from semantic palette tokens (positive/negative/warning/neutral)
- *    so the badge naturally adapts to the dark/light theme.
+ *    so the date naturally adapts to the dark/light theme.
  */
 
 import { StyleSheet, View } from 'react-native';
 
-import { Badge, Card, Text, type BadgeTone } from '@/design/components';
+import { Card, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
 import { getRenewalStatus } from '@/features/subscription-detail/detail-helpers';
@@ -32,9 +32,7 @@ export function RenewalCountdown({ sub }: RenewalCountdownProps) {
   const renewal = getRenewalStatus(sub);
   const status = trial ?? renewal;
   const endISO = trial ? trial.endISO : renewal.nextISO;
-  const tone: BadgeTone = status.tone;
-  // Derived background tint via the soft variant of the matching semantic color.
-  const toneBackground = toneSoftColor(status.tone, colors);
+  // Tone tints the date itself; the countdown label stays quieter below it.
   const toneText = toneTextColor(status.tone, colors);
 
   return (
@@ -43,24 +41,19 @@ export function RenewalCountdown({ sub }: RenewalCountdownProps) {
         {trial ? 'Free trial' : 'Next renewal'}
       </Text>
 
-      <View style={styles.bigRow}>
-        <Text variant="stat" weight="700" color="textPrimary">
-          {status.days < 0 ? Math.abs(status.days) : status.days}
-        </Text>
-        <Text variant="caption" color="textSecondary" style={styles.daysLabel}>
-          {Math.abs(status.days) === 1 ? 'day' : 'days'}
-          {status.days < 0 ? ' ago' : ''}
-        </Text>
-      </View>
+      <Text
+        variant="title"
+        weight="700"
+        color={toneText}
+        style={styles.date}
+        numberOfLines={1}
+      >
+        {formatDate(endISO)}
+      </Text>
 
-      <View style={styles.badgeRow}>
-        <Badge tone={tone}>{status.label}</Badge>
-        <View style={[styles.dateChip, { backgroundColor: toneBackground }]}>
-          <Text variant="caption" weight="600" color={toneText}>
-            {formatDate(endISO)}
-          </Text>
-        </View>
-      </View>
+      <Text variant="caption" color="textSecondary" style={styles.countdown}>
+        {status.label}
+      </Text>
 
       <View style={[styles.divider, { backgroundColor: colors.hairline }]} />
     </Card>
@@ -68,23 +61,6 @@ export function RenewalCountdown({ sub }: RenewalCountdownProps) {
 }
 
 // --- Helpers ----------------------------------------------------------------
-
-function toneSoftColor(
-  tone: RenewalTone,
-  c: ReturnType<typeof useTheme>['colors'],
-): string {
-  switch (tone) {
-    case 'positive':
-      return c.positiveSoft;
-    case 'negative':
-      return c.negativeSoft;
-    case 'warning':
-      return c.warningSoft;
-    case 'neutral':
-    default:
-      return c.surfaceHigher;
-  }
-}
 
 function toneTextColor(
   tone: RenewalTone,
@@ -104,27 +80,11 @@ function toneTextColor(
 }
 
 const styles = StyleSheet.create({
-  bigRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: spacing.xs,
+  date: {
     marginTop: spacing.xs,
   },
-  daysLabel: {
-    marginBottom: spacing.xs,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-    flexWrap: 'wrap',
-  },
-  dateChip: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs / 2,
-    borderRadius: spacing.xs,
-    borderCurve: 'continuous',
+  countdown: {
+    marginTop: spacing.xs / 2,
   },
   divider: {
     height: 1,

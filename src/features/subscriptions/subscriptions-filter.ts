@@ -7,6 +7,7 @@
  */
 
 import type {
+  CategorySlug,
   Subscription,
   SubscriptionFilter,
   SubscriptionSort,
@@ -16,6 +17,7 @@ import {
   nextRenewalAfter,
   parseDate,
 } from '@/utils/billing';
+import { CATEGORIES, categoryMeta } from '@/utils/constants';
 
 export interface FilterSortOptions {
   query: string;
@@ -99,4 +101,93 @@ export function filterAndSortSubs(
     matchesQuery(s, opts.query),
   );
   return applySort(filtered, opts.sort);
+}
+
+// --- Category grouping -------------------------------------------------------
+
+/** One category bucket of an already filtered + sorted list. */
+export interface CategorySection {
+  category: CategorySlug;
+  label: string;
+  icon: string;
+  items: Subscription[];
+}
+
+/** Canonical category order (CATEGORIES table); unknown slugs sort last. */
+const CATEGORY_ORDER = new Map<CategorySlug, number>(
+  CATEGORIES.map((c, i) => [c.slug, i]),
+);
+
+/**
+ * Group an already filtered + sorted list by category.
+ * Item order within each group is preserved (so the caller's sort holds
+ * per-group); groups follow the canonical CATEGORIES order. Returns a NEW
+ * array; empty categories are omitted.
+ */
+export function groupSubsByCategory(
+  subs: readonly Subscription[],
+): CategorySection[] {
+  const buckets = new Map<CategorySlug, Subscription[]>();
+  for (const sub of subs) {
+    const list = buckets.get(sub.category);
+    if (list) {
+      list.push(sub);
+    } else {
+      buckets.set(sub.category, [sub]);
+    }
+  }
+  const sections: CategorySection[] = [];
+  for (const [category, items] of buckets) {
+    const meta = categoryMeta(category);
+    sections.push({ category, label: meta.label, icon: meta.icon, items });
+  }
+  sections.sort((a, b) => {
+    const orderA = CATEGORY_ORDER.get(a.category) ?? Number.MAX_SAFE_INTEGER;
+    const orderB = CATEGORY_ORDER.get(b.category) ?? Number.MAX_SAFE_INTEGER;
+    return orderA !== orderB
+      ? orderA - orderB
+      : a.label.localeCompare(b.label, undefined, { sensitivity: 'base' });
+  });
+  return sections;
+}
+
+/** Flattened FlashList item: sticky category header or subscription row. */
+export type SubscriptionsListItem =
+  | {
+      kind: 'header';
+      category: CategorySlug;
+      label: string;
+      icon: string;
+      count: number;
+      collapsed: boolean;
+    }
+  | { kind: 'row'; subscription: Subscription };
+
+/**
+ * Flatten sections into a heterogeneous FlashList array. Collapsed sections
+ * emit only their header. Headers carry only primitives so rows stay
+ * `memo()`-effective.
+ */
+export function flattenSectionsForList(
+  sections: readonly CategorySection[],
+  collapsed: ReadonlySet<CategorySlug>,
+): SubscriptionsListItem[] {
+  const flat: SubscriptionsListItem[] = [];
+  for (const section of sections) {
+    const isCollapsed = collapsed.has(section.category);
+    flat.push({
+      kind: 'header',
+      category: section.category,
+      label: section.label,
+      icon: section.icon,
+      count: section.items.length,
+      collapsed: isCollapsed,
+    });
+    if (!isCollapsed) {
+      for (const subscription of section.items) {
+        flat.push({ kind: 'row', subscription });
+      }
+    }
+  }
+  return flat;
 }

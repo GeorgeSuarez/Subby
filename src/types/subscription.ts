@@ -10,8 +10,14 @@
 /** ISO-4217 currency codes we support out of the box. More can be added. */
 export type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'JPY' | 'CAD' | 'AUD';
 
-/** Billing cycle. `months` is how many calendar months each cycle spans. */
-export type Cycle = 'monthly' | 'quarterly' | 'yearly';
+/** Billing cycle. Calendar stepping lives in `CycleMeta.step`; cost
+ * normalization uses `CycleMeta.billsPerYear` (see `utils/constants.ts`). */
+export type Cycle =
+  | 'weekly'
+  | 'monthly'
+  | 'quarterly'
+  | 'semiannual'
+  | 'yearly';
 
 /** Category slug. Keep stable string ids; labels live in `utils/constants.ts`. */
 export type CategorySlug =

@@ -27,7 +27,6 @@ export interface EffectiveCostCardProps {
 
 export function EffectiveCostCard({ sub, notes }: EffectiveCostCardProps) {
   const { colors } = useTheme();
-  const monthly = getMonthlyCost(sub);
   const yearly = getYearlyCost(sub);
   const savings = yearlySavingsHint(sub);
 
@@ -38,7 +37,6 @@ export function EffectiveCostCard({ sub, notes }: EffectiveCostCardProps) {
       </Text>
 
       <View style={[styles.row, { borderColor: colors.hairline }]}>
-        <Stat label="Per month" value={monthly} currency={sub.currency} />
         <Divider />
         <Stat label="Per year" value={yearly} currency={sub.currency} />
       </View>

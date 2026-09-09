@@ -16,9 +16,8 @@
 
 import { useCallback } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Card, EmptyState, IconButton, Text } from '@/design/components';
+import { Card, EmptyState, Text } from '@/design/components';
 import { Surface } from '@/design/components/Surface';
 import { spacing } from '@/design/tokens';
 import { DetailHero } from '@/features/subscription-detail/components/DetailHero';
@@ -49,7 +48,6 @@ export function DetailScreen({
   onEdit,
   onDismiss,
 }: DetailScreenProps) {
-  const insets = useSafeAreaInsets();
   // Mutators from the store are stable references (Zustand).
   const archive = useSubscriptionsStore((s) => s.archive);
   const remove = useSubscriptionsStore((s) => s.remove);
@@ -81,10 +79,12 @@ export function DetailScreen({
   }, [onEdit]);
 
   // Not-found — early return (skill `rendering-no-falsy-and`).
+  // Dismissal needs no back arrow: the formSheet natively supports
+  // swipe-to-dismiss (iOS grabber) and the system back button (Android),
+  // and this state carries its own Close action.
   if (!sub) {
     return (
       <Surface background="surface" style={styles.root}>
-        <BackButton top={insets.top} onPress={onDismiss} />
         <View style={styles.notFound}>
           <EmptyState
             title="Subscription not found"
@@ -99,7 +99,6 @@ export function DetailScreen({
 
   return (
     <Surface background="surface" style={styles.root}>
-      <BackButton top={insets.top} onPress={onDismiss} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scrollContent}
@@ -132,36 +131,9 @@ function formatTimestamp(ms: number): string {
   return new Date(ms).toLocaleDateString();
 }
 
-/**
- * Floating back arrow overlaid top-left, safe-area aware. The detail screen is
- * a formSheet whose native header is just a grabber, so it needs an explicit
- * in-page affordance to return to the previous screen.
- */
-function BackButton({ top, onPress }: { top: number; onPress: () => void }) {
-  return (
-    <View style={[styles.backButton, { top: top + spacing.xs }]}>
-      <IconButton
-        name="chevron-back"
-        size={24}
-        color="textPrimary"
-        variant="solid"
-        backgroundColor="surfaceHigher"
-        onPress={onPress}
-        accessibilityRole="button"
-        accessibilityLabel="Go back"
-      />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-  },
-  backButton: {
-    position: 'absolute',
-    left: spacing.md,
-    zIndex: 10,
   },
   scrollContent: {
     padding: spacing.lg,

@@ -50,6 +50,25 @@ export function daysBetween(from: Date, to: Date): number {
 }
 
 /**
+ * Add N calendar days to a date, preserving the UTC-noon anchor so local
+ * timezone shifts don't flip the day.
+ */
+export function addDays(date: Date, days: number): Date {
+  return new Date(date.getTime() + days * 86_400_000);
+}
+
+/**
+ * Advance a date by `steps` billing cycles (negative steps go backwards).
+ * Weekly steps by days; every other cycle steps by whole calendar months so
+ * renewals never drift (e.g. Jan 31 + 1 month → Feb 28).
+ */
+export function advanceCycle(date: Date, cycle: Cycle, steps = 1): Date {
+  const step = cycleMeta(cycle).step;
+  if (step.kind === 'days') return addDays(date, step.days * steps);
+  return addMonths(date, step.months * steps);
+}
+
+/**
  * Add N calendar months to a date, clamping the day to the last day of the
  * target month (e.g. Jan 31 + 1 month → Feb 28). Hole-free month arithmetic.
  */
@@ -74,13 +93,12 @@ export function nextRenewalAfter(
   sub: { nextRenewal: string; cycle: Cycle },
   from: Date = todayUTC(),
 ): string {
-  const spanMonths = cycleMeta(sub.cycle).months;
   let current = parseDate(sub.nextRenewal);
   // Advance until renewal is strictly in the future relative to `from`.
   // Sanity cap at 120 iterations to avoid an infinite loop on bad data.
   let guard = 0;
   while (current.getTime() <= from.getTime() && guard < 120) {
-    current = addMonths(current, spanMonths);
+    current = advanceCycle(current, sub.cycle);
     guard += 1;
   }
   return toISODate(current);
@@ -97,15 +115,15 @@ export function daysUntilRenewal(sub: {
 
 /**
  * Convert any cycle's amount to its monthly equivalent.
- * Yearly amounts are divided by 12; quarterly by 3; monthly as-is.
+ * Derived from charges-per-year (weekly ≈ 52/yr, monthly 12/yr, quarterly
+ * 4/yr, semi-annual 2/yr, yearly 1/yr).
  * Skill rule `react-state-minimize`: derive during render, don't store.
  */
 export function monthlyEquivalent(sub: {
   amount: number;
   cycle: Cycle;
 }): number {
-  const months = cycleMeta(sub.cycle).months;
-  return sub.amount / months;
+  return (sub.amount * cycleMeta(sub.cycle).billsPerYear) / 12;
 }
 
 /** Convert any cycle's amount to its yearly equivalent. */
@@ -113,8 +131,7 @@ export function yearlyEquivalent(sub: {
   amount: number;
   cycle: Cycle;
 }): number {
-  const months = cycleMeta(sub.cycle).months;
-  return (sub.amount / months) * 12;
+  return sub.amount * cycleMeta(sub.cycle).billsPerYear;
 }
 
 /** Total monthly spend across active subscriptions. */
@@ -250,10 +267,10 @@ export function projectedMonthEndSpend(
   let spent = 0;
   for (const s of subs) {
     if (s.archived) continue;
-    const spanMonths = cycleMeta(s.cycle).months;
-    const previous = addMonths(
+    const previous = advanceCycle(
       parseDate(nextRenewalAfter(s, from)),
-      -spanMonths,
+      s.cycle,
+      -1,
     );
     if (
       previous.getTime() >= monthStart.getTime() &&
@@ -385,17 +402,32 @@ export function monthlyForecast(
   from: Date = todayUTC(),
 ): ForecastMonth[] {
   const buckets = new Map<string, { total: number; count: number }>();
+  // End of the forecast window (last day of the final month, UTC noon).
+  const windowEnd = new Date(
+    Date.UTC(
+      from.getUTCFullYear(),
+      from.getUTCMonth() + months,
+      0,
+      12,
+      0,
+      0,
+      0,
+    ),
+  );
   for (const s of subs) {
     if (s.archived) continue;
-    const span = cycleMeta(s.cycle).months;
     let next = parseDate(nextRenewalAfter(s, from));
-    for (let i = 0; i < months; i++) {
+    // Walk forward cycle-by-cycle until past the window. Weekly subs land
+    // several charges per month; the guard caps pathological cycles.
+    let guard = 0;
+    while (next.getTime() <= windowEnd.getTime() && guard < months * 62) {
       const key = `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, '0')}`;
       const bucket = buckets.get(key) ?? { total: 0, count: 0 };
       bucket.total += s.amount;
       bucket.count += 1;
       buckets.set(key, bucket);
-      next = addMonths(next, span);
+      next = advanceCycle(next, s.cycle);
+      guard += 1;
     }
   }
 

@@ -146,18 +146,31 @@ export function formatRenewalIn(days: number): string {
 
 // --- Cycles -----------------------------------------------------------------
 
-/** Display label for a cycle ("Monthly" / "Quarterly" / "Yearly"). */
+/** Display label for a cycle ("Weekly" / "Monthly" / "Quarterly" / "Semi-annual" / "Yearly"). */
 export function formatCycle(cycle: Cycle): string {
   return cycleMeta(cycle).label;
 }
 
-/** "per month" / "per quarter" / "per year" suffix used on amount rows. */
+/** Human cadence for a cycle ("Every 7 days" / "Every month" / "Every 3 months"). */
+export function cycleCadence(cycle: Cycle): string {
+  const step = cycleMeta(cycle).step;
+  if (step.kind === 'days') {
+    return step.days === 7 ? 'Every week' : `Every ${step.days} days`;
+  }
+  return step.months === 1 ? 'Every month' : `Every ${step.months} months`;
+}
+
+/** "per week" / "per month" / "per quarter" / "every 6 months" / "per year" suffix used on amount rows. */
 export function cycleSuffix(cycle: Cycle): string {
   switch (cycle) {
+    case 'weekly':
+      return 'per week';
     case 'monthly':
       return 'per month';
     case 'quarterly':
       return 'per quarter';
+    case 'semiannual':
+      return 'every 6 months';
     case 'yearly':
       return 'per year';
   }

@@ -1,5 +1,6 @@
 /**
- * SubscriptionsScreen — full subscription list with sort, filter, and search.
+ * SubscriptionsScreen — subscriptions grouped by category with collapsible
+ * section headers, plus sort, filter, and search.
  *
  * Skill rules:
  *  - `list-performance-virtualize`: uses FlashList for any sized collection.
@@ -26,8 +27,14 @@ import { Surface } from '@/design/components/Surface';
 import { radius, spacing } from '@/design/tokens';
 import { useTheme } from '@/design/theme';
 import { SortFilterBar } from '@/features/subscriptions/components/SortFilterBar';
+import { CategorySectionHeader } from '@/features/subscriptions/components/CategorySectionHeader';
 import { SwipeableRow } from '@/features/subscriptions/components/SwipeableRow';
-import { filterAndSortSubs } from '@/features/subscriptions/subscriptions-filter';
+import {
+  filterAndSortSubs,
+  flattenSectionsForList,
+  groupSubsByCategory,
+  type SubscriptionsListItem,
+} from '@/features/subscriptions/subscriptions-filter';
 import {
   confirmDelete,
   openRowActions,
@@ -51,9 +58,9 @@ import {
 import { toast } from '@/store/useToastStore';
 import { selection, impactLight } from '@/utils/haptics';
 import { brandBackground, brandIconColor } from '@/utils/brand';
-import type { Subscription } from '@/types/subscription';
+import type { CategorySlug, Subscription } from '@/types/subscription';
 
-type FlashListProps = ComponentProps<typeof FlashList<Subscription>>;
+type FlashListProps = ComponentProps<typeof FlashList<SubscriptionsListItem>>;
 
 export function SubscriptionsScreen() {
   const router = useRouter();
@@ -73,14 +80,37 @@ export function SubscriptionsScreen() {
   const remove = useSubscriptionsStore((s) => s.remove);
   const flushPending = useSubscriptionsStore((s) => s.flushPending);
 
-  // Local UI state: just the search query (single-line text input).
+  // Local UI state: search query + collapsed categories (ground truth; the
+  // flattened FlashList array is derived from it during render).
   const [query, setQuery] = useState('');
+  const [collapsed, setCollapsed] = useState<ReadonlySet<CategorySlug>>(
+    () => new Set<CategorySlug>(),
+  );
 
   // Derive the visible list during render (skill `react-state-minimize`).
   const visible = useMemo(
     () => filterAndSortSubs(subs, { query, sort, filter }),
     [subs, query, sort, filter],
   );
+
+  // Group by category (canonical order, per-group order follows the sort),
+  // then flatten to headers + rows for the heterogeneous FlashList.
+  const sections = useMemo(() => groupSubsByCategory(visible), [visible]);
+  const flat = useMemo(
+    () => flattenSectionsForList(sections, collapsed),
+    [sections, collapsed],
+  );
+  const stickyIndices = useMemo(() => {
+    // +1 offset: ListHeaderComponent occupies child index 0, so data index
+    // `i` sits at child index `i + 1`.
+    const indices: number[] = [];
+    flat.forEach((item, index) => {
+      if (item.kind === 'header') indices.push(index + 1);
+    });
+    return indices;
+  }, [flat]);
+  const allCollapsed =
+    sections.length > 0 && sections.every((s) => collapsed.has(s.category));
 
   // For quick membership checks inside row renderers (avoids N² lookups in
   // heterogeneous mode, though the trace is O(N·FilterPass)=O(N) here).
@@ -137,6 +167,31 @@ export function SubscriptionsScreen() {
     },
     [subs, runArchive],
   );
+
+  // Collapse/expand — single stable instances at the list root (skill
+  // `list-performance-callbacks`); headers receive primitives + `onToggle`.
+  const onToggleCategory = useCallback((category: CategorySlug) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
+    });
+  }, []);
+
+  const onCollapseAll = useCallback(() => {
+    setCollapsed((prev) => {
+      if (sections.every((s) => prev.has(s.category))) return prev;
+      return new Set(sections.map((s) => s.category));
+    });
+  }, [sections]);
+
+  const onExpandAll = useCallback(() => {
+    setCollapsed((prev) => (prev.size === 0 ? prev : new Set()));
+  }, []);
 
   const hasAnySubs = subs.length > 0;
   const filteredToZero = visible.length === 0;
@@ -217,13 +272,31 @@ export function SubscriptionsScreen() {
 
       <View style={styles.countRow}>
         <Text variant="caption" color="textSecondary" weight="600">
-          {visible.length} shown
+          {`${visible.length} shown`}
         </Text>
-        {error ? (
-          <Text variant="caption" color="negative">
-            {error}
-          </Text>
-        ) : null}
+        <View style={styles.countActions}>
+          {error ? (
+            <Text variant="caption" color="negative">
+              {error}
+            </Text>
+          ) : null}
+          {sections.length > 1 ? (
+            <Pressable
+              onPress={allCollapsed ? onExpandAll : onCollapseAll}
+              accessibilityRole="button"
+              accessibilityLabel={
+                allCollapsed
+                  ? 'Expand all categories'
+                  : 'Collapse all categories'
+              }
+              hitSlop={8}
+            >
+              <Text variant="caption" color="accent" weight="600">
+                {allCollapsed ? 'Expand all' : 'Collapse all'}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
     </View>
   );
@@ -237,34 +310,53 @@ export function SubscriptionsScreen() {
   return (
     <Surface background="surface" style={styles.root}>
       <FlashList
-        data={visible}
-        keyExtractor={(item) => item.id}
+        data={flat}
+        keyExtractor={(item) =>
+          item.kind === 'header'
+            ? `header-${item.category}`
+            : item.subscription.id
+        }
+        getItemType={(item) => item.kind}
+        stickyHeaderIndices={stickyIndices}
         maintainVisibleContentPosition={{ disabled: true }}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={header}
         ListFooterComponent={footer}
         renderItem={({ item }) => {
-          const bg = item.archived
+          if (item.kind === 'header') {
+            return (
+              <CategorySectionHeader
+                category={item.category}
+                label={item.label}
+                icon={item.icon}
+                count={item.count}
+                collapsed={item.collapsed}
+                onToggle={onToggleCategory}
+              />
+            );
+          }
+          const sub = item.subscription;
+          const bg = sub.archived
             ? 'surfaceHigher'
-            : brandBackground(item.name, item.category);
-          const fg = item.archived ? undefined : brandIconColor(bg);
+            : brandBackground(sub.name, sub.category);
+          const fg = sub.archived ? undefined : brandIconColor(bg);
           return (
             <SwipeableRow
-              id={item.id}
-              archived={item.archived}
+              id={sub.id}
+              archived={sub.archived}
               onAction={onSwipeAction}
               onPressWithId={onRowPress}
               onLongPressWithId={onRowLongPress}
-              title={item.name}
-              subtitle={rowSubtitle(item)}
-              trailingTitle={formatCurrency(item.amount, item.currency)}
-              trailingSubtitle={rowTrailingSubtitle(item, activeIdSet)}
-              icon={item.icon}
+              title={sub.name}
+              subtitle={rowSubtitle(sub)}
+              trailingTitle={formatCurrency(sub.amount, sub.currency)}
+              trailingSubtitle={rowTrailingSubtitle(sub, activeIdSet)}
+              icon={sub.icon}
               avatarBackground={bg}
               avatarIconColor={fg}
-              disabled={item.archived}
-              style={item.archived ? styles.archivedRow : undefined}
+              disabled={sub.archived}
+              style={sub.archived ? styles.archivedRow : undefined}
             />
           );
         }}
@@ -323,6 +415,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  countActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   footerEmpty: {
     padding: spacing.xl,

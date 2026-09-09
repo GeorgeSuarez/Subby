@@ -18,9 +18,9 @@
  *  - `rendering-no-falsy-and`: ternaries only — no `value && <X />`.
  *  - `ui-menus` / `ui-native-modals`: the modal is presented by the route
  *    group (`/subscription/_layout.tsx`), not a JS bottom sheet.
- *  - `state-ground-truth`: the draft is ground truth; we interpolate category
- *    defaults from the user's chosen category only when `id` editing changes
- *    the icon slot — never overwriting user-typed values.
+ *  - `state-ground-truth`: the draft is ground truth; the icon is derived
+ *    from the chosen category (no icon picker) and the color is an optional
+ *    user override.
  */
 
 import {
@@ -42,7 +42,6 @@ import { AmountInput } from '@/features/add-subscription/components/AmountInput'
 import { DateInput } from '@/features/add-subscription/components/DateInput';
 import { CyclePicker } from '@/features/add-subscription/components/CyclePicker';
 import { CategoryPicker } from '@/features/add-subscription/components/CategoryPicker';
-import { IconColorPicker } from '@/features/add-subscription/components/IconColorPicker';
 import {
   defaultDraft,
   draftFromSubscription,
@@ -149,23 +148,14 @@ export function AddEditScreen({
   }, []);
 
   const setCategory = useCallback((category: SubscriptionDraft['category']) => {
-    setDraft((prev) => {
-      // If the user added nothing custom to the icon yet, follow the category
-      // default for convenience. Otherwise leave their chosen icon alone.
-      const icon =
-        prev.icon === categoryMeta(prev.category).icon
-          ? categoryMeta(category).icon
-          : prev.icon;
-      return { ...prev, category, icon };
-    });
-  }, []);
-
-  const setIcon = useCallback((icon: string) => {
-    setDraft((prev) => ({ ...prev, icon }));
-  }, []);
-
-  const setColor = useCallback((hex: string) => {
-    setDraft((prev) => ({ ...prev, color: hex }));
+    // The icon always follows the category (there is no icon picker), so a
+    // category change re-derives it. Drafts edited from legacy subscriptions
+    // with a custom icon keep it until the category is touched.
+    setDraft((prev) => ({
+      ...prev,
+      category,
+      icon: categoryMeta(category).icon,
+    }));
   }, []);
 
   const setNotes = useCallback((notes: string) => {
@@ -354,19 +344,6 @@ export function AddEditScreen({
               <CategoryPicker value={draft.category} onSelect={setCategory} />
             </FormField>
 
-            <IconColorPicker
-              icon={draft.icon}
-              color={draft.color}
-              onSelectIcon={(name) => {
-                setIcon(name);
-                markTouched('icon');
-              }}
-              onSelectColor={(hex) => {
-                setColor(hex);
-                markTouched('color');
-              }}
-            />
-
             <FormField
               field="notes"
               label="Notes (optional)"
@@ -404,10 +381,14 @@ export function AddEditScreen({
 
 function cycleLabelFor(cycle: SubscriptionDraft['cycle']): string {
   switch (cycle) {
+    case 'weekly':
+      return 'week';
     case 'monthly':
       return 'month';
     case 'quarterly':
       return 'quarter';
+    case 'semiannual':
+      return '6 months';
     case 'yearly':
       return 'year';
   }

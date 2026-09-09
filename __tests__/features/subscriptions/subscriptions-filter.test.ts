@@ -2,6 +2,8 @@ import {
   applyFilter,
   applySort,
   filterAndSortSubs,
+  flattenSectionsForList,
+  groupSubsByCategory,
   matchesQuery,
 } from '@/features/subscriptions/subscriptions-filter';
 import type { Subscription } from '@/types/subscription';
@@ -187,5 +189,66 @@ describe('filterAndSortSubs', () => {
     const ids = result.map((s) => s.id);
     expect(ids).not.toContain('arch');
     expect(ids.length).toBe(4);
+  });
+});
+
+describe('groupSubsByCategory', () => {
+  it('groups in canonical CATEGORIES order and preserves item order', () => {
+    // Input deliberately out of category order; items within streaming keep
+    // their relative order.
+    const input = [subs[2]!, subs[3]!, subs[1]!, subs[0]!];
+    const sections = groupSubsByCategory(input);
+    expect(sections.map((s) => s.category)).toEqual([
+      'streaming',
+      'music',
+      'developer',
+      'other',
+    ]);
+    expect(sections[0]!.items.map((s) => s.id)).toEqual(['d']);
+    expect(sections.map((s) => s.items.length)).toEqual([1, 1, 1, 1]);
+  });
+
+  it('attaches label + icon metadata and omits empty categories', () => {
+    const sections = groupSubsByCategory([subs[1]!]);
+    expect(sections.length).toBe(1);
+    expect(sections[0]).toMatchObject({
+      category: 'music',
+      label: 'Music',
+      icon: 'musical-notes-outline',
+    });
+  });
+
+  it('returns a NEW array for empty input', () => {
+    expect(groupSubsByCategory([])).toEqual([]);
+  });
+});
+
+describe('flattenSectionsForList', () => {
+  it('emits a header per section plus rows when expanded', () => {
+    const sections = groupSubsByCategory([subs[3]!, subs[1]!]);
+    const flat = flattenSectionsForList(sections, new Set());
+    expect(flat.map((i) => i.kind)).toEqual(['header', 'row', 'header', 'row']);
+    expect(flat[0]).toMatchObject({
+      kind: 'header',
+      category: 'streaming',
+      count: 1,
+      collapsed: false,
+    });
+  });
+
+  it('emits only the header for collapsed sections', () => {
+    const sections = groupSubsByCategory([subs[3]!, subs[1]!]);
+    const flat = flattenSectionsForList(sections, new Set(['streaming']));
+    expect(flat.map((i) => i.kind)).toEqual(['header', 'header', 'row']);
+    expect(flat[0]).toMatchObject({
+      kind: 'header',
+      category: 'streaming',
+      collapsed: true,
+    });
+    expect(flat[1]).toMatchObject({
+      kind: 'header',
+      category: 'music',
+      collapsed: false,
+    });
   });
 });

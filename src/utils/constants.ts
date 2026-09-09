@@ -50,14 +50,46 @@ export function categoryMeta(slug: CategorySlug): CategoryMeta {
 export interface CycleMeta {
   cycle: Cycle;
   label: string;
-  /** How many calendar months each cycle spans. */
-  months: number;
+  /** Charges per calendar year — drives monthly/yearly cost normalization. */
+  billsPerYear: number;
+  /**
+   * Calendar step used to advance renewal dates. Month-based cycles step by
+   * whole months (no day drift); weekly steps by days.
+   */
+  step: { kind: 'days'; days: number } | { kind: 'months'; months: number };
 }
 
 export const CYCLES: readonly CycleMeta[] = [
-  { cycle: 'monthly', label: 'Monthly', months: 1 },
-  { cycle: 'quarterly', label: 'Quarterly', months: 3 },
-  { cycle: 'yearly', label: 'Yearly', months: 12 },
+  {
+    cycle: 'weekly',
+    label: 'Weekly',
+    billsPerYear: 52,
+    step: { kind: 'days', days: 7 },
+  },
+  {
+    cycle: 'monthly',
+    label: 'Monthly',
+    billsPerYear: 12,
+    step: { kind: 'months', months: 1 },
+  },
+  {
+    cycle: 'quarterly',
+    label: 'Quarterly',
+    billsPerYear: 4,
+    step: { kind: 'months', months: 3 },
+  },
+  {
+    cycle: 'semiannual',
+    label: 'Semi-annual',
+    billsPerYear: 2,
+    step: { kind: 'months', months: 6 },
+  },
+  {
+    cycle: 'yearly',
+    label: 'Yearly',
+    billsPerYear: 1,
+    step: { kind: 'months', months: 12 },
+  },
 ] as const;
 
 export const CYCLE_BY_NAME: Record<Cycle, CycleMeta> =

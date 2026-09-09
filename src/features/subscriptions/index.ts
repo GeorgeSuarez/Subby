@@ -5,6 +5,10 @@ export {
   applyFilter,
   applySort,
   filterAndSortSubs,
+  flattenSectionsForList,
+  groupSubsByCategory,
   matchesQuery,
+  type CategorySection,
   type FilterSortOptions,
+  type SubscriptionsListItem,
 } from '@/features/subscriptions/subscriptions-filter';

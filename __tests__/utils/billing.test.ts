@@ -1,6 +1,8 @@
 import {
   activeTrials,
+  addDays,
   addMonths,
+  advanceCycle,
   billingCyclePosition,
   budgetProgress,
   categoryBreakdown,
@@ -139,6 +141,45 @@ describe('nextRenewalAfter', () => {
     );
     expect(result).toBe('2027-01-01');
   });
+
+  it('advances weekly by 7-day steps', () => {
+    const result = nextRenewalAfter(
+      { nextRenewal: '2026-07-01', cycle: 'weekly' },
+      parseDate('2026-07-16'),
+    );
+    // 07-01 -> 07-08 -> 07-15 (still past) -> 07-22 (future yes!)
+    expect(result).toBe('2026-07-22');
+  });
+
+  it('advances semi-annual by 6 months', () => {
+    const result = nextRenewalAfter(
+      { nextRenewal: '2026-01-15', cycle: 'semiannual' },
+      parseDate('2026-07-16'),
+    );
+    // 01-15 -> 07-15 (still past) -> 2027-01-15 (future yes!)
+    expect(result).toBe('2027-01-15');
+  });
+});
+
+describe('advanceCycle', () => {
+  it('steps weekly by days, forward and back', () => {
+    expect(toISODate(advanceCycle(parseDate('2026-07-01'), 'weekly'))).toBe(
+      '2026-07-08',
+    );
+    expect(toISODate(advanceCycle(parseDate('2026-07-08'), 'weekly', -1))).toBe(
+      '2026-07-01',
+    );
+  });
+
+  it('clamps month ends when stepping backwards', () => {
+    expect(
+      toISODate(advanceCycle(parseDate('2026-03-31'), 'monthly', -1)),
+    ).toBe('2026-02-28');
+  });
+
+  it('addDays preserves the UTC-noon anchor', () => {
+    expect(toISODate(addDays(parseDate('2026-07-01'), 7))).toBe('2026-07-08');
+  });
 });
 
 describe('daysUntilRenewal', () => {
@@ -164,6 +205,20 @@ describe('monthlyEquivalent / yearlyEquivalent', () => {
   });
   it('yearly divided by 12', () => {
     expect(monthlyEquivalent({ amount: 120, cycle: 'yearly' })).toBeCloseTo(10);
+  });
+  it('weekly bills ~52 times a year', () => {
+    expect(monthlyEquivalent({ amount: 10, cycle: 'weekly' })).toBeCloseTo(
+      (10 * 52) / 12,
+    );
+    expect(yearlyEquivalent({ amount: 10, cycle: 'weekly' })).toBeCloseTo(520);
+  });
+  it('semi-annual divided by 6', () => {
+    expect(monthlyEquivalent({ amount: 60, cycle: 'semiannual' })).toBeCloseTo(
+      10,
+    );
+    expect(yearlyEquivalent({ amount: 60, cycle: 'semiannual' })).toBeCloseTo(
+      120,
+    );
   });
   it('yearlyEquivalent is monthly * 12', () => {
     expect(yearlyEquivalent({ amount: 12, cycle: 'monthly' })).toBeCloseTo(144);

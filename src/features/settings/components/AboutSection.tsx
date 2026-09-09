@@ -30,15 +30,7 @@ export function AboutSection() {
           Version
         </Text>
         <Text variant="caption" weight="600" color="textPrimary">
-          1.0.0
-        </Text>
-      </View>
-      <View style={styles.row}>
-        <Text variant="caption" color="textSecondary">
-          Built with
-        </Text>
-        <Text variant="caption" weight="600" color="textPrimary">
-          Expo · React Native
+          0.1.0
         </Text>
       </View>
     </Card>

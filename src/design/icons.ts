@@ -10,9 +10,9 @@ import type { Ionicons } from '@expo/vector-icons';
 
 /** Coerce a stored icon string into an Ionicons glyph name. */
 export function iconName(name: string): keyof typeof Ionicons.glyphMap {
-  // SAFETY: names enter through curated sources (ICON_PALETTE, category
-  // defaults, form input constrained to those) or existing user data from the
-  // same sources; a name missing from the glyph map renders a blank box
-  // instead of crashing, so the assertion cannot break the UI.
+  // SAFETY: names enter through curated sources (category defaults) or
+  // existing user data from the same sources; a name missing from the glyph
+  // map renders a blank box instead of crashing, so the assertion cannot
+  // break the UI.
   return name as keyof typeof Ionicons.glyphMap;
 }
