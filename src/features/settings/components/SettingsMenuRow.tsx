@@ -59,7 +59,7 @@ export function SettingsMenuRow({
             {label}
           </Text>
           {description ? (
-            <Text variant="caption" color="textSecondary" numberOfLines={1}>
+            <Text variant="caption" color="textSecondary">
               {description}
             </Text>
           ) : null}
