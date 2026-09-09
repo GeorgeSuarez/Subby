@@ -71,7 +71,7 @@ src/
     subscriptions/              SortFilterBar, filter helpers
     subscription-detail/        DetailHero, RenewalCountdown, EffectiveCost
     add-subscription/           FormField, AmountInput, CyclePicker, etc.
-    settings/                   ThemeSection, CurrencySection, DangerZone
+    settings/                   ThemeSection, CurrencySheet, DangerZone
   design/                       Tokens, theme store, 14 primitive components
   db/                           Schema, client, queries, seed data
   store/                        Zustand stores (subscriptions + UI prefs)

@@ -4,7 +4,7 @@ export { SettingsDetailScreen } from '@/features/settings/components/SettingsDet
 export { SettingsMenuRow } from '@/features/settings/components/SettingsMenuRow';
 export { ProSection } from '@/features/settings/components/ProSection';
 export { ThemeSection } from '@/features/settings/components/ThemeSection';
-export { CurrencySection } from '@/features/settings/components/CurrencySection';
+export { CurrencySheet } from '@/features/settings/components/CurrencySheet';
 export { BudgetSection } from '@/features/settings/components/BudgetSection';
 export { RemindersSection } from '@/features/settings/components/RemindersSection';
 export { AccountSection } from '@/features/settings/components/AccountSection';

@@ -18,7 +18,6 @@ export default function SettingsGroupLayout() {
     >
       <Stack.Screen name="pro" options={{ title: 'Subby Pro' }} />
       <Stack.Screen name="theme" options={{ title: 'Theme' }} />
-      <Stack.Screen name="currency" options={{ title: 'Currency' }} />
       <Stack.Screen name="budget" options={{ title: 'Budget' }} />
       <Stack.Screen name="notifications" options={{ title: 'Notifications' }} />
       <Stack.Screen name="account" options={{ title: 'Account' }} />

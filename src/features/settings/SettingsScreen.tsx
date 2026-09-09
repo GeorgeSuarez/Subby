@@ -16,7 +16,7 @@
  *  - `rendering-no-falsy-and`: ternaries only.
  */
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -24,6 +24,7 @@ import { Text } from '@/design/components';
 import { Surface } from '@/design/components/Surface';
 import { spacing } from '@/design/tokens';
 import { SettingsMenuRow } from '@/features/settings/components/SettingsMenuRow';
+import { CurrencySheet } from '@/features/settings/components/CurrencySheet';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useDemoDataStore } from '@/store/useDemoDataStore';
 import { ENABLE_DEMO_DATA } from '@/utils/environment';
@@ -61,6 +62,7 @@ export function SettingsScreen() {
   }, [refreshDemoInfo, email]);
 
   const showDeveloper = ENABLE_DEMO_DATA && demoInfo?.isAllowed === true;
+  const [currencyOpen, setCurrencyOpen] = useState(false);
 
   const items: SettingsMenuItem[] = [
     {
@@ -81,7 +83,7 @@ export function SettingsScreen() {
       id: 'currency',
       label: 'Currency',
       description: 'Set a currency preference',
-      onPress: () => router.push('/settings/currency'),
+      onPress: () => setCurrencyOpen(true),
     },
     {
       id: 'budget',
@@ -149,6 +151,10 @@ export function SettingsScreen() {
         >
           {items.map(renderMenuItem)}
         </ScrollView>
+        <CurrencySheet
+          visible={currencyOpen}
+          onClose={() => setCurrencyOpen(false)}
+        />
       </View>
     </Surface>
   );
