@@ -55,6 +55,7 @@ export function usePaywall() {
   }, []);
 
   useEffect(() => {
+    // oxlint-disable-next-line react/set-state-in-effect -- mount-only IAP product fetch: external-store sync (the rule's documented exception); initial state is already loading/null.
     void load();
   }, [load]);
 

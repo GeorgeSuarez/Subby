@@ -2,7 +2,7 @@
  * AccountSection — mock account summary and sign-out.
  *
  * Skill rules:
- *  - `react-state-minimize`: the email and session facts are read straight
+ *  - `react-state-minimize`: the session facts are read straight
  *    from the auth store; nothing local.
  *  - `react-state-dispatcher`: signing out goes through the store's `signOut`;
  *    the root layout's `Stack.Protected` gate flips and the auth screen
@@ -27,7 +27,6 @@ import { notifyError, notifySuccess } from '@/utils/haptics';
 export function AccountSection() {
   const { colors } = useTheme();
   const router = useRouter();
-  const email = useAuthStore((s) => s.email);
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
   const isAnonymous = useAuthStore((s) => s.isAnonymous);
   const pendingVerificationEmail = useAuthStore(

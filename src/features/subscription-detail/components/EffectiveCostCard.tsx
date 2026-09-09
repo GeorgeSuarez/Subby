@@ -1,6 +1,6 @@
 /**
- * EffectiveCostCard — two-column stat block (monthly / yearly) showing the
- * per-cycle amount converted to standard equivalents.
+ * EffectiveCostCard — yearly cost stat block with an optional yearly-billing
+ * savings hint and the subscription notes.
  *
  * Skill rule `react-state-minimize`: both values are derived during render
  * from the subscription, never stored.
@@ -11,10 +11,7 @@ import { StyleSheet, View } from 'react-native';
 import { Card, Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { spacing } from '@/design/tokens';
-import {
-  getMonthlyCost,
-  getYearlyCost,
-} from '@/features/subscription-detail/detail-helpers';
+import { getYearlyCost } from '@/features/subscription-detail/detail-helpers';
 import { formatCurrency } from '@/utils/format';
 import { yearlySavingsHint } from '@/utils/billing';
 import type { Subscription } from '@/types/subscription';
