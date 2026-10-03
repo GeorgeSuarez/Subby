@@ -29,13 +29,16 @@ import Animated, {
   withSpring,
   interpolate,
   runOnJS,
+  ZoomIn,
   type AnimatedStyle,
 } from 'react-native-reanimated';
 import type { AccessibilityRole, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+import { Text } from '@/design/components';
 import { useTheme } from '@/design/theme';
 import { layout, spacing } from '@/design/tokens';
+import { usePendingCount } from '@/store/useSubscriptionsStore';
 import { impactLight } from '@/utils/haptics';
 
 export interface AddFabProps {
@@ -47,6 +50,8 @@ export interface AddFabProps {
 export function AddFab({ onPress, label = 'Add subscription' }: AddFabProps) {
   const { colors, shadow } = useTheme();
   const insets = useSafeAreaInsets();
+  // Number of writes queued for sync (offline) — surfaces as a badge.
+  const pendingCount = usePendingCount();
 
   // Ground truth state shared values (skill §7.1):
   //   pressed: 0 = idle, 1 = pressed  (gesture-driven)
@@ -104,6 +109,24 @@ export function AddFab({ onPress, label = 'Add subscription' }: AddFabProps) {
           animatedStyle={animatedStyle}
         />
       </GestureDetector>
+
+      {/* Pending-sync badge — appears while offline changes wait to upload. */}
+      {pendingCount > 0 ? (
+        <Animated.View
+          entering={ZoomIn.springify().damping(14).stiffness(220)}
+          style={[styles.badge, { backgroundColor: colors.negative }]}
+          pointerEvents="none"
+        >
+          <Text
+            variant="caption"
+            weight="700"
+            color="textOnAccent"
+            style={styles.badgeText}
+          >
+            {pendingCount > 99 ? '99+' : String(pendingCount)}
+          </Text>
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
@@ -152,5 +175,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderCurve: 'continuous',
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xs,
+    borderCurve: 'continuous',
+  },
+  badgeText: {
+    fontSize: 11,
+    lineHeight: 14,
   },
 });
