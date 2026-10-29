@@ -5,24 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="A visual tour of Subby, a calm subscription tracker for recurring spend."
+      content="A short tour of Subby, a quiet subscription tracker for iPhone and Android."
     />
-    <meta name="theme-color" content="#080b10" />
+    <meta name="theme-color" content="#faf7f0" />
+    <meta name="color-scheme" content="light" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Subby — Product tour" />
+    <meta
+      property="og:description"
+      content="Monthly spend, upcoming renewals, and three silent recordings of the app."
+    />
+    <meta
+      property="og:url"
+      content="https://georgesuarez.github.io/Subby/demo/"
+    />
     <title>Subby — Product tour</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23FAF7F0'/%3E%3Cg fill='%230E4A5C'%3E%3Crect x='14' y='18' width='36' height='8' rx='4'/%3E%3Crect x='18' y='28' width='36' height='8' rx='4' opacity='.78'/%3E%3Crect x='14' y='38' width='36' height='8' rx='4' opacity='.56'/%3E%3C/g%3E%3C/svg%3E"
+    />
     <style>
       :root {
-        --surface: #080b10;
-        --surface-raised: #0e141c;
-        --surface-high: #151e29;
-        --border: #243243;
-        --border-bright: #35475b;
-        --text: #f4f7fb;
-        --text-secondary: #93a1b5;
-        --text-tertiary: #64748b;
-        --accent: #22d3ee;
-        --accent-soft: #0b5366;
-        --warm: #f4c95d;
-        --shadow: 0 24px 70px rgb(0 0 0 / 24%);
+        color-scheme: light;
+        --paper: #faf7f0;
+        --ink: #102a33;
+        --muted: #50636a;
+        --rule: #ded7c9;
+        --rule-soft: #ebe5d8;
+        --teal: #0e4a5c;
+        --signal: #22a0bf;
+        --trial: #c98a00;
+        --serif:
+          'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino,
+          Georgia, serif;
+        --sans:
+          system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
+          sans-serif;
+        --page: 1120px;
+        --gutter: 32px;
       }
 
       * {
@@ -30,553 +50,847 @@
       }
 
       html {
-        background: var(--surface);
-        scroll-behavior: smooth;
+        background: var(--paper);
       }
 
       body {
         min-width: 320px;
         margin: 0;
-        background:
-          radial-gradient(
-            circle at 12% 0%,
-            rgb(34 211 238 / 10%),
-            transparent 30rem
-          ),
-          radial-gradient(
-            circle at 90% 18%,
-            rgb(244 201 93 / 7%),
-            transparent 24rem
-          ),
-          var(--surface);
-        color: var(--text);
-        font-family:
-          Inter,
-          ui-sans-serif,
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          'Segoe UI',
-          sans-serif;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      h1,
+      h2,
+      h3,
+      p,
+      figure {
+        margin: 0;
+      }
+
+      ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
       }
 
       a {
         color: inherit;
       }
 
+      svg,
+      video {
+        display: block;
+      }
+
+      ::selection {
+        background: var(--teal);
+        color: var(--paper);
+      }
+
+      :focus-visible {
+        outline: 2px solid var(--teal);
+        outline-offset: 3px;
+        border-radius: 2px;
+      }
+
+      .skip {
+        position: absolute;
+        top: -100px;
+        left: 16px;
+        z-index: 10;
+        border: 1px solid var(--teal);
+        background: var(--paper);
+        padding: 10px 14px;
+        color: var(--teal);
+        font-size: 0.875rem;
+        text-decoration: none;
+      }
+
+      .skip:focus {
+        top: 16px;
+      }
+
+      main:focus {
+        outline: none;
+      }
+
       .site-header,
-      main,
-      footer {
-        width: min(100% - 48px, 1200px);
+      .hero,
+      .tour,
+      .site-footer {
+        width: min(calc(100% - 2 * var(--gutter)), var(--page));
         margin-inline: auto;
       }
 
       .site-header {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) minmax(250px, 340px);
-        gap: 56px;
-        align-items: end;
-        padding: 72px 0 46px;
-      }
-
-      .eyebrow,
-      .demo-kicker,
-      .status-label {
-        margin: 0;
-        color: var(--accent);
-        font-family:
-          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.16em;
-        line-height: 1.4;
-        text-transform: uppercase;
-      }
-
-      h1,
-      h2,
-      p {
-        margin-top: 0;
-      }
-
-      h1 {
-        max-width: 700px;
-        margin-bottom: 20px;
-        font-family:
-          ui-rounded, 'SF Pro Rounded', 'Arial Rounded MT Bold', system-ui,
-          sans-serif;
-        font-size: clamp(42px, 6.4vw, 78px);
-        font-weight: 750;
-        letter-spacing: -0.065em;
-        line-height: 0.98;
-      }
-
-      h1 em {
-        color: var(--accent);
-        font-style: normal;
-      }
-
-      .intro {
-        max-width: 580px;
-        margin-bottom: 0;
-        color: var(--text-secondary);
-        font-size: clamp(16px, 2vw, 19px);
-        line-height: 1.55;
-      }
-
-      .header-actions {
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 26px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        border-bottom: 1px solid var(--rule);
+        padding: 22px 0 20px;
       }
 
-      .header-actions a,
-      .status-pill {
+      .wordmark {
         display: inline-flex;
+        flex: none;
         align-items: center;
-        gap: 8px;
-        min-height: 36px;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        padding: 0 14px;
-        color: var(--text-secondary);
-        font-size: 12px;
-        font-weight: 650;
+        gap: 10px;
+        color: var(--ink);
+        font-family: var(--serif);
+        font-size: 1.3125rem;
+        letter-spacing: -0.01em;
+        line-height: 1;
         text-decoration: none;
       }
 
-      .header-actions a:hover,
-      .header-actions a:focus-visible {
-        border-color: var(--accent);
-        color: var(--text);
-        outline: none;
+      .wordmark svg {
+        width: 27px;
+        height: auto;
       }
 
-      .header-actions a:focus-visible,
-      video:focus-visible {
-        box-shadow: 0 0 0 3px rgb(34 211 238 / 32%);
+      .site-nav {
+        display: flex;
+        align-items: center;
+        gap: 24px;
       }
 
-      .status-pill {
-        border-color: rgb(34 211 238 / 28%);
-        background: rgb(11 83 102 / 22%);
-        color: var(--accent);
+      .site-nav a {
+        color: var(--muted);
+        font-size: 0.8125rem;
+        font-weight: 500;
+        text-decoration: none;
       }
 
-      .status-pill::before {
+      .site-nav a:hover {
+        color: var(--ink);
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 4px;
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.14fr) minmax(320px, 0.86fr);
+        gap: clamp(40px, 6.5vw, 80px);
+        align-items: start;
+        padding: clamp(56px, 8vw, 96px) 0 clamp(64px, 8vw, 96px);
+      }
+
+      .hero h1 {
+        font-family: var(--serif);
+        font-size: clamp(2.75rem, 7vw + 1rem, 4.5rem);
+        font-weight: 400;
+        letter-spacing: -0.025em;
+        line-height: 1.02;
+      }
+
+      .hero h1 .line {
+        display: block;
+      }
+
+      .hero-intro {
+        max-width: 44ch;
+        margin-top: 30px;
+        color: var(--muted);
+        font-family: var(--serif);
+        font-size: clamp(1.0625rem, 1.2vw, 1.1875rem);
+        line-height: 1.62;
+        text-wrap: pretty;
+      }
+
+      /* Ledger: the app's dashboard, set as a page from a ledger book. */
+      .ledger {
+        border-top: 1px solid var(--ink);
+        padding-top: 16px;
+      }
+
+      .ledger-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      .ledger-kicker,
+      .ledger-active {
+        color: var(--muted);
+        font-family: var(--sans);
+        font-size: 0.75rem;
+        line-height: 1.4;
+      }
+
+      .ledger-kicker {
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+
+      .ledger-active strong {
+        color: var(--ink);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .ledger-amount {
+        margin-top: 10px;
+        font-family: var(--serif);
+        font-size: clamp(3.4rem, 5.6vw, 4.5rem);
+        font-variant-numeric: tabular-nums;
+        font-weight: 400;
+        letter-spacing: -0.035em;
+        line-height: 0.94;
+      }
+
+      .ledger-year {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 0.8125rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .renewals-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        margin-top: 26px;
+        border-top: 1px solid var(--rule);
+        padding-top: 13px;
+        color: var(--muted);
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+
+      .renewals-list li {
+        display: grid;
+        grid-template-columns: 8px minmax(0, 1fr) auto auto;
+        align-items: baseline;
+        column-gap: 12px;
+        border-bottom: 1px solid var(--rule-soft);
+        padding: 10px 0;
+      }
+
+      .renewal-dot {
         width: 7px;
         height: 7px;
         border-radius: 50%;
-        background: var(--accent);
-        box-shadow: 0 0 0 4px rgb(34 211 238 / 12%);
-        content: '';
+        background: var(--dot);
+        align-self: center;
       }
 
-      .signal-card {
-        position: relative;
+      .renewal-name {
         overflow: hidden;
-        border: 1px solid var(--border);
-        border-radius: 22px;
-        padding: 22px;
-        background: linear-gradient(
-          145deg,
-          rgb(21 30 41 / 92%),
-          rgb(14 20 28 / 92%)
-        );
-        box-shadow: var(--shadow);
+        color: var(--ink);
+        font-size: 0.9375rem;
+        font-weight: 500;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
-      .signal-card::after {
-        position: absolute;
-        top: -70px;
-        right: -60px;
-        width: 190px;
-        height: 190px;
-        border: 1px solid rgb(34 211 238 / 28%);
-        border-radius: 50%;
-        box-shadow:
-          0 0 0 20px rgb(34 211 238 / 4%),
-          0 0 0 42px rgb(34 211 238 / 3%);
-        content: '';
+      .renewal-date {
+        min-width: 3.4em;
+        color: var(--muted);
+        font-size: 0.75rem;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
       }
 
-      .signal-value {
-        display: block;
-        margin: 8px 0 16px;
-        font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
-        font-size: 42px;
-        font-weight: 750;
-        letter-spacing: -0.06em;
+      .renewal-amount {
+        min-width: 3.9em;
+        color: var(--ink);
+        font-family: var(--serif);
+        font-size: 1rem;
+        font-variant-numeric: tabular-nums;
+        text-align: right;
       }
 
-      .signal-value span {
-        color: var(--accent);
-      }
-
-      .signal-caption {
-        margin: 0;
-        color: var(--text-secondary);
-        font-size: 13px;
-        line-height: 1.45;
-      }
-
-      .signal-bars {
-        display: flex;
-        align-items: end;
-        gap: 6px;
-        height: 36px;
+      .budget {
         margin-top: 22px;
       }
 
-      .signal-bars i {
-        display: block;
-        width: 8px;
-        border-radius: 5px 5px 2px 2px;
-        background: var(--accent);
-        opacity: 0.78;
+      .budget-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        color: var(--muted);
+        font-size: 0.75rem;
       }
 
-      .signal-bars i:nth-child(1) {
-        height: 13px;
-        opacity: 0.28;
+      .budget-head span:last-child {
+        font-variant-numeric: tabular-nums;
       }
 
-      .signal-bars i:nth-child(2) {
-        height: 22px;
-        opacity: 0.45;
+      .budget-track {
+        height: 3px;
+        margin-top: 9px;
+        overflow: hidden;
+        border-radius: 2px;
+        background: var(--rule);
       }
 
-      .signal-bars i:nth-child(3) {
-        height: 31px;
-        opacity: 0.66;
+      .budget-fill {
+        width: 87%;
+        height: 100%;
+        border-radius: 2px;
+        background: var(--teal);
+        transform-origin: left;
+        animation: budget-fill 720ms cubic-bezier(0.16, 0.84, 0.3, 1) 280ms both;
       }
 
-      .signal-bars i:nth-child(4) {
-        height: 26px;
+      @keyframes budget-fill {
+        from {
+          transform: scaleX(0);
+        }
+        to {
+          transform: scaleX(1);
+        }
       }
 
-      .signal-bars i:nth-child(5) {
-        height: 36px;
+      .budget-note {
+        margin-top: 9px;
+        color: var(--muted);
+        font-size: 0.75rem;
+        line-height: 1.5;
+        text-wrap: pretty;
       }
 
-      main {
+      .tour {
+        border-top: 1px solid var(--rule);
+        padding: clamp(36px, 4.5vw, 52px) 0 clamp(72px, 8vw, 104px);
+      }
+
+      .tour-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: clamp(24px, 5vw, 64px);
+        margin-bottom: clamp(28px, 4vw, 40px);
+      }
+
+      .tour-title {
+        font-family: var(--serif);
+        font-size: clamp(1.75rem, 2.6vw, 2.25rem);
+        font-weight: 400;
+        letter-spacing: -0.015em;
+        line-height: 1.1;
+      }
+
+      .tour-intro {
+        max-width: 38ch;
+        color: var(--muted);
+        font-family: var(--serif);
+        font-size: 1rem;
+        line-height: 1.55;
+        text-wrap: pretty;
+      }
+
+      .motion-note-reduced {
+        display: none;
+      }
+
+      .tour-grid {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 18px;
-        align-items: start;
-        padding-bottom: 70px;
+        gap: clamp(24px, 3.5vw, 40px);
       }
 
-      .demo {
-        min-width: 0;
-        border: 1px solid var(--border);
-        border-radius: 24px;
-        padding: 12px 12px 18px;
-        background: linear-gradient(
-          160deg,
-          rgb(14 20 28 / 96%),
-          rgb(10 15 21 / 96%)
-        );
-        box-shadow: 0 16px 40px rgb(0 0 0 / 14%);
-        transition:
-          border-color 180ms ease,
-          transform 180ms ease,
-          box-shadow 180ms ease;
+      .screen {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgb(16 42 51 / 14%);
+        border-radius: 20px;
+        background: #0b0f14;
+        transition: border-color 160ms ease;
       }
 
-      .demo:hover {
-        border-color: var(--border-bright);
-        box-shadow: var(--shadow);
-        transform: translateY(-4px);
+      .screen:hover {
+        border-color: rgb(14 74 92 / 45%);
       }
 
-      .demo-head {
-        display: flex;
-        align-items: end;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 6px 6px 14px;
+      .screen:focus-within {
+        outline: 2px solid var(--teal);
+        outline-offset: 3px;
       }
 
-      .demo-kicker {
-        margin-bottom: 5px;
-        color: var(--text-tertiary);
-        font-size: 9px;
-        letter-spacing: 0.13em;
-      }
-
-      .demo h2 {
-        margin: 0;
-        font-family: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
-        font-size: 18px;
-        font-weight: 720;
-        letter-spacing: -0.025em;
-      }
-
-      .demo-time {
-        flex: none;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        padding: 5px 8px;
-        color: var(--text-tertiary);
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        font-size: 10px;
-        font-weight: 700;
-      }
-
-      .demo video {
-        display: block;
+      .screen video {
         width: 100%;
         height: auto;
         aspect-ratio: 540 / 1046;
-        border: 1px solid var(--border);
-        border-radius: 16px;
-        background: #000;
+        cursor: pointer;
         object-fit: cover;
       }
 
-      .demo-caption {
-        min-height: 58px;
-        margin: 14px 6px 0;
-        color: var(--text-secondary);
-        font-size: 13px;
-        line-height: 1.5;
-      }
-
-      footer {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        border-top: 1px solid var(--border);
-        padding: 22px 0 34px;
-        color: var(--text-tertiary);
-        font-size: 12px;
-      }
-
-      footer p {
-        margin: 0;
-      }
-
-      footer a {
-        color: var(--text-secondary);
-        text-decoration: none;
-      }
-
-      footer a:hover,
-      footer a:focus-visible {
-        color: var(--accent);
+      .screen video:focus {
         outline: none;
       }
 
-      @media (max-width: 900px) {
-        .site-header {
-          grid-template-columns: 1fr;
-          gap: 30px;
-          padding-top: 54px;
-        }
+      .demo h3 {
+        margin-top: 18px;
+        font-family: var(--serif);
+        font-size: 1.3125rem;
+        font-weight: 400;
+        letter-spacing: -0.01em;
+        line-height: 1.2;
+      }
 
-        .signal-card {
-          max-width: 390px;
-        }
+      .demo p {
+        max-width: 37ch;
+        margin-top: 7px;
+        color: var(--muted);
+        font-family: var(--serif);
+        font-size: 0.9375rem;
+        line-height: 1.55;
+        text-wrap: pretty;
+      }
 
-        main {
+      .site-footer {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 32px;
+        border-top: 1px solid var(--rule);
+        padding: 24px 0 40px;
+        color: var(--muted);
+        font-size: 0.75rem;
+      }
+
+      .site-footer p {
+        max-width: 46ch;
+        line-height: 1.6;
+      }
+
+      .site-footer nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+
+      .site-footer a {
+        color: var(--muted);
+        text-decoration: none;
+      }
+
+      .site-footer a:hover {
+        color: var(--ink);
+        text-decoration: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
+      }
+
+      @media (max-width: 960px) {
+        .tour-grid {
           grid-template-columns: repeat(2, minmax(0, 1fr));
         }
       }
 
-      @media (max-width: 620px) {
-        .site-header,
-        main,
-        footer {
-          width: min(100% - 28px, 480px);
+      @media (max-width: 900px) {
+        .hero {
+          grid-template-columns: 1fr;
+          gap: 44px;
+          padding: 52px 0 64px;
+        }
+
+        .ledger {
+          max-width: 460px;
+        }
+
+        .tour-head {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 12px;
+        }
+      }
+
+      @media (max-width: 700px) {
+        .tour-grid {
+          grid-template-columns: 1fr;
+          gap: 44px;
+        }
+
+        .demo {
+          max-width: 420px;
+        }
+      }
+
+      @media (max-width: 560px) {
+        :root {
+          --gutter: 20px;
         }
 
         .site-header {
-          padding-top: 38px;
-          padding-bottom: 34px;
+          padding: 18px 0 16px;
         }
 
-        h1 {
-          font-size: clamp(40px, 14vw, 62px);
+        .site-nav {
+          gap: 18px;
         }
 
-        main {
-          grid-template-columns: 1fr;
-          gap: 16px;
+        .hero {
+          gap: 36px;
+          padding-top: 40px;
         }
 
-        .demo-caption {
-          min-height: 0;
+        .site-footer {
+          flex-direction: column;
+          gap: 18px;
         }
       }
 
       @media (prefers-reduced-motion: reduce) {
-        html {
-          scroll-behavior: auto;
+        .budget-fill {
+          animation: none;
         }
 
-        .demo {
+        .screen {
           transition: none;
+        }
+
+        .motion-note-auto {
+          display: none;
+        }
+
+        .motion-note-reduced {
+          display: inline;
         }
       }
     </style>
   </head>
   <body>
+    <a class="skip" href="#main">Skip to content</a>
+
     <header class="site-header">
-      <div>
-        <h1>See the whole <em>subscription picture.</em></h1>
-        <p class="intro">
-          Subby turns scattered renewals into one calm, visual dashboard — so
-          you can spot the monthly signal before it becomes noise.
-        </p>
-        <div class="header-actions" aria-label="Demo links">
-          <a href="https://github.com/GeorgeSuarez/Subby"
-            >View source <span aria-hidden="true">↗</span></a
-          >
-        </div>
-      </div>
+      <a class="wordmark" href="../" aria-label="Subby overview">
+        <svg viewBox="108 132 342 248" aria-hidden="true" focusable="false">
+          <defs>
+            <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#22a0bf" />
+              <stop offset="1" stop-color="#0e4a5c" />
+            </linearGradient>
+          </defs>
+          <g fill="url(#mark)">
+            <rect x="118" y="142" width="276" height="66" rx="33" />
+            <rect
+              x="164"
+              y="223"
+              width="276"
+              height="66"
+              rx="33"
+              opacity="0.78"
+            />
+            <rect
+              x="118"
+              y="304"
+              width="276"
+              height="66"
+              rx="33"
+              opacity="0.56"
+            />
+          </g>
+          <g fill="#faf7f0" opacity="0.72">
+            <circle cx="152" cy="175" r="10" />
+            <circle cx="198" cy="256" r="10" />
+            <circle cx="152" cy="337" r="10" />
+          </g>
+        </svg>
+        <span>Subby</span>
+      </a>
+      <nav class="site-nav" aria-label="Site">
+        <a href="../app-flow.html">App flow</a>
+        <a href="https://github.com/GeorgeSuarez/Subby">View source</a>
+      </nav>
     </header>
 
-    <main>
-      <section class="demo" aria-labelledby="dashboard-title">
-        <div class="demo-head">
-          <div>
-            <h2 id="dashboard-title">Dashboard</h2>
-          </div>
+    <main id="main" tabindex="-1">
+      <section class="hero" aria-labelledby="hero-title">
+        <div>
+          <h1 id="hero-title">
+            <span class="line">See the whole</span>
+            <span class="line">subscription</span>
+            <span class="line">picture.</span>
+          </h1>
+          <p class="hero-intro">
+            Subby is a subscription tracker for iPhone and Android. It puts
+            every recurring charge in one place: what you pay each month, what
+            renews next, and how the month is tracking against your budget.
+          </p>
         </div>
-        <video
-          data-src="web/dashboard.mp4"
-          data-src-fallback="web/dashboard.webm"
-          poster="web/dashboard-poster.jpg"
-          width="540"
-          height="1046"
-          muted
-          playsinline
-          loop
-          preload="none"
-          tabindex="0"
-          aria-label="Subby dashboard demo"
-        ></video>
-        <p class="demo-caption">
-          Monthly spend, budget projection, active trials, renewal timeline,
-          category breakdown, and forecast.
-        </p>
+
+        <aside class="ledger" aria-label="This month in Subby">
+          <div class="ledger-head">
+            <p class="ledger-kicker">Monthly spend</p>
+            <p class="ledger-active"><strong>8</strong> active</p>
+          </div>
+          <p class="ledger-amount">$87.13</p>
+          <p class="ledger-year">$1,045.51 a year</p>
+
+          <p class="renewals-head"><span>Next 30 days</span></p>
+          <ul class="renewals-list">
+            <li>
+              <span
+                class="renewal-dot"
+                style="--dot: #8b949e"
+                aria-hidden="true"
+              ></span>
+              <span class="renewal-name">GitHub</span>
+              <span class="renewal-date">Aug 22</span>
+              <span class="renewal-amount">$4.00</span>
+            </li>
+            <li>
+              <span
+                class="renewal-dot"
+                style="--dot: #3a82f7"
+                aria-hidden="true"
+              ></span>
+              <span class="renewal-name">iCloud+</span>
+              <span class="renewal-date">Aug 26</span>
+              <span class="renewal-amount">$2.99</span>
+            </li>
+            <li>
+              <span
+                class="renewal-dot"
+                style="--dot: var(--trial)"
+                aria-hidden="true"
+              ></span>
+              <span class="renewal-name">Peacock</span>
+              <span class="renewal-date">Aug 30</span>
+              <span class="renewal-amount">$5.99</span>
+            </li>
+          </ul>
+
+          <div class="budget">
+            <div class="budget-head">
+              <span>Monthly budget</span>
+              <span>$100.00</span>
+            </div>
+            <div class="budget-track" aria-hidden="true">
+              <div class="budget-fill"></div>
+            </div>
+            <p class="budget-note">
+              87% used. On track to end the month $22.04 under budget.
+            </p>
+          </div>
+        </aside>
       </section>
 
-      <section class="demo" aria-labelledby="add-title">
-        <div class="demo-head">
-          <div>
-            <h2 id="add-title">Add a subscription</h2>
-          </div>
+      <section class="tour" id="tour" aria-labelledby="tour-title">
+        <div class="tour-head">
+          <h2 class="tour-title" id="tour-title">A short tour</h2>
+          <p class="tour-intro">
+            Three silent recordings from the app, each under a minute.
+            <span class="motion-note motion-note-auto"
+              >Click or tap any screen to pause.</span
+            ><span class="motion-note motion-note-reduced"
+              >Use the player controls to play or pause.</span
+            >
+          </p>
         </div>
-        <video
-          data-src="web/add-subscription.mp4"
-          data-src-fallback="web/add-subscription.webm"
-          poster="web/add-subscription-poster.jpg"
-          width="540"
-          height="1046"
-          muted
-          playsinline
-          loop
-          preload="none"
-          tabindex="0"
-          aria-label="Subby add subscription demo"
-        ></video>
-        <p class="demo-caption">
-          Name, amount, renewal date, category, notes, and the saved detail
-          screen in one focused flow.
-        </p>
-      </section>
 
-      <section class="demo" aria-labelledby="subscriptions-title">
-        <div class="demo-head">
-          <div>
-            <h2 id="subscriptions-title">All subscriptions</h2>
-          </div>
+        <div class="tour-grid">
+          <figure class="demo">
+            <div class="screen">
+              <video
+                data-src="web/dashboard.mp4"
+                data-src-fallback="web/dashboard.webm"
+                data-start="0"
+                poster="web/dashboard-poster.jpg"
+                width="540"
+                height="1046"
+                muted
+                playsinline
+                preload="none"
+                tabindex="0"
+                aria-describedby="dashboard-desc"
+                aria-label="Dashboard recording, silent loop. Click or press Space to play or pause."
+              ></video>
+            </div>
+            <figcaption>
+              <h3>The dashboard</h3>
+              <p id="dashboard-desc">
+                Watch the month add up, then check what renews in the next 30
+                days.
+              </p>
+            </figcaption>
+          </figure>
+
+          <figure class="demo">
+            <div class="screen">
+              <video
+                data-src="web/add-subscription.mp4"
+                data-src-fallback="web/add-subscription.webm"
+                data-start="11"
+                poster="web/add-subscription-poster.jpg"
+                width="540"
+                height="1046"
+                muted
+                playsinline
+                preload="none"
+                tabindex="0"
+                aria-describedby="add-desc"
+                aria-label="Add a subscription recording, silent loop. Click or press Space to play or pause."
+              ></video>
+            </div>
+            <figcaption>
+              <h3>Adding a subscription</h3>
+              <p id="add-desc">
+                Name, amount, cycle, and renewal date, then a category, color,
+                and notes.
+              </p>
+            </figcaption>
+          </figure>
+
+          <figure class="demo">
+            <div class="screen">
+              <video
+                data-src="web/subscriptions.mp4"
+                data-src-fallback="web/subscriptions.webm"
+                data-start="14"
+                poster="web/subscriptions-poster.jpg"
+                width="540"
+                height="1046"
+                muted
+                playsinline
+                preload="none"
+                tabindex="0"
+                aria-describedby="subscriptions-desc"
+                aria-label="Subscriptions list recording, silent loop. Click or press Space to play or pause."
+              ></video>
+            </div>
+            <figcaption>
+              <h3>All subscriptions</h3>
+              <p id="subscriptions-desc">
+                Sort by cost, search as you type, and open a row for its detail
+                and effective monthly cost.
+              </p>
+            </figcaption>
+          </figure>
         </div>
-        <video
-          data-src="web/subscriptions.mp4"
-          data-src-fallback="web/subscriptions.webm"
-          poster="web/subscriptions-poster.jpg"
-          width="540"
-          height="1046"
-          muted
-          playsinline
-          loop
-          preload="none"
-          tabindex="0"
-          aria-label="Subby subscriptions list demo"
-        ></video>
-        <p class="demo-caption">
-          Sort by cost, search live, and open a subscription to see its saved
-          description and effective cost.
-        </p>
       </section>
     </main>
 
-    <footer>
-      <p>Subby · a minimal subscription dashboard for iOS</p>
-      <a href="https://github.com/GeorgeSuarez/Subby"
-        >Built in public on GitHub ↗</a
-      >
+    <footer class="site-footer">
+      <p>
+        Subby is a personal project by George Suarez, built in public for iPhone
+        and Android.
+      </p>
+      <nav aria-label="Elsewhere">
+        <a href="../">Overview</a>
+        <a href="../app-flow.html">App flow</a>
+        <a href="https://github.com/GeorgeSuarez/Subby">GitHub</a>
+      </nav>
     </footer>
 
     <script>
-      // Load each video only when it scrolls into view, then autoplay it.
-      // WebM first (smaller); MP4 is the fallback for browsers without VP9.
-      const videos = Array.from(document.querySelectorAll('video[data-src]'));
-      const reducedMotion = window.matchMedia(
+      // Load each recording when it nears the viewport. Start each clip at the
+      // screen it is actually about, so the tour does not open on three copies
+      // of the dashboard.
+      const reduceMotion = window.matchMedia(
         '(prefers-reduced-motion: reduce)',
       ).matches;
+      const videos = Array.from(document.querySelectorAll('video[data-src]'));
 
-      function play(video) {
+      function load(video) {
         if (video.dataset.loaded) return;
         video.dataset.loaded = 'true';
 
-        const source = document.createElement('source');
-        source.src = video.dataset.srcFallback;
-        source.type = 'video/webm';
-        video.appendChild(source);
+        const start = Number(video.dataset.start || 0);
+        video.muted = true;
 
-        const fallback = document.createElement('source');
-        fallback.src = video.dataset.src;
-        fallback.type = 'video/mp4';
-        video.appendChild(fallback);
+        const webm = document.createElement('source');
+        webm.src = video.dataset.srcFallback;
+        webm.type = 'video/webm';
 
-        if (reducedMotion) video.controls = true;
+        const mp4 = document.createElement('source');
+        mp4.src = video.dataset.src;
+        mp4.type = 'video/mp4';
+
+        video.append(webm, mp4);
+
+        video.addEventListener(
+          'loadedmetadata',
+          () => {
+            if (reduceMotion) {
+              if (start > 0 && start < video.duration)
+                video.currentTime = start;
+              return;
+            }
+
+            if (start > 0 && start < video.duration) {
+              // Let the poster stay up until the clip has reached its subject,
+              // then start. The timeout is a fallback for streams that will
+              // not seek.
+              video.currentTime = start;
+              let started = false;
+              const play = () => {
+                if (started) return;
+                started = true;
+                video.play().catch(() => {});
+              };
+              video.addEventListener('seeked', play, { once: true });
+              window.setTimeout(play, 2500);
+            } else {
+              video.play().catch(() => {});
+            }
+          },
+          { once: true },
+        );
+
         video.load();
-        if (!reducedMotion) video.play().catch(() => {});
+
+        if (reduceMotion) {
+          video.controls = true;
+          video.setAttribute(
+            'aria-label',
+            video
+              .getAttribute('aria-label')
+              .replace(
+                'Click or press Space to play or pause.',
+                'Use the player controls to play or pause.',
+              ),
+          );
+          return;
+        }
+
+        video.addEventListener('ended', () => {
+          video.currentTime = start;
+          video.play().catch(() => {});
+        });
       }
 
       const observer = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
             if (entry.isIntersecting) {
-              play(entry.target);
+              load(entry.target);
               observer.unobserve(entry.target);
             }
           }
         },
-        { rootMargin: '160px' },
+        { rootMargin: '200px' },
       );
 
       for (const video of videos) observer.observe(video);
 
-      // Pause on click (or Enter/Space for keyboard users).
-      for (const video of videos) {
-        video.addEventListener('click', () => {
-          if (video.paused) video.play().catch(() => {});
-          else video.pause();
-        });
-        video.addEventListener('keydown', (event) => {
-          if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            video.click();
-          }
-        });
+      // Click (or Enter / Space) toggles playback. Native controls handle this
+      // themselves when reduced motion is on.
+      if (!reduceMotion) {
+        for (const video of videos) {
+          video.addEventListener('click', () => {
+            if (video.paused) video.play().catch(() => {});
+            else video.pause();
+          });
+
+          video.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              video.click();
+            }
+          });
+        }
       }
     </script>
   </body>
