@@ -399,34 +399,107 @@
         gap: clamp(24px, 3.5vw, 40px);
       }
 
-      .screen {
+      /* iPhone mockup: the recordings were captured without the status bar,
+         so the missing top 128px (at 540px wide) is restored as iOS chrome.
+         The screen is 540 x 1174 (the full 1206 x 2622 capture); the video
+         keeps its exact 540 x 1046 aspect and is never cropped. */
+      .device {
         position: relative;
+        container-type: inline-size;
+        padding: clamp(7px, 0.65vw, 10px);
+        border-radius: clamp(26px, 2.2vw, 32px);
+        background: linear-gradient(
+          145deg,
+          #f4efe5 0%,
+          #d4ccbd 16%,
+          #989083 44%,
+          #e0d8ca 72%,
+          #aaa193 100%
+        );
+        box-shadow:
+          0 30px 60px -34px rgb(16 42 51 / 55%),
+          0 2px 8px -2px rgb(16 42 51 / 18%),
+          inset 0 1px 0 rgb(255 255 255 / 65%);
+      }
+
+      .device::before,
+      .device::after {
+        position: absolute;
+        width: 1.1cqi;
+        background: linear-gradient(180deg, #8b8377, #d9d1c3 45%, #7d756a);
+        content: '';
+      }
+
+      .device::before {
+        left: -1.1cqi;
+        top: 21%;
+        height: 13%;
+        border-radius: 2px 0 0 2px;
+      }
+
+      .device::after {
+        right: -1.1cqi;
+        top: 31%;
+        height: 12%;
+        border-radius: 0 2px 2px 0;
+      }
+
+      .device-screen {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        aspect-ratio: 540 / 1174;
         overflow: hidden;
-        border: 1px solid rgb(16 42 51 / 14%);
-        border-radius: 20px;
+        border-radius: 6cqi;
         background: #0b0f14;
-        transition: border-color 160ms ease;
+        box-shadow:
+          inset 0 0 0 1px rgb(5 8 10 / 90%),
+          0 0 0 1px rgb(255 255 255 / 10%);
+        transition: box-shadow 160ms ease;
       }
 
-      .screen:hover {
-        border-color: rgb(14 74 92 / 45%);
+      .device:hover .device-screen {
+        box-shadow:
+          inset 0 0 0 1px rgb(5 8 10 / 90%),
+          0 0 0 1px rgb(34 160 191 / 35%);
       }
 
-      .screen:focus-within {
+      .device:focus-within {
         outline: 2px solid var(--teal);
-        outline-offset: 3px;
+        outline-offset: 5px;
       }
 
-      .screen video {
+      .app-viewport {
+        position: relative;
+        flex: 1 1 auto;
+        min-height: 0;
+        background: #0b0f14;
+      }
+
+      .app-viewport video {
+        display: block;
         width: 100%;
-        height: auto;
-        aspect-ratio: 540 / 1046;
+        height: 100%;
+        background: #0b0f14;
         cursor: pointer;
-        object-fit: cover;
+        object-fit: contain;
       }
 
-      .screen video:focus {
+      .app-viewport video:focus {
         outline: none;
+      }
+
+      .home-indicator {
+        position: absolute;
+        bottom: 1.5cqi;
+        left: 50%;
+        z-index: 3;
+        width: 33cqi;
+        height: 1.3cqi;
+        transform: translateX(-50%);
+        border-radius: 999px;
+        background: rgb(244 247 251 / 88%);
+        pointer-events: none;
       }
 
       .demo h3 {
@@ -546,10 +619,6 @@
           animation: none;
         }
 
-        .screen {
-          transition: none;
-        }
-
         .motion-note-auto {
           display: none;
         }
@@ -637,7 +706,7 @@
                 aria-hidden="true"
               ></span>
               <span class="renewal-name">GitHub</span>
-              <span class="renewal-date">Aug 22</span>
+              <span class="renewal-date">Nov 7</span>
               <span class="renewal-amount">$4.00</span>
             </li>
             <li>
@@ -647,7 +716,7 @@
                 aria-hidden="true"
               ></span>
               <span class="renewal-name">iCloud+</span>
-              <span class="renewal-date">Aug 26</span>
+              <span class="renewal-date">Nov 11</span>
               <span class="renewal-amount">$2.99</span>
             </li>
             <li>
@@ -657,7 +726,7 @@
                 aria-hidden="true"
               ></span>
               <span class="renewal-name">Peacock</span>
-              <span class="renewal-date">Aug 30</span>
+              <span class="renewal-date">Nov 15</span>
               <span class="renewal-amount">$5.99</span>
             </li>
           </ul>
@@ -671,7 +740,7 @@
               <div class="budget-fill"></div>
             </div>
             <p class="budget-note">
-              87% used. On track to end the month $22.04 under budget.
+              87% used. $12.87 under budget.
             </p>
           </div>
         </aside>
@@ -692,14 +761,16 @@
 
         <div class="tour-grid">
           <figure class="demo">
-            <div class="screen">
-              <video
+            <div class="device">
+              <div class="device-screen">
+                <div class="app-viewport">
+                  <video
                 data-src="web/dashboard.mp4"
                 data-src-fallback="web/dashboard.webm"
                 data-start="0"
                 poster="web/dashboard-poster.jpg"
                 width="540"
-                height="1046"
+                height="1174"
                 muted
                 playsinline
                 preload="none"
@@ -707,6 +778,9 @@
                 aria-describedby="dashboard-desc"
                 aria-label="Dashboard recording, silent loop. Click or press Space to play or pause."
               ></video>
+                </div>
+                <span class="home-indicator" aria-hidden="true"></span>
+              </div>
             </div>
             <figcaption>
               <h3>The dashboard</h3>
@@ -718,14 +792,16 @@
           </figure>
 
           <figure class="demo">
-            <div class="screen">
-              <video
+            <div class="device">
+              <div class="device-screen">
+                <div class="app-viewport">
+                  <video
                 data-src="web/add-subscription.mp4"
                 data-src-fallback="web/add-subscription.webm"
-                data-start="11"
+                data-start="0"
                 poster="web/add-subscription-poster.jpg"
                 width="540"
-                height="1046"
+                height="1174"
                 muted
                 playsinline
                 preload="none"
@@ -733,6 +809,9 @@
                 aria-describedby="add-desc"
                 aria-label="Add a subscription recording, silent loop. Click or press Space to play or pause."
               ></video>
+                </div>
+                <span class="home-indicator" aria-hidden="true"></span>
+              </div>
             </div>
             <figcaption>
               <h3>Adding a subscription</h3>
@@ -744,14 +823,16 @@
           </figure>
 
           <figure class="demo">
-            <div class="screen">
-              <video
+            <div class="device">
+              <div class="device-screen">
+                <div class="app-viewport">
+                  <video
                 data-src="web/subscriptions.mp4"
                 data-src-fallback="web/subscriptions.webm"
-                data-start="14"
+                data-start="0"
                 poster="web/subscriptions-poster.jpg"
                 width="540"
-                height="1046"
+                height="1174"
                 muted
                 playsinline
                 preload="none"
@@ -759,6 +840,9 @@
                 aria-describedby="subscriptions-desc"
                 aria-label="Subscriptions list recording, silent loop. Click or press Space to play or pause."
               ></video>
+                </div>
+                <span class="home-indicator" aria-hidden="true"></span>
+              </div>
             </div>
             <figcaption>
               <h3>All subscriptions</h3>
