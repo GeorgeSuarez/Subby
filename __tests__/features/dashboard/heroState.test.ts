@@ -67,23 +67,32 @@ describe('pickHeroState', () => {
   });
 
   it('shows the budget hero when only projected over', () => {
-    // A $700/yr sub renewing this month costs $58.33/mo on paper but charges
-    // $700 in reality — projected over a $60 budget without being over yet.
-    const state = pickHeroState(
-      [
-        base({
-          id: 'a',
-          amount: 700,
-          cycle: 'yearly',
-          nextRenewal: inDays(5),
-        }),
-      ],
-      60,
-    );
-    expect(state.kind).toBe('budget');
-    if (state.kind !== 'budget') return;
-    expect(state.over).toBe(false);
-    expect(state.overAmount).toBeGreaterThan(0);
+    // Pin to mid-month so inDays(5) cannot fall into the next month. The
+    // projection only counts charges left in the current month.
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2026-01-15T12:00:00Z'));
+
+    try {
+      // A $700/yr sub renewing this month costs $58.33/mo on paper but charges
+      // $700 in reality — projected over a $60 budget without being over yet.
+      const state = pickHeroState(
+        [
+          base({
+            id: 'a',
+            amount: 700,
+            cycle: 'yearly',
+            nextRenewal: inDays(5),
+          }),
+        ],
+        60,
+      );
+      expect(state.kind).toBe('budget');
+      if (state.kind !== 'budget') return;
+      expect(state.over).toBe(false);
+      expect(state.overAmount).toBeGreaterThan(0);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('ignores the budget state when no budget is set', () => {
